@@ -2975,9 +2975,63 @@ function secStyle(section){ return SECTION_STYLE[section] || {color:'var(--pitch
 const EXERCISES = JSON.parse(document.getElementById('exercise-data').textContent);
 /* Normalizes one exercise record's fields — used both for the bundled starting data and for
    rows freshly pulled from the live Google Sheet, so both paths behave identically. */
+// A Diagram/Video URL cell that isn't actually a link (a stray note like "Insta" landing in the
+// wrong spreadsheet column, a typo, etc.) would otherwise get handed straight to an <img>/<video>
+// src and render as a blank or broken tile instead of the normal fallback icon. Treat anything
+// that doesn't look like a real link the same as if the cell were empty.
+function looksLikeMediaUrl(v){
+  if(typeof v !== 'string') return false;
+  const s = v.trim();
+  return /^https?:\/\//i.test(s) || /^data:(image|video)\//i.test(s);
+}
+// Trims whitespace and folds legacy/casing variants (a lingering "Warm Up" from before the
+// single-word rename, stray capitalization, a trailing space from a copy-paste) onto the section
+// names the app actually knows about -- so a formatting slip in the sheet doesn't silently zero
+// out a section filter (e.g. picking exercises for the Warmup phase showing no results). Anything
+// unrecognized is left as-is (trimmed) so custom, coach-added sections still work.
+const SECTION_ALIASES = {
+  'warm up':'Warmup', 'warmup':'Warmup', 'athletic':'Athletic', 'duels':'Duels',
+  'rondos':'Rondos', 'ssgs':'SSGs', 'ssg':'SSGs', 'scrimmage':'Scrimmage',
+};
+function normalizeSectionValue(v){
+  if(v===undefined || v===null) return v;
+  const trimmed = String(v).trim();
+  if(!trimmed) return trimmed;
+  return SECTION_ALIASES[trimmed.toLowerCase()] || trimmed;
+}
+// Guards against duplicate or blank Exercise IDs (most often: a new row copied from an existing
+// one whose ID column never got changed, or was left blank). Without this, EXERCISES.find(e =>
+// e.id === id) always resolves to whichever colliding row comes first in the sheet -- so tapping
+// one exercise's tile can silently open a completely different exercise's detail page. Instead of
+// failing silently, every row is guaranteed a unique id, and the collision is flagged (via the
+// return value, surfaced as a Home-screen banner) rather than causing confusing navigation.
+function dedupeExerciseIds(list){
+  const seen = new Map();
+  let hadIssue = false;
+  list.forEach((e, i) => {
+    let id = (e.id || '').trim();
+    if(!id){
+      hadIssue = true;       // blank ID -- flag it, even though the fallback below keeps it unique
+      id = '_ROW' + i;
+    }
+    if(seen.has(id)){
+      hadIssue = true;       // a real duplicate, not just a blank
+      const n = seen.get(id) + 1;
+      seen.set(id, n);
+      e.id = id + '-dup' + n;
+    } else {
+      seen.set(id, 0);
+      e.id = id;
+    }
+  });
+  return hadIssue;
+}
 function normalizeExerciseRecord(e){
   if(e.mediaUrl===undefined) e.mediaUrl=null;
   if(e.videoUrl===undefined) e.videoUrl=null;
+  if(e.mediaUrl && !looksLikeMediaUrl(e.mediaUrl)) e.mediaUrl=null;
+  if(e.videoUrl && !looksLikeMediaUrl(e.videoUrl)) e.videoUrl=null;
+  e.section = normalizeSectionValue(e.section);
   if(e.location===undefined || e.location===null || e.location===''){
     const text = (e.name + ' ' + (e.setup||'') + ' ' + (e.description||'')).toLowerCase();
     e.location = text.includes('wall') ? 'indoor' : 'both';
@@ -2988,6 +3042,7 @@ function normalizeExerciseRecord(e){
   return e;
 }
 EXERCISES.forEach(normalizeExerciseRecord);
+const bundledHadIdCollision = dedupeExerciseIds(EXERCISES);
 const LOCATION_LABELS = {both:'Indoor or Outdoor', indoor:'Indoor only', outdoor:'Outdoor only'};
 
 /* ============ LIVE SHEET SYNC ============
@@ -3018,7 +3073,11 @@ function parseDifficultyField(v){
 }
 function splitTags(v){
   if(!v) return [];
-  return String(v).split(';').map(s=>s.trim()).filter(Boolean);
+  // Google Sheets' native multi-select dropdown ("Allow multiple selections" on a chip-format
+  // Data Validation rule) writes its picks into the cell comma-separated (e.g. "Passing, Receiving"),
+  // not semicolon-separated -- so both delimiters need to be accepted here. None of the tag
+  // vocabulary itself contains a comma or semicolon, so splitting on either is safe.
+  return String(v).split(/[;,]/).map(s=>s.trim()).filter(Boolean);
 }
 function csvRowToExercise(row){
   const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
@@ -3129,6 +3188,7 @@ async function syncExercisesFromSheet(){
     if(!e.mediaUrl && localMediaByName[e.name]) e.mediaUrl = localMediaByName[e.name];
     return normalizeExerciseRecord(e);
   });
+  state.hasIdCollision = dedupeExerciseIds(fresh);
 
   EXERCISES.length = 0;
   EXERCISES.push(...fresh);
@@ -3267,6 +3327,7 @@ const state = {
   sessionName: defaultSessionName(),  // coach-editable name for the session currently being built
   practiceLocation: 'outdoor',        // 'indoor' | 'outdoor' — where this session is being run
   dataSource: 'unknown',      // 'unknown' (still trying) | 'live' (synced this load) | 'offline' (both sync sources failed — showing the copy baked into this file)
+  hasIdCollision: bundledHadIdCollision,  // true if two+ rows shared an Exercise ID (or had none) — tapping one can open the wrong exercise until the sheet's IDs are fixed
   phaseData: Object.fromEntries(PHASES.map(p => [p.key, []])), // key -> [exerciseId,...]
   extraSections: [],          // user-added custom sections {key,label,exercises:[]}
   savedSessions: [],
@@ -3342,6 +3403,7 @@ function renderHome(){
   <div class="section-pad">
     <div class="eyebrow">Coach Home</div>
     ${state.dataSource === 'offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach your live exercise sheet just now — showing the last saved copy on this device. New videos, diagrams, or edits from the sheet won't appear until this reconnects. Try closing and reopening the app, or check your connection.</span></div>` : ''}
+    ${state.hasIdCollision ? `<div class="sync-banner">${ICONS.image}<span>Some exercises in your sheet are missing an Exercise ID, or share one with another row. Tapping one of them may open the wrong exercise's details until the IDs are fixed — check the Exercise ID column for blanks or duplicates.</span></div>` : ''}
 
     <div class="main-actions-row">
       <button class="mac-tile primary" onclick="nav('build')">
