@@ -1299,7 +1299,7 @@ input.section-title-input:focus{border-color:var(--turf);}
   "id": "EX057",
   "name": "No-dribble tag (ball in hands)",
   "section": "Athletic",
-  "category": "Warm Up",
+  "category": "Warmup",
   "difficulty": 1,
   "duration": null,
   "setup": "Two teams; one offense w/ ball and other running around",
@@ -2538,7 +2538,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX069",
   "name": "Ginga without the ball",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Agility",
   "difficulty": 1,
   "duration": 5.0,
@@ -2568,8 +2568,8 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX003",
   "name": "Ginga (freestyle dribbling)",
-  "section": "Warm Up",
-  "category": "Warm Up",
+  "section": "Warmup",
+  "category": "Warmup",
   "difficulty": 1,
   "duration": 5.0,
   "setup": "Players each have a ball in a square.",
@@ -2600,7 +2600,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX002",
   "name": "Juggling",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Coordination",
   "difficulty": 1,
   "duration": 5.0,
@@ -2628,7 +2628,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX070",
   "name": "Guided Juggling",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Coordination",
   "difficulty": 1,
   "duration": 5.0,
@@ -2650,7 +2650,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX021",
   "name": "Numbered Shooting",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Shooting",
   "difficulty": 1,
   "duration": 10.0,
@@ -2685,7 +2685,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX037",
   "name": "Catch / Volley Game",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Coordination",
   "difficulty": 1,
   "duration": 5.0,
@@ -2717,7 +2717,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX038",
   "name": "Gladiator Game",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Balance",
   "difficulty": 1,
   "duration": 10.0,
@@ -2747,7 +2747,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX071",
   "name": "2v1 chaos in rectangle",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Reaction",
   "difficulty": 1,
   "duration": 10.0,
@@ -2769,7 +2769,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX072",
   "name": "4 Cone in square passing game (indoor)",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Competition; Agility",
   "difficulty": 1,
   "duration": 5.0,
@@ -2791,7 +2791,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX073",
   "name": "Lay off, Two touch game - 1v1",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "1v1",
   "difficulty": 1,
   "duration": 10.0,
@@ -2813,7 +2813,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX074",
   "name": "Follow the leader",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Coordination",
   "difficulty": 1,
   "duration": 5.0,
@@ -2835,7 +2835,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX075",
   "name": "S-Warmup",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Athletic",
   "difficulty": 3,
   "duration": 15.0,
@@ -2879,7 +2879,7 @@ input.section-title-input:focus{border-color:var(--turf);}
  {
   "id": "EX077",
   "name": "Playing SSG on arrival",
-  "section": "Warm Up",
+  "section": "Warmup",
   "category": "Small-Sided Game",
   "difficulty": 1,
   "duration": 10.0,
@@ -2955,7 +2955,7 @@ const ICONS = {
 /* ============ SECTION STYLE (color + icon families) ============ */
 /* Warm Up / Athletic = teal "activation" family. Duels / Rondos / SSGs = navy "tactical" family. Scrimmage = gold, distinct. */
 const SECTION_STYLE = {
-  'Warm Up':  {color:'var(--sec-warmup)',   textOn:'white', icon: ICONS.flame},
+  'Warmup':  {color:'var(--sec-warmup)',   textOn:'white', icon: ICONS.flame},
   'Athletic': {color:'var(--sec-athletic)', textOn:'white', icon: ICONS.bolt},
   'Duels':    {color:'var(--sec-duels)',    textOn:'white', icon: ICONS.swords},
   'Rondos':   {color:'var(--sec-rondos)',   textOn:'white', icon: ICONS.circleArrows},
@@ -3126,7 +3126,7 @@ async function syncExercisesFromSheet(){
 }
 
 const PHASES = [
-  {key:'warmup',   label:'Warm Up',              section:'Warm Up'},
+  {key:'warmup',   label:'Warmup',              section:'Warmup'},
   {key:'athletic', label:'Athletic',              section:'Athletic'},
   {key:'duels',    label:'Duels — 1v1 / 2v2',     section:'Duels'},
   {key:'rondos',   label:'Rondos',                section:'Rondos'},
@@ -3134,7 +3134,7 @@ const PHASES = [
   {key:'scrimmage',label:'Scrimmage',             section:'Scrimmage'},
 ];
 
-const SECTION_LIST = ['Warm Up','Athletic','Duels','Rondos','SSGs','Scrimmage'];
+const SECTION_LIST = ['Warmup','Athletic','Duels','Rondos','SSGs','Scrimmage'];
 
 // Coaching guideline for how a session's time should roughly break down across phase groups.
 const SUGGESTED_SPLIT = [
@@ -3206,8 +3206,8 @@ function nextExerciseId(){
 
 function createNewExercise(){
   const section = state.pickingPhase
-    ? (PHASES.find(p=>p.key===state.pickingPhase)?.section || state.sectionFilter || 'Warm Up')
-    : (state.sectionFilter || 'Warm Up');
+    ? (PHASES.find(p=>p.key===state.pickingPhase)?.section || state.sectionFilter || 'Warmup')
+    : (state.sectionFilter || 'Warmup');
   const id = nextExerciseId();
   const ex = {
     id, name:'New Exercise', section, category:null, difficulty:null, duration:10,
