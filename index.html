@@ -4437,8 +4437,8 @@ const LOCATION_LABELS = {both:'Indoor or Outdoor', indoor:'Indoor only', outdoor
    shared, offline, etc.) it silently keeps the bundled data — no error shown, just no live sync.
    NOTE: this only works when the app is actually hosted (http/https), not opened as a local file,
    and only if the sheet's sharing is set to "Anyone with the link — Viewer". */
-const SHEET_ID = '1Jqji-i2PZ6p3PnCBux95ZUr-pw8F5LgYbCS7EqKgYMI';
-const SHEET_GID = '1993829082'; // the tab holding the exercise rows — update if this changes
+const SHEET_ID = '1_vZ0w47EwERpf09Els4xcleWGW-RaxUGT9L6ZU9VyK8';
+const SHEET_GID = '1948432010'; // the tab holding the exercise rows — update if this changes
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 /* Preferred sync source: an Apps Script Web App bound to the sheet (see FT2_AppsScript_Code.gs in
@@ -4446,7 +4446,7 @@ const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export
    sheet itself can stay private — unlike the CSV export above, which needs "Anyone with the
    link — Viewer" sharing. Deploy as: Execute as Me, Who has access: Anyone, and the URL must end
    in /exec. Leave as '' to skip straight to the CSV export path below. */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR2bbo2OHUynqc909lmhoITROdzOzCh_VTvcwcNDe7OarCA0MDjlfo4rhxrL1nghQYzg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaw7sBqqpXcsN0rqG_1tCxh66wnpyCYOMq_9ONSjjEigqN8We-fCrSNxLtKU11JZm-/exec';
 
 const DIFF_TEXT_MAP = {Beginner:1, Intermediate:3, Advanced:5};
 function parseDifficultyField(v){
