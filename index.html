@@ -189,7 +189,7 @@ a{color:inherit;text-decoration:none;}
 .navitem.build-fab span{display:none;}
 
 /* ---------- home ---------- */
-.main-actions-row{display:flex;gap:8px;margin-top:6px;}
+.main-actions-row{display:flex;gap:4px;margin-top:6px;}
 .mac-tile{
   /* All three Home tiles now share one bold treatment -- easier to spot at a glance than the old
      mix of one dark "primary" tile plus two low-contrast white ones. */
@@ -204,7 +204,7 @@ a{color:inherit;text-decoration:none;}
   background:var(--sky-blue);color:#000;
 }
 .mact-icon svg{width:27px;height:27px;}
-.mact-label{display:flex;flex-direction:column;gap:1px;text-align:center;font-family:'Inter',sans-serif;font-weight:800;font-size:14px;color:white;line-height:1.25;}
+.mact-label{display:flex;flex-direction:column;gap:1px;text-align:center;font-family:'Inter',sans-serif;font-weight:800;font-size:12.5px;color:white;line-height:1.25;}
 .mact-stat{font-size:10.5px;color:rgba(255,255,255,0.72);margin-top:3px;text-align:center;font-variant-numeric:tabular-nums;}
 
 .feed-item{
@@ -346,13 +346,6 @@ a{color:inherit;text-decoration:none;}
   background:rgba(0,0,0,0.4);color:white;font-size:11.5px;font-weight:700;
   padding:3px 8px;border-radius:8px;
 }
-.loc-badge{
-  position:absolute;bottom:6px;left:6px;
-  background:rgba(0,0,0,0.4);color:white;
-  width:20px;height:20px;border-radius:6px;
-  display:flex;align-items:center;justify-content:center;
-}
-.loc-badge svg{width:11px;height:11px;}
 .ex-bookmark{
   position:absolute;top:4px;right:4px;
   width:32px;height:32px;border-radius:50%;
@@ -461,6 +454,12 @@ select.section-select option{color:var(--ink);background:var(--bg-surface);text-
   padding:8px 14px;font-size:13px;font-weight:700;min-height:34px;margin-bottom:14px;
 }
 .back-to-session-pill svg{width:13px;height:13px;}
+.back-pill-flat{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--chalk-dim);color:var(--ink);border:1px solid var(--line);border-radius:20px;
+  padding:8px 14px;font-size:13px;font-weight:700;min-height:34px;
+}
+.back-pill-flat svg{width:13px;height:13px;}
 .draft-actions{display:flex;gap:10px;padding:14px 18px 0;}
 .draft-hint{padding:0 18px 6px;font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
 .draft-hint svg{width:10px;height:10px;flex-shrink:0;opacity:0.7;}
@@ -724,30 +723,52 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px;}
 .phase-box{background:var(--bg-surface);border:1.5px solid var(--line);border-radius:14px;padding:13px 12px 14px;}
 .phase-box.next-up{border-color:var(--cone);box-shadow:0 0 0 1px var(--cone);}
-.phase-box-header{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px;}
-.pb-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+/* "Filled" = this section already has exercises in it. Previously looked identical to an empty
+   section (aside from the tiny minute count), so a coach couldn't tell at a glance what was done.
+   Turf green (the app's established "added/complete" color, same as exercise-card added badges)
+   plus a small checkmark badge on the icon makes progress genuinely visible on the page. */
+.phase-box.filled{border-color:var(--turf);box-shadow:0 0 0 1px var(--turf);}
+.phase-box-header{margin-bottom:4px;}
+.phase-box-header.with-icon{display:flex;align-items:center;gap:8px;}
+.phase-box-body{flex:1;min-width:0;}
+.phase-box-toprow{display:flex;align-items:center;gap:8px;}
+.phase-box-subrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;}
+.phase-box-subrow-actions{display:flex;align-items:center;}
+.pb-icon-wrap{position:relative;flex-shrink:0;display:flex;}
+.pb-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .pb-icon svg{width:14px;height:14px;}
-.pb-icon.big{width:38px;height:38px;border-radius:10px;margin-top:0;}
-.pb-icon.big svg{width:20px;height:20px;}
-.phase-box-header.centered{align-items:center;}
-.phase-collapse-spacer{width:29px;flex-shrink:0;}
+/* Flatter, smaller header icon (was 38px "big") -- frees up width so the section title reliably
+   fits on one line instead of wrapping ("Small Sided Games" was wrapping to 2 lines before). */
+.pb-icon.md{width:29px;height:29px;border-radius:9px;}
+.pb-icon.md svg{width:15px;height:15px;}
+.pb-filled-badge{
+  position:absolute;bottom:-3px;right:-3px;width:13px;height:13px;border-radius:50%;
+  background:var(--turf);color:#fff;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--bg-surface);
+}
+.pb-filled-badge svg{width:7px;height:7px;}
 .phase-box-add-btn{
   background:var(--turf-dim);color:var(--turf);border:none;border-radius:12px;
-  padding:6px 12px;font-size:11px;font-weight:800;line-height:1.25;text-align:center;
-  flex-shrink:0;margin:-2px -3px -2px 0;min-width:64px;min-height:44px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 14px;font-size:11.5px;font-weight:800;text-align:center;
+  flex-shrink:0;min-height:34px;display:flex;align-items:center;justify-content:center;
 }
-.phase-box-title{font-family:'Inter',sans-serif;font-weight:700;font-size:14.5px;text-transform:uppercase;letter-spacing:0.01em;line-height:1.25;flex:1;padding-top:2px;}
+/* Icon + title now sit flush left as the row's first two elements (the collapse chevron moved to
+   the end of the row, below), and the row is a single flex line -- title gets nowrap+ellipsis as
+   a safety net, but with the extra width freed up here it fits on one line in practice. */
+.phase-box-title{
+  font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:0.01em;
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .next-up-pill{
   display:inline-block;background:var(--cone);color:var(--pitch-dark);text-transform:none;
   font-size:10px;font-weight:700;letter-spacing:0.02em;padding:2px 7px;border-radius:20px;
   vertical-align:middle;margin-left:5px;
 }
-.phase-box-time{font-size:11.5px;color:var(--ink-soft);font-weight:700;flex-shrink:0;white-space:nowrap;margin-top:6px;}
-.phase-collapse-btn{background:none;border:none;color:var(--ink-soft);flex-shrink:0;padding:7px;display:flex;margin:-6px 0 -6px -7px;transition:transform .15s;}
+.phase-box-time{font-size:11.5px;color:var(--ink-soft);font-weight:700;flex-shrink:0;white-space:nowrap;}
+.phase-collapse-btn{background:none;border:none;color:var(--ink-soft);flex-shrink:0;padding:7px;display:flex;margin:-7px -7px -7px 0;transition:transform .15s;}
 .phase-collapse-btn svg{width:15px;height:15px;transform:rotate(90deg);}
 .phase-collapse-btn.collapsed svg{transform:rotate(0deg);}
-.phase-box-edit{background:none;border:none;color:var(--ink-soft);flex-shrink:0;padding:7px;display:flex;margin:-6px -7px -6px 0;}
+.phase-box-edit{background:none;border:none;color:var(--ink-soft);flex-shrink:0;padding:7px;display:flex;margin:-6px 0 -6px 0;}
 .phase-box-edit svg{width:14px;height:14px;}
 .phase-box-del{background:none;border:none;color:var(--warn);flex-shrink:0;padding:7px;display:flex;margin:-6px -7px -6px 0;}
 .phase-box-del svg{width:15px;height:15px;}
@@ -894,6 +915,15 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .tmpl-toggle{width:26px;height:26px;border-radius:50%;border:none;background:none;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .tmpl-toggle svg{width:14px;height:14px;}
 .tmpl-toggle.remove{color:var(--warn);}
+.tmpl-lib-list{display:flex;flex-direction:column;gap:8px;}
+.tmpl-lib-row{display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 10px 10px 12px;}
+.tmpl-lib-icon{width:32px;height:32px;border-radius:9px;background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tmpl-lib-icon svg{width:16px;height:16px;}
+.tmpl-lib-info{flex:1;min-width:0;}
+.tmpl-lib-name{font-size:13.5px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tmpl-lib-meta{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:1px;}
+.tmpl-lib-chevron{color:var(--ink-soft);display:flex;flex-shrink:0;}
+.tmpl-lib-chevron svg{width:15px;height:15px;}
 .tmpl-sum-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--chalk-dim);color:var(--ink);}
 .tmpl-sum-row.bad .tmpl-sum-warn{color:var(--warn);}
 .tmpl-sum-row.ok .tmpl-sum-warn{color:var(--turf);}
@@ -942,7 +972,7 @@ input.section-title-input:focus{border-color:var(--turf);}
 
 /* ---------- media / gif box ---------- */
 .media-box{
-  margin:16px 18px 0;height:150px;border-radius:14px;overflow:hidden;position:relative;
+  margin:16px 18px 0;height:220px;border-radius:14px;overflow:hidden;position:relative;
   background:var(--chalk-dim);border:1px solid var(--line);
   display:flex;align-items:center;justify-content:center;
 }
@@ -1035,7 +1065,7 @@ button,.btn,.ex-card,.mac-tile,.phase-box,.session-builder-box,.stat,.feed-item,
   text-transform:uppercase !important;letter-spacing:0.04em !important;
 }
 .section-pad{padding-left:20px;padding-right:20px;}
-.mac-tile{padding:22px 12px;}
+.mac-tile{padding:22px 3px;}
 * { transition:background-color .15s ease,color .15s ease,border-color .15s ease; }
 </style>
 </head>
@@ -4494,7 +4524,7 @@ const ICONS = {
   // section icons
   flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s-5 5.5-5 10a5 5 0 0010 0c0-1.5-1-2.5-1-2.5s-.5 2-2 2c-1.8 0-2-2-1-3.5C13.5 6.5 12 2 12 2z"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>`,
-  swords: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3l3 3M5 3l-3 3"/><path d="M6 8l2-2 2 3 2-2.5 2 3"/><path d="M12.3 9.3l1.4 0.4 0.5-1.4"/><circle cx="20.3" cy="20.3" r="2"/><path d="M18.3 18.3L14.8 14.8"/><path d="M13.2 10l-1.9-0.2 0.2 1.9"/></svg>`,
+  swords: `<svg viewBox="0 0 24 24" fill="none"><text x="12" y="16.5" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-weight="800" font-size="12.5" letter-spacing="-0.5" fill="currentColor" transform="rotate(-14 12 12)">VS</text></svg>`,
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.2"/></svg>`,
   target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>`,
@@ -4895,7 +4925,7 @@ function saveDraftExercise(silent){
 }
 function discardDraftExercise(){
   state.draftExercise = null;
-  nav(state.fromBuild ? 'build' : 'exercises');
+  nav('exercises');
 }
 function backFromDetail(){
   if(state.draftExercise){
@@ -4903,7 +4933,10 @@ function backFromDetail(){
     if(!ok) return;
     state.draftExercise = null;
   }
-  nav(state.fromBuild ? 'build' : 'exercises');
+  // Always back to Explore Exercises -- when fromBuild is true, state.pickingPhase is still set
+  // (they're set together, only ever in pickForPhase()), so this naturally lands the coach back
+  // on the same Building Session picker screen they came from rather than the full phase grid.
+  nav('exercises');
 }
 
 /* ============ STATE ============ */
@@ -4935,14 +4968,16 @@ const state = {
   collapsedPhases: new Set(), // phase/section keys currently collapsed on the Build page
   viewMode: 'tile',           // 'tile' | 'list' -- how Explore Exercises lays out results
   confirmDiscardOpen: false,  // whether the "discard this draft practice?" confirm sheet is showing
-  practiceTemplates: {        // coach-configurable section/percentage split, one per practice location
-    outdoor: { sections: defaultTemplateSections(), duration: 75 },
-    indoor:  { sections: defaultTemplateSections(), duration: 75 },
-  },
-  settingsLocation: 'outdoor',            // which template tab Settings is currently showing
-  enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the saved template
+  practiceTemplates: [        // coach's own named library of section/percentage splits -- as many as they want, saved locally on their own device
+    {id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:75, sections: defaultTemplateSections()},
+    {id:'tmpl-indoor-default',  name:'Indoor Practice',  location:'indoor',  duration:75, sections: defaultTemplateSections()},
+  ],
+  editingTemplateId: null,        // which template Settings is currently editing -- null shows the library list
+  editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
+  confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
+  templatePickerOpen: false,      // Build page: "Load a template" sheet open/closed
+  enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the applied template
   phaseOrder: PHASES.map(p => p.key),     // standard-phase display order -- reorderable in Settings (Warmup always stays first)
-  editingTemplateDuration: {outdoor:false, indoor:false}, // whether each template's custom-duration input is active
 };
 
 function setState(patch){ Object.assign(state, patch); render(); }
@@ -4969,17 +5004,22 @@ function renderTopbar(){
     </div>
     <div class="topbar-icons">
       <button class="icon-btn" onclick="toggleTheme()" title="Toggle light/dark theme">${document.documentElement.getAttribute('data-theme')==='dark'?ICONS.sun:ICONS.moon}</button>
-      <button class="icon-btn" onclick="nav('exercises')" title="Search">${ICONS.search}</button>
+      <button class="icon-btn" onclick="openSearch()" title="Search">${ICONS.search}</button>
       <button class="icon-btn" style="${bmActive?'background:var(--cone);color:var(--pitch-dark);':''}" onclick="openBookmarks()" title="Bookmarks">${bmActive?ICONS.bookmarkFilled:ICONS.bookmark}</button>
       <div class="avatar" title="Coach profile">TA</div>
     </div>`;
 }
 function initTheme(){
+  // Default to light regardless of the device's system dark-mode setting -- previously, a coach
+  // with no saved preference yet (first visit, or storage cleared) would silently get dark mode
+  // just because their phone's OS-wide setting was dark, via the prefers-color-scheme fallback.
+  // An explicit in-app toggle (below) still saves and is still respected on every future load.
   try{
     const saved = localStorage.getItem('ft2-theme');
-    if(saved==='dark') document.documentElement.setAttribute('data-theme','dark');
-    else if(saved==='light') document.documentElement.setAttribute('data-theme','light');
-  }catch(e){}
+    document.documentElement.setAttribute('data-theme', saved==='dark' ? 'dark' : 'light');
+  }catch(e){
+    document.documentElement.setAttribute('data-theme','light');
+  }
 }
 function toggleTheme(){
   const isDark = document.documentElement.getAttribute('data-theme')==='dark';
@@ -5021,43 +5061,86 @@ state.phaseHasAny = function(){
   return PHASES.some(p => state.phaseData[p.key].length) || state.extraSections.some(s=>s.exercises.length);
 };
 
-/* ============ SETTINGS ============ */
-function templateSum(loc){
-  return state.practiceTemplates[loc].sections.filter(s=>s.enabled!==false).reduce((a,s)=>a+s.pct,0);
+/* ============ SETTINGS ============
+   Practice Templates are a coach's own named library of section/percentage splits -- as many as
+   they want, not just a fixed one-per-location slot. This app has no login or backend, so "a
+   coach's own templates" just means whatever's saved in their own browser's storage on their own
+   device -- nothing here is shared between coaches or synced across devices. */
+function getTemplate(id){ return state.practiceTemplates.find(t=>t.id===id); }
+function templateSum(id){
+  const t = getTemplate(id);
+  return t ? t.sections.filter(s=>s.enabled!==false).reduce((a,s)=>a+s.pct,0) : 0;
 }
-function setSettingsLocation(loc){ state.settingsLocation = loc; render(); }
-function adjustTemplatePct(loc, key, delta){
-  const s = state.practiceTemplates[loc].sections.find(s=>s.key===key);
+function createTemplate(){
+  const id = 'tmpl'+Date.now();
+  state.practiceTemplates.push({id, name:'New Template', location:'outdoor', duration:75, sections:defaultTemplateSections()});
+  state.editingTemplateId = id;
+  render();
+}
+function openTemplateEditor(id){
+  state.editingTemplateId = id;
+  render();
+  const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+}
+function closeTemplateEditor(){ state.editingTemplateId = null; render(); }
+function renameTemplate(id, val){
+  const t = getTemplate(id);
+  if(t) t.name = val;
+  setTimeout(render, 0);
+}
+function setTemplateLocation(id, loc){
+  const t = getTemplate(id);
+  if(t) t.location = loc;
+  render();
+}
+function requestDeleteTemplate(id){ state.confirmDeleteTemplateId = id; renderOverlay(); }
+function cancelDeleteTemplate(){ state.confirmDeleteTemplateId = null; renderOverlay(); }
+function confirmDeleteTemplateNow(){
+  const id = state.confirmDeleteTemplateId;
+  state.practiceTemplates = state.practiceTemplates.filter(t=>t.id!==id);
+  if(state.editingTemplateId === id) state.editingTemplateId = null;
+  state.confirmDeleteTemplateId = null;
+  showToast('Template deleted');
+  render();
+}
+function adjustTemplatePct(id, key, delta){
+  const t = getTemplate(id); if(!t) return;
+  const s = t.sections.find(s=>s.key===key);
   if(!s) return;
   s.pct = Math.max(0, Math.min(100, s.pct + delta));
   render();
 }
-function toggleTemplateSection(loc, key){
-  const s = state.practiceTemplates[loc].sections.find(s=>s.key===key);
+function toggleTemplateSection(id, key){
+  const t = getTemplate(id); if(!t) return;
+  const s = t.sections.find(s=>s.key===key);
   if(!s) return;
   s.enabled = s.enabled===false ? true : false;
   render();
 }
-function addTemplateCustomSection(loc){
-  const sections = state.practiceTemplates[loc].sections;
-  const n = sections.filter(s=>!s.standard).length + 1;
-  sections.push({key:'tmplcustom'+Date.now(), label:'Custom Section '+n, pct:0, standard:false, enabled:true});
+function addTemplateCustomSection(id){
+  const t = getTemplate(id); if(!t) return;
+  const n = t.sections.filter(s=>!s.standard).length + 1;
+  t.sections.push({key:'tmplcustom'+Date.now(), label:'Custom Section '+n, pct:0, standard:false, enabled:true});
   render();
 }
-function renameTemplateCustomSection(loc, key, val){
-  const s = state.practiceTemplates[loc].sections.find(s=>s.key===key);
+function renameTemplateCustomSection(id, key, val){
+  const t = getTemplate(id); if(!t) return;
+  const s = t.sections.find(s=>s.key===key);
   if(s) s.label = val.trim() || s.label;
   setTimeout(render, 0);
 }
-function removeTemplateSection(loc, key){
-  state.practiceTemplates[loc].sections = state.practiceTemplates[loc].sections.filter(s=>s.key!==key);
+function removeTemplateSection(id, key){
+  const t = getTemplate(id); if(!t) return;
+  t.sections = t.sections.filter(s=>s.key!==key);
   render();
 }
-/* Committing a saved template is what actually changes what the coach sees on the Build page --
-   editing percentages/sections above only touches the draft in Settings until Save is tapped, so
-   adjusting arrows never yanks a box out from under a coach who's mid-build on the OTHER location. */
-function applyTemplateToBuilder(loc){
-  const tmpl = state.practiceTemplates[loc];
+/* Applying a template is what actually changes what the coach sees on the Build page -- only ever
+   triggered explicitly (the "Load a template" sheet on Build, below), never automatically just
+   because a template got edited/saved -- so editing a template never yanks a section out from
+   under a coach who's mid-build. */
+function applyTemplateToBuilder(id){
+  const tmpl = getTemplate(id);
+  if(!tmpl) return;
   state.enabledPhaseKeys = new Set(tmpl.sections.filter(s=>s.standard && s.enabled!==false).map(s=>s.key));
   state.phaseOrder = tmpl.sections.filter(s=>s.standard).map(s=>s.key);
   if(tmpl.duration) state.targetDuration = tmpl.duration;
@@ -5077,34 +5160,46 @@ function applyTemplateToBuilder(loc){
     return !!stillWanted || es.exercises.length>0;
   });
 }
-function saveTemplate(loc){
-  if(templateSum(loc)!==100){ showToast('Percentages must add up to 100% before saving'); return; }
-  if(loc===state.practiceLocation){ applyTemplateToBuilder(loc); }
-  showToast('Template saved for '+(loc==='outdoor'?'Outdoor':'Indoor')+' practices');
+function saveTemplate(id){
+  if(templateSum(id)!==100){ showToast('Percentages must add up to 100% before saving'); return; }
+  showToast('Template saved');
+  state.editingTemplateId = null;
   render();
 }
-function setTemplatePct(loc, key, val){
-  const s = state.practiceTemplates[loc].sections.find(s=>s.key===key);
+function setTemplatePct(id, key, val){
+  const t = getTemplate(id); if(!t) return;
+  const s = t.sections.find(s=>s.key===key);
   if(!s) return;
   const n = parseInt(String(val).replace(/[^0-9]/g,''), 10);
   s.pct = isNaN(n) ? 0 : Math.max(0, Math.min(100, n));
   render();
 }
-function setTemplateDuration(loc, v){
-  state.practiceTemplates[loc].duration = v;
-  state.editingTemplateDuration[loc] = false;
+function setTemplateDuration(id, v){
+  const t = getTemplate(id); if(!t) return;
+  t.duration = v;
+  state.editingTemplateDurationId = null;
   render();
 }
-function toggleTemplateDurationEdit(loc){
-  state.editingTemplateDuration[loc] = true;
+function toggleTemplateDurationEdit(id){
+  state.editingTemplateDurationId = id;
   render();
   setTimeout(()=>{ const el=document.getElementById('tmplCustomDurInput'); if(el){ el.focus(); el.select(); } }, 0);
 }
-function commitTemplateCustomDuration(loc, rawVal){
+function commitTemplateCustomDuration(id, rawVal){
+  const t = getTemplate(id);
   const n = parseInt(String(rawVal).replace(/[^0-9]/g,''), 10);
-  if(!isNaN(n) && n>0) state.practiceTemplates[loc].duration = Math.max(15, n);
-  state.editingTemplateDuration[loc] = false;
+  if(t && !isNaN(n) && n>0) t.duration = Math.max(15, n);
+  state.editingTemplateDurationId = null;
   setTimeout(render, 0);
+}
+/* Build page: pick a saved template to apply to the session currently being built. */
+function openTemplatePicker(){ state.templatePickerOpen = true; renderOverlay(); }
+function closeTemplatePicker(){ state.templatePickerOpen = false; renderOverlay(); }
+function chooseTemplate(id){
+  const t = getTemplate(id);
+  applyTemplateToBuilder(id);
+  state.templatePickerOpen = false;
+  showToast(`Applied "${t?t.name:'template'}" to this session`);
 }
 /* Long-press-and-drag reorder for Settings template rows. Warmup is excluded entirely -- it's
    never the drag source and never a valid drop target -- so it's structurally impossible for a
@@ -5113,7 +5208,7 @@ function commitTemplateCustomDuration(loc, rawVal){
    if the pointer moves more than a few px before the timer fires, the gesture is treated as a
    scroll instead and the drag is cancelled. */
 let tmplDrag = null;
-function tmplGripDown(e, loc, key){
+function tmplGripDown(e, id, key){
   e.preventDefault();
   const startY = e.clientY;
   const timer = setTimeout(()=>{
@@ -5123,7 +5218,7 @@ function tmplGripDown(e, loc, key){
     if(row) row.classList.add('dragging');
     if(navigator.vibrate) navigator.vibrate(15);
   }, 320);
-  tmplDrag = {loc, key, timer, startY, longPressed:false};
+  tmplDrag = {id, key, timer, startY, longPressed:false};
   document.addEventListener('pointermove', tmplGripMove);
   document.addEventListener('pointerup', tmplGripUp);
 }
@@ -5135,7 +5230,9 @@ function tmplGripMove(e){
   }
   e.preventDefault();
   const y = e.clientY;
-  const sections = state.practiceTemplates[tmplDrag.loc].sections;
+  const tmpl = getTemplate(tmplDrag.id);
+  if(!tmpl) return;
+  const sections = tmpl.sections;
   const reorderableKeys = sections.filter(s=>s.key!=='warmup').map(s=>s.key);
   let overKey = null;
   reorderableKeys.forEach(k=>{
@@ -5164,76 +5261,114 @@ function tmplGripUp(){
   tmplGripCancel();
   render();
 }
+/* One row in a template list -- reused by the Settings library list (tap opens the editor) and
+   the Build page's "Load a template" sheet (tap applies it to the current session instead). */
+function templateLibRowHtml(t, forPicker){
+  const locIcon = t.location==='indoor' ? ICONS.home : t.location==='outdoor' ? ICONS.sun : ICONS.pitch;
+  const locLabel = t.location==='indoor' ? 'Indoor' : t.location==='outdoor' ? 'Outdoor' : 'Any location';
+  const sectionCount = t.sections.filter(s=>s.enabled!==false).length;
+  const sum = templateSum(t.id);
+  return `
+  <div class="tmpl-lib-row" onclick="${forPicker ? `chooseTemplate('${t.id}')` : `openTemplateEditor('${t.id}')`}">
+    <div class="tmpl-lib-icon">${locIcon}</div>
+    <div class="tmpl-lib-info">
+      <div class="tmpl-lib-name">${escHtml(t.name || 'Untitled template')}</div>
+      <div class="tmpl-lib-meta">${locLabel} &middot; ${t.duration}m &middot; ${sectionCount} section${sectionCount===1?'':'s'}${sum!==100?` &middot; <span style="color:var(--warn);">${sum}% allocated</span>`:''}</div>
+    </div>
+    ${forPicker ? '' : `<button class="phase-box-del" onclick="event.stopPropagation(); requestDeleteTemplate('${t.id}')" title="Delete template">${ICONS.trash}</button>`}
+    <span class="tmpl-lib-chevron">${ICONS.chevronRight}</span>
+  </div>`;
+}
 function renderSettings(){
-  const loc = state.settingsLocation;
-  const tmpl = state.practiceTemplates[loc];
-  const sum = templateSum(loc);
-  const presets = [60,75,90];
-  const isTmplDurCustom = !presets.includes(tmpl.duration);
-  const warmupPct = (tmpl.sections.find(s=>s.key==='warmup'&&s.enabled!==false)||{pct:0}).pct;
-  const athleticPct = (tmpl.sections.find(s=>s.key==='athletic'&&s.enabled!==false)||{pct:0}).pct;
+  if(state.editingTemplateId){
+    const id = state.editingTemplateId;
+    const tmpl = getTemplate(id);
+    if(!tmpl){ state.editingTemplateId = null; return renderSettings(); }
+    const sum = templateSum(id);
+    const presets = [60,75,90];
+    const isTmplDurCustom = !presets.includes(tmpl.duration);
+    const warmupPct = (tmpl.sections.find(s=>s.key==='warmup'&&s.enabled!==false)||{pct:0}).pct;
+    const athleticPct = (tmpl.sections.find(s=>s.key==='athletic'&&s.enabled!==false)||{pct:0}).pct;
+    return `
+    <div class="section-pad">
+      <button class="back-pill-flat" onclick="closeTemplateEditor()">${ICONS.back} Back to Templates</button>
+      <div class="eyebrow" style="margin-top:14px;">Edit Template</div>
+      <input class="session-name-input" style="margin:2px 0 14px;" value="${escAttr(tmpl.name)}" oninput="renameTemplate('${id}', this.value)" placeholder="Name this template">
+
+      <div class="ps-label" style="margin-bottom:6px;">Location</div>
+      <div class="location-toggle" style="margin-bottom:14px;">
+        <button class="loc-btn ${tmpl.location==='outdoor'?'active':''}" onclick="setTemplateLocation('${id}','outdoor')">${ICONS.sun} Outdoor</button>
+        <button class="loc-btn ${tmpl.location==='indoor'?'active':''}" onclick="setTemplateLocation('${id}','indoor')">${ICONS.home} Indoor</button>
+        <button class="loc-btn ${tmpl.location==='any'?'active':''}" onclick="setTemplateLocation('${id}','any')">Either</button>
+      </div>
+
+      <div class="practice-setting-group" style="margin-bottom:14px;">
+        <div class="ps-label">Practice Duration</div>
+        <div class="duration-target compact">
+          ${presets.map(v => `<button class="dtarget compact ${tmpl.duration===v?'active':''}" onclick="setTemplateDuration('${id}',${v})">${v}</button>`).join('')}
+          ${state.editingTemplateDurationId===id
+            ? `<input id="tmplCustomDurInput" class="dtarget-input compact" type="text" inputmode="numeric" pattern="[0-9]*" value="${isTmplDurCustom?tmpl.duration:''}" placeholder="#" onblur="commitTemplateCustomDuration('${id}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
+            : `<button class="dtarget compact ${isTmplDurCustom?'active':''}" onclick="toggleTemplateDurationEdit('${id}')">${isTmplDurCustom?tmpl.duration:'+'}</button>`}
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Set how much of this practice each section should take up. Suggested split: <b>25% Athletic-based training</b> (Warmup + Athletic combined) &middot; 15% Duels &middot; 20% Rondos &middot; 20% Small Sided Games (SSG) &middot; 20% Scrimmage. Long-press the grip and drag to reorder a section (Warmup always stays first).</div>
+
+      <div class="tmpl-list">
+        ${tmpl.sections.map(s=>{
+          const isOff = s.enabled===false;
+          const phase = s.standard ? PHASES.find(p=>p.key===s.key) : null;
+          const st = phase ? secStyle(phase.section) : null;
+          const isWarmup = s.key==='warmup';
+          return `
+          <div class="tmpl-row ${isOff?'off':''}" data-key="${s.key}">
+            ${isWarmup ? `<span class="tmpl-grip-spacer"></span>` : `<span class="tmpl-grip" onpointerdown="tmplGripDown(event,'${id}','${s.key}')" title="Long-press and drag to reorder">${ICONS.grip}</span>`}
+            ${s.standard
+              ? `<div class="tmpl-row-icon" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`
+              : `<div class="tmpl-row-icon custom">${ICONS.doc}</div>`}
+            <div class="tmpl-row-label">
+              ${s.standard
+                ? `<div>${s.label}</div>${(s.key==='warmup'||s.key==='athletic') ? `<div class="tmpl-row-hint">Part of 25% Athletic-based training</div>` : ''}`
+                : `<input class="extra-box-title-input" style="font-size:13.5px;" value="${escAttr(s.label)}" onblur="renameTemplateCustomSection('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`}
+            </div>
+            <div class="tmpl-row-pct">
+              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',-1)" ${isOff?'disabled':''}>${ICONS.minus}</button>
+              <input class="tmpl-pct-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${s.pct}" ${isOff?'disabled':''} onblur="setTemplatePct('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">%
+              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',1)" ${isOff?'disabled':''}>${ICONS.plus}</button>
+            </div>
+            ${s.standard
+              ? `<button class="tmpl-toggle" onclick="toggleTemplateSection('${id}','${s.key}')" title="${isOff?'Include':'Exclude'} ${escAttr(s.label)}">${isOff?ICONS.plus:ICONS.minus}</button>`
+              : `<button class="tmpl-toggle remove" onclick="removeTemplateSection('${id}','${s.key}')" title="Remove section">${ICONS.trash}</button>`}
+          </div>`;
+        }).join('')}
+      </div>
+
+      <button class="addsection-btn" style="margin-top:10px;" onclick="addTemplateCustomSection('${id}')">${ICONS.plus} Add custom section</button>
+
+      <div class="tmpl-sum-row ${sum===100?'ok':'bad'}">
+        <span>${sum}% of 100% allocated${(warmupPct||athleticPct) ? ` &middot; ${warmupPct+athleticPct}% Athletic-based` : ''}</span>
+        <span class="tmpl-sum-warn">${sum===100 ? 'Ready to save' : (sum<100?'Add '+(100-sum)+'% to save':'Remove '+(sum-100)+'% to save')}</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" ${sum!==100?'disabled':''} onclick="saveTemplate('${id}')">Save Template</button>
+      <button class="discard-session-btn" style="margin-top:10px;" onclick="requestDeleteTemplate('${id}')">${ICONS.trash} Delete this template</button>
+    </div>`;
+  }
+
   return `
   <div class="section-pad">
     <div class="eyebrow">Settings</div>
     <div class="sh" style="margin-top:2px;"><h2>Practice Templates</h2></div>
-    <div class="location-toggle" style="margin-bottom:14px;">
-      <button class="loc-btn ${loc==='outdoor'?'active':''}" onclick="setSettingsLocation('outdoor')">${ICONS.sun} Outdoor</button>
-      <button class="loc-btn ${loc==='indoor'?'active':''}" onclick="setSettingsLocation('indoor')">${ICONS.home} Indoor</button>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Save your own section/percentage splits, name as many as you want, and load one from the Build page whenever you start a new session. Templates live on this device only -- each coach saves their own.</div>
+    <div class="tmpl-lib-list">
+      ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, false)).join('') : `<div class="build-ex-empty">No templates saved yet</div>`}
     </div>
-    <div class="practice-setting-group" style="margin-bottom:14px;">
-      <div class="ps-label">Practice Duration</div>
-      <div class="duration-target compact">
-        ${presets.map(v => `<button class="dtarget compact ${tmpl.duration===v?'active':''}" onclick="setTemplateDuration('${loc}',${v})">${v}</button>`).join('')}
-        ${state.editingTemplateDuration[loc]
-          ? `<input id="tmplCustomDurInput" class="dtarget-input compact" type="text" inputmode="numeric" pattern="[0-9]*" value="${isTmplDurCustom?tmpl.duration:''}" placeholder="#" onblur="commitTemplateCustomDuration('${loc}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
-          : `<button class="dtarget compact ${isTmplDurCustom?'active':''}" onclick="toggleTemplateDurationEdit('${loc}')">${isTmplDurCustom?tmpl.duration:'+'}</button>`}
-      </div>
-    </div>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Set how much of a typical ${loc} practice each section should take up. Suggested split: <b>25% Athletic-based training</b> (Warmup + Athletic combined) &middot; 15% Duels &middot; 20% Rondos &middot; 20% Small Sided Games (SSG) &middot; 20% Scrimmage. Long-press the grip and drag to reorder a section (Warmup always stays first).</div>
-
-    <div class="tmpl-list">
-      ${tmpl.sections.map(s=>{
-        const isOff = s.enabled===false;
-        const phase = s.standard ? PHASES.find(p=>p.key===s.key) : null;
-        const st = phase ? secStyle(phase.section) : null;
-        const isWarmup = s.key==='warmup';
-        return `
-        <div class="tmpl-row ${isOff?'off':''}" data-key="${s.key}">
-          ${isWarmup ? `<span class="tmpl-grip-spacer"></span>` : `<span class="tmpl-grip" onpointerdown="tmplGripDown(event,'${loc}','${s.key}')" title="Long-press and drag to reorder">${ICONS.grip}</span>`}
-          ${s.standard
-            ? `<div class="tmpl-row-icon" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`
-            : `<div class="tmpl-row-icon custom">${ICONS.doc}</div>`}
-          <div class="tmpl-row-label">
-            ${s.standard
-              ? `<div>${s.label}</div>${(s.key==='warmup'||s.key==='athletic') ? `<div class="tmpl-row-hint">Part of 25% Athletic-based training</div>` : ''}`
-              : `<input class="extra-box-title-input" style="font-size:13.5px;" value="${escAttr(s.label)}" onblur="renameTemplateCustomSection('${loc}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`}
-          </div>
-          <div class="tmpl-row-pct">
-            <button class="tmpl-step" onclick="adjustTemplatePct('${loc}','${s.key}',-1)" ${isOff?'disabled':''}>${ICONS.minus}</button>
-            <input class="tmpl-pct-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${s.pct}" ${isOff?'disabled':''} onblur="setTemplatePct('${loc}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">%
-            <button class="tmpl-step" onclick="adjustTemplatePct('${loc}','${s.key}',1)" ${isOff?'disabled':''}>${ICONS.plus}</button>
-          </div>
-          ${s.standard
-            ? `<button class="tmpl-toggle" onclick="toggleTemplateSection('${loc}','${s.key}')" title="${isOff?'Include':'Exclude'} ${escAttr(s.label)}">${isOff?ICONS.plus:ICONS.minus}</button>`
-            : `<button class="tmpl-toggle remove" onclick="removeTemplateSection('${loc}','${s.key}')" title="Remove section">${ICONS.trash}</button>`}
-        </div>`;
-      }).join('')}
-    </div>
-
-    <button class="addsection-btn" style="margin-top:10px;" onclick="addTemplateCustomSection('${loc}')">${ICONS.plus} Add custom section</button>
-
-    <div class="tmpl-sum-row ${sum===100?'ok':'bad'}">
-      <span>${sum}% of 100% allocated${(warmupPct||athleticPct) ? ` &middot; ${warmupPct+athleticPct}% Athletic-based` : ''}</span>
-      <span class="tmpl-sum-warn">${sum===100 ? 'Ready to save' : (sum<100?'Add '+(100-sum)+'% to save':'Remove '+(sum-100)+'% to save')}</span>
-    </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:10px;" ${sum!==100?'disabled':''} onclick="saveTemplate('${loc}')">Save ${loc==='outdoor'?'Outdoor':'Indoor'} Template</button>
-    <div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Saving tailors which sections show up on the Building Session page for ${loc} practices. Like the rest of this prototype, templates reset if the app is closed and reopened.</div>
+    <button class="addsection-btn" style="margin-top:10px;" onclick="createTemplate()">${ICONS.plus} New template</button>
 
     <div class="divider" style="margin:26px 0;"></div>
     <div class="sh" style="margin-top:0;"><h2>More settings</h2></div>
     <div style="font-size:12.5px;color:var(--ink-soft);">More configuration options are coming soon.</div>
   </div>`;
 }
+
 
 /* ============ HOME ============ */
 function renderHome(){
@@ -5248,7 +5383,7 @@ function renderHome(){
     <div class="main-actions-row">
       <button class="mac-tile" onclick="nav('build')">
         <div class="mact-icon">${ICONS.clipboard}</div>
-        <div class="mact-label"><span>Build</span><span>New Practice</span><span>Session</span></div>
+        <div class="mact-label"><span>Build</span><span>New Session</span></div>
         <div class="mact-stat">Create from Library</div>
       </button>
       <button class="mac-tile" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null})">
@@ -5377,7 +5512,6 @@ function exCard(ex){
   <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${ex.id}')" style="cursor:pointer;">
     <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${ex.id}')">
       ${ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;', false) : `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`}
-      ${ex.location!=='both' ? `<span class="loc-badge">${ex.location==='indoor'?ICONS.home:ICONS.sun}</span>` : ''}
       ${inPhase ? `<span class="added-badge">${ICONS.check}</span>` : ''}
     </button>
     <button class="ex-bookmark ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${ex.id}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
@@ -5429,7 +5563,18 @@ function isExerciseInPhase(id, key){
   return s ? s.exercises.includes(id) : false;
 }
 
-function onSearch(v){ state.search = v; renderSoft(); }
+let searchDebounceTimer = null;
+function openSearch(){
+  // Clear any active section filter / guided-picking context first so this genuinely searches
+  // the entire exercise library, not whatever subset a leftover filter happened to be scoped to.
+  nav('exercises', {fromBuild:false, pickingPhase:null, sectionFilter:null});
+  setTimeout(()=>{ const el = document.getElementById('searchInput'); if(el) el.focus(); }, 0);
+}
+function onSearch(v){
+  state.search = v;
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(renderSoft, 150);
+}
 function clearSearch(){
   state.search = '';
   renderSoft();
@@ -5592,6 +5737,35 @@ function renderOverlay(){
       </div>
     </div>`;
   }
+  if(state.confirmDeleteTemplateId){
+    const dt = getTemplate(state.confirmDeleteTemplateId);
+    html += `
+    <div class="sheet-backdrop" onclick="cancelDeleteTemplate()"></div>
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3>Delete "${escHtml(dt ? dt.name : 'this template')}"?</h3>
+      <div style="font-size:13px;color:var(--ink-soft);margin:-4px 0 4px;">This can't be undone.</div>
+      <div class="sheet-footer">
+        <button class="btn btn-ghost" onclick="cancelDeleteTemplate()">Keep it</button>
+        <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDeleteTemplateNow()">Delete template</button>
+      </div>
+    </div>`;
+  }
+  if(state.templatePickerOpen){
+    html += `
+    <div class="sheet-backdrop" onclick="closeTemplatePicker()"></div>
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3>Load a template</h3>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin:-4px 0 10px;">Replaces which sections show up on this page (and their order) with this template's setup. Exercises you've already added to a section that stays enabled aren't removed.</div>
+      <div class="tmpl-lib-list" style="max-height:48vh;overflow-y:auto;">
+        ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, true)).join('') : `<div class="build-ex-empty">No templates saved yet -- add one in Settings</div>`}
+      </div>
+      <div class="sheet-footer">
+        <button class="btn btn-ghost" style="width:100%;" onclick="closeTemplatePicker()">Cancel</button>
+      </div>
+    </div>`;
+  }
   if(state.filtersOpen){
     html += `
     <div class="sheet-backdrop" onclick="toggleFilters(false)"></div>
@@ -5638,7 +5812,7 @@ function renderDetail(){
   return `
   <div class="detail-header" style="background:${st.color};">
     ${state.fromBuild
-      ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to session</button>`
+      ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
       : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
@@ -5952,7 +6126,7 @@ function renderSessionBuilderBox(pickingLabel){
   <div class="session-builder-box">
     <div class="sbb-header">
       <div class="sbb-title">${ICONS.ball} Building Session</div>
-      <button class="sbb-full-view" onclick="nav('build')">${ICONS.back} Back to Full Session</button>
+      <button class="sbb-full-view" onclick="nav('build')">Full Session</button>
     </div>
     <div class="sbb-current">${pickingLabel ? `Adding to: <b>${pickingLabel}</b>` : `<b>${escHtml(state.sessionName.trim() || 'Your practice')}</b> — ${count} exercise${count===1?'':'s'} so far`}</div>
     <div class="pps-dots">
@@ -6031,16 +6205,24 @@ function renderBuild(){
     // to expanded so the coach immediately sees what they just added.
     const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
     return `
-    <div class="phase-box ${isNextUp?'next-up':''}">
-      <div class="phase-box-header centered">
-        ${isEmpty ? `<span class="phase-collapse-spacer"></span>` : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
-        <div class="pb-icon big" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>
-        <div class="phase-box-title centered">${p.label}${isNextUp?' <span class="next-up-pill">Start here</span>':''}</div>
-        <div class="phase-box-time centered">${ids.length ? ids.length+' exercise'+(ids.length===1?'':'s')+' \u00b7 ' : ''}${mins}m</div>
-        <button class="phase-box-add-btn" onclick="pickForPhase('${p.key}')">+ Add<br>Exercises</button>
+    <div class="phase-box ${isNextUp?'next-up':''} ${isEmpty?'':'filled'}">
+      <div class="phase-box-header with-icon">
+        <div class="pb-icon-wrap">
+          <div class="pb-icon md" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>
+          ${isEmpty ? '' : `<span class="pb-filled-badge">${ICONS.check}</span>`}
+        </div>
+        <div class="phase-box-body">
+          <div class="phase-box-toprow">
+            <div class="phase-box-title">${p.label}${isNextUp?' <span class="next-up-pill">Start here</span>':''}</div>
+            ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
+          </div>
+          <div class="phase-box-subrow">
+            <div class="phase-box-time">${ids.length ? ids.length+' exercise'+(ids.length===1?'':'s')+' \u00b7 ' : ''}${mins}m</div>
+            <button class="phase-box-add-btn" onclick="pickForPhase('${p.key}')">+ Add Exercises</button>
+          </div>
+        </div>
       </div>
       ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list">${ids.map(id=>buildExRowHtml(id, `removeFromPhase('${p.key}','${id}')`)).join('')}</div>` : '')}
-      ${isCollapsed ? '' : `<button class="build-add-btn" onclick="pickForPhase('${p.key}')">${ICONS.plus} Add exercise</button>`}
     </div>`;
   };
 
@@ -6048,16 +6230,21 @@ function renderBuild(){
     const mins = s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0);
     const isCollapsed = state.collapsedPhases.has(s.key);
     return `
-    <div class="phase-box">
+    <div class="phase-box ${s.exercises.length?'filled':''}">
       <div class="phase-box-header">
-        <button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${s.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(s.label)}">${ICONS.chevronRight}</button>
-        <input class="extra-box-title-input" value="${escAttr(s.label)}" onblur="renameExtraSection('${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">
-        <div class="phase-box-time">${mins}m</div>
-        <button class="phase-box-edit" onclick="pickForPhase('${s.key}')" title="Edit exercises">${ICONS.pencil}</button>
-        <button class="phase-box-del" onclick="removeExtraSection('${s.key}')" title="Remove section">${ICONS.trash}</button>
+        <div class="phase-box-toprow">
+          <input class="extra-box-title-input" value="${escAttr(s.label)}" onblur="renameExtraSection('${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+          <button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${s.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(s.label)}">${ICONS.chevronRight}</button>
+        </div>
+        <div class="phase-box-subrow">
+          <div class="phase-box-time">${mins}m</div>
+          <div class="phase-box-subrow-actions">
+            <button class="phase-box-edit" onclick="pickForPhase('${s.key}')" title="Edit exercises">${ICONS.pencil}</button>
+            <button class="phase-box-del" onclick="removeExtraSection('${s.key}')" title="Remove section">${ICONS.trash}</button>
+          </div>
+        </div>
       </div>
       ${isCollapsed ? '' : (s.exercises.length ? `<div class="build-ex-list">${s.exercises.map(id=>buildExRowHtml(id, `removeFromPhase('${s.key}','${id}')`)).join('')}</div>` : `<div class="build-ex-empty">No exercises yet</div>`)}
-      ${isCollapsed ? '' : `<button class="build-add-btn" onclick="pickForPhase('${s.key}')">${ICONS.plus} Add exercise</button>`}
     </div>`;
   };
 
@@ -6098,6 +6285,8 @@ function renderBuild(){
     </div>
 
     ${renderTimeComparisonPanel()}
+
+    ${state.practiceTemplates.length ? `<button class="addsection-btn" style="margin-top:14px;" onclick="openTemplatePicker()">${ICONS.doc} Load from a template</button>` : ''}
 
     <div class="phase-grid">
       ${activePhases.map(p=>phaseBoxHtml(p)).join('')}
@@ -6327,6 +6516,84 @@ function renderSessionDetail(){
   </div>`;
 }
 
+/* ============ PERSISTENCE ============
+   A reload -- from the OS reclaiming a backgrounded phone browser tab/PWA, not from anything this
+   app itself triggers -- previously meant losing an in-progress draft session, every saved session,
+   and every bookmark, since none of it lived anywhere but memory. Every render() call now snapshots
+   the meaningful state to localStorage, and it's restored once on load before the first render. */
+const APP_STATE_STORAGE_KEY = 'ft2-app-state-v1';
+function saveAppStateToStorage(){
+  try{
+    const snapshot = {
+      phaseData: state.phaseData,
+      extraSections: state.extraSections,
+      sessionName: state.sessionName,
+      targetDuration: state.targetDuration,
+      practiceLocation: state.practiceLocation,
+      savedSessions: state.savedSessions,
+      bookmarks: [...state.bookmarks],
+      enabledPhaseKeys: [...state.enabledPhaseKeys],
+      phaseOrder: state.phaseOrder,
+      practiceTemplates: state.practiceTemplates,
+      // Navigation context -- so a reload lands the coach back on the screen they were actually
+      // on (mid-build, picking exercises, reviewing) instead of bouncing to Home even though the
+      // underlying data survived. Validated against live data below before being trusted.
+      screen: state.screen,
+      detailId: state.detailId,
+      pickingPhase: state.pickingPhase,
+      sectionFilter: state.sectionFilter,
+      viewingSessionId: state.viewingSessionId,
+      fromBuild: state.fromBuild,
+    };
+    localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
+  }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
+}
+function loadAppStateFromStorage(){
+  try{
+    const raw = localStorage.getItem(APP_STATE_STORAGE_KEY);
+    if(!raw) return;
+    const snap = JSON.parse(raw);
+    if(snap.phaseData){
+      // Merge onto the current phaseData skeleton, key by key, so a PHASES entry that didn't exist
+      // yet when this draft was saved still ends up as a valid empty array instead of missing.
+      PHASES.forEach(p => { state.phaseData[p.key] = snap.phaseData[p.key] || []; });
+    }
+    if(Array.isArray(snap.extraSections)) state.extraSections = snap.extraSections;
+    if(typeof snap.sessionName === 'string' && snap.sessionName.trim()) state.sessionName = snap.sessionName;
+    if(typeof snap.targetDuration === 'number' && snap.targetDuration > 0) state.targetDuration = snap.targetDuration;
+    if(snap.practiceLocation === 'indoor' || snap.practiceLocation === 'outdoor') state.practiceLocation = snap.practiceLocation;
+    if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
+    if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
+    if(Array.isArray(snap.enabledPhaseKeys) && snap.enabledPhaseKeys.length) state.enabledPhaseKeys = new Set(snap.enabledPhaseKeys);
+    if(Array.isArray(snap.phaseOrder) && snap.phaseOrder.length) state.phaseOrder = snap.phaseOrder;
+    if(Array.isArray(snap.practiceTemplates)){
+      state.practiceTemplates = snap.practiceTemplates;
+    } else if(snap.practiceTemplates && typeof snap.practiceTemplates === 'object'){
+      // Migrate from the old fixed outdoor/indoor-slot shape (before templates became a named
+      // library) so nobody's already-saved template configuration silently vanishes.
+      const migrated = [];
+      if(snap.practiceTemplates.outdoor) migrated.push({id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:snap.practiceTemplates.outdoor.duration||75, sections:snap.practiceTemplates.outdoor.sections||defaultTemplateSections()});
+      if(snap.practiceTemplates.indoor) migrated.push({id:'tmpl-indoor-default', name:'Indoor Practice', location:'indoor', duration:snap.practiceTemplates.indoor.duration||75, sections:snap.practiceTemplates.indoor.sections||defaultTemplateSections()});
+      if(migrated.length) state.practiceTemplates = migrated;
+    }
+
+    // Restore navigation context last, once savedSessions/etc. above are already in place, so the
+    // screen-specific data a restored screen depends on (a saved session's id, an exercise's id)
+    // can actually be checked against real, current data rather than trusted blindly.
+    if(typeof snap.screen === 'string' && screens[snap.screen]){
+      let restoredScreen = snap.screen;
+      state.detailId = snap.detailId ?? null;
+      state.pickingPhase = snap.pickingPhase ?? null;
+      state.sectionFilter = snap.sectionFilter ?? null;
+      state.viewingSessionId = snap.viewingSessionId ?? null;
+      state.fromBuild = !!snap.fromBuild;
+      if(restoredScreen === 'detail' && !exById(state.detailId)) restoredScreen = 'home';
+      if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
+      state.screen = restoredScreen;
+    }
+  }catch(e){ /* corrupted/incompatible saved data (e.g. from an older version of this app) -- fall back to defaults rather than crash */ }
+}
+
 /* ============ ROUTER / RENDER ============ */
 const screens = {
   home: renderHome,
@@ -6344,9 +6611,11 @@ function render(){
   document.getElementById('content').innerHTML = screens[state.screen]();
   renderBottomnav();
   renderOverlay();
+  saveAppStateToStorage();
 }
 
 initTheme();
+loadAppStateFromStorage();
 render();
 syncExercisesFromSheet();
 
