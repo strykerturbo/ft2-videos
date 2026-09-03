@@ -739,8 +739,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pb-icon svg{width:14px;height:14px;}
 /* Flatter, smaller header icon (was 38px "big") -- frees up width so the section title reliably
    fits on one line instead of wrapping ("Small Sided Games" was wrapping to 2 lines before). */
-.pb-icon.md{width:29px;height:29px;border-radius:9px;}
-.pb-icon.md svg{width:15px;height:15px;}
+.pb-icon.md{width:36px;height:36px;border-radius:11px;}
+.pb-icon.md svg{width:18px;height:18px;}
 .pb-filled-badge{
   position:absolute;bottom:-3px;right:-3px;width:13px;height:13px;border-radius:50%;
   background:var(--turf);color:#fff;display:flex;align-items:center;justify-content:center;
@@ -791,6 +791,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-ex-name{font-size:13.5px;font-weight:700;margin-bottom:4px;line-height:1.3;}
 .build-ex-bullets{margin:0;padding-left:15px;}
 .build-ex-bullets li{font-size:11.5px;color:var(--ink-soft);line-height:1.45;margin-bottom:2px;}
+.build-ex-grip{width:20px;align-self:stretch;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;margin-left:-4px;}
+.build-ex-grip svg{width:14px;height:14px;}
+.build-ex-row.dragging{opacity:0.6;box-shadow:0 4px 14px rgba(0,0,0,0.25);position:relative;z-index:5;background:var(--bg-surface);}
 .build-ex-remove{
   position:absolute;top:9px;right:-4px;background:none;border:none;color:var(--ink-soft);
   opacity:0.38;padding:8px;display:flex;
@@ -872,26 +875,18 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 /* ---------- picking-mode progress strip ---------- */
 .session-builder-box{
-  background:var(--cone-dim);border:1.5px solid var(--cone);border-radius:14px;
-  padding:11px 13px 12px;margin-bottom:12px;
+  background:var(--bg-surface);border:1.5px solid var(--line);border-left:4px solid var(--cone);
+  border-radius:14px;padding:11px 13px 12px 11px;margin-bottom:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08);
 }
-.sbb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.sbb-header{margin-bottom:6px;}
 .sbb-title{
   display:flex;align-items:center;gap:6px;
   font-family:'Inter',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:0.03em;
-  color:#7a4a10;
+  color:var(--ink);
 }
-.sbb-title svg{width:15px;height:15px;}
-.sbb-full-view{
-  /* var(--ink) used to sit here, which is nearly indistinguishable from the Duels/Rondos/Tactical
-     Focus (SSG) section colors shown a few pixels below in the dots row. Turf green instead -- it
-     can never collide with a section color and it draws from the claret/green/burnt-orange palette. */
-  display:flex;align-items:center;gap:5px;
-  background:var(--turf);color:#fff;border:1.5px solid var(--turf);border-radius:20px;
-  padding:8px 14px;font-size:12px;font-weight:700;flex-shrink:0;min-height:34px;
-}
-.sbb-full-view svg{width:12px;height:12px;}
-.sbb-current{font-size:13px;font-weight:600;color:#8a5010;margin-bottom:10px;}
+.sbb-title svg{width:15px;height:15px;color:#8a6d00;}
+.sbb-current{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;}
 .sbb-current b{color:var(--pitch-dark);}
 .tmpl-list{display:flex;flex-direction:column;gap:8px;}
 .tmpl-row{display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1px solid var(--line);border-radius:12px;padding:9px 10px;}
@@ -937,13 +932,16 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;justify-content:center;
 }
 .pps-dot svg{width:16px;height:16px;}
-.pps-progress .progress-track{background:rgba(255,255,255,0.6);border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);}
-.pps-progress .progress-fill{background:var(--turf);}
-.pps-progress .progress-fill.over{background:var(--warn);}
-.pps-caption{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:#8a5010;font-weight:600;}
+.pps-caption{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--ink-soft);font-weight:600;}
 .pps-caption b{color:var(--pitch-dark);}
+.pps-btn-row{display:flex;gap:8px;margin-top:10px;}
+.pps-secondary-btn{
+  flex-shrink:0;border:1.5px solid var(--pitch);border-radius:12px;background:var(--pitch);color:#fff;
+  padding:12px 16px;font-weight:700;font-size:13px;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;
+}
 .pps-next-btn{
-  width:100%;margin-top:10px;border:none;border-radius:12px;background:var(--pitch);color:white;
+  flex:1;border:none;border-radius:12px;background:var(--cone);color:var(--pitch-dark);
   padding:12px 0;font-weight:700;font-size:13.5px;
   display:flex;align-items:center;justify-content:center;gap:5px;
 }
@@ -4860,31 +4858,54 @@ function exById(id){
 function isVideoUrl(url){
   return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url) || url.startsWith('data:video/');
 }
-function mediaTagHtml(url, altText, extraStyle, autoplay){
+let mediaFallbackSeq = 0;
+const mediaFallbackHtml = {};
+function mediaTagHtml(url, altText, extraStyle, autoplay, fallbackHtml){
   if(autoplay === undefined) autoplay = true;
   const style = extraStyle || '';
+  // fallbackHtml, when given, is the exact same markup this call site already uses for its own
+  // "no media at all" case -- stashed by id (not inlined into the onerror attribute -- it can
+  // contain quotes/markup that wouldn't survive that) so a broken link renders identically to a
+  // missing one, instead of always falling back to one generic gray box with no section context.
+  let fid = '';
+  if(fallbackHtml){
+    fid = 'mf'+(++mediaFallbackSeq);
+    mediaFallbackHtml[fid] = fallbackHtml;
+  }
   if(isVideoUrl(url)){
     if(autoplay){
-      return `<video src="${escAttr(url)}" autoplay muted loop playsinline style="${style}" onerror="mediaLoadFailed(this)"></video>`;
+      return `<video src="${escAttr(url)}" autoplay muted loop playsinline style="${style}" onerror="mediaLoadFailed(this,'${fid}')"></video>`;
     }
     // Plain first-frame still, no play badge overlay -- reads as a normal photo thumbnail.
     return `<div class="media-still-wrap" style="${style}">
-      <video src="${escAttr(url)}#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;" onloadedmetadata="this.currentTime=0.1" onerror="mediaLoadFailed(this)"></video>
+      <video src="${escAttr(url)}#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;" onloadedmetadata="this.currentTime=0.1" onerror="mediaLoadFailed(this,'${fid}')"></video>
     </div>`;
   }
-  return `<img src="${escAttr(url)}" alt="${escAttr(altText||'')}" style="${style}" onerror="mediaLoadFailed(this)">`;
+  return `<img src="${escAttr(url)}" alt="${escAttr(altText||'')}" style="${style}" onerror="mediaLoadFailed(this,'${fid}')">`;
 }
 /* A Diagram URL that's set but unreachable/invalid (wrong link type -- a Google Drive share page
    or YouTube page instead of a direct file link -- a typo'd/renamed filename, or a link accidentally
    pasted into the wrong Sheet column) previously showed the browser's own bare broken-image icon,
-   with zero indication anything was wrong or why. Swap it for the same "Diagram coming soon"
-   placeholder shown when no media is set at all, so a bad link degrades gracefully everywhere
-   mediaTagHtml() is used (exercise cards, the Detail page, session rows, Similar Exercises). */
-function mediaLoadFailed(el){
+   with zero indication anything was wrong or why. Swap it for a "Diagram coming soon" placeholder --
+   the caller's own fallbackHtml (matching what it shows for "no media at all") when one was given,
+   otherwise a generic fallback, so a bad link degrades gracefully everywhere mediaTagHtml() is used
+   (exercise cards, the Detail page, session rows, Similar Exercises). */
+function mediaLoadFailed(el, fid){
   if(el.dataset.mediaFailed) return;
   el.dataset.mediaFailed = '1';
   const wrap = el.closest('.media-still-wrap');
   const target = wrap || el;
+  const custom = fid && mediaFallbackHtml[fid];
+  if(custom){
+    const temp = document.createElement('div');
+    temp.innerHTML = custom;
+    const fallback = temp.firstElementChild;
+    if(fallback){
+      target.replaceWith(fallback);
+      delete mediaFallbackHtml[fid];
+      return;
+    }
+  }
   const style = target.getAttribute('style') || '';
   const fallback = document.createElement('div');
   fallback.className = 'media-error-fallback';
@@ -5511,7 +5532,7 @@ function exCard(ex){
   return `
   <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${ex.id}')" style="cursor:pointer;">
     <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${ex.id}')">
-      ${ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;', false) : `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`}
+      ${ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;', false, `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`) : `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`}
       ${inPhase ? `<span class="added-badge">${ICONS.check}</span>` : ''}
     </button>
     <button class="ex-bookmark ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${ex.id}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
@@ -5553,8 +5574,9 @@ function targetPhaseKeyFor(ex){
 function peiThumbHtml(ex){
   if(!ex) return `<div class="pei-thumb" style="background:var(--chalk-dim);"></div>`;
   const st = secStyle(ex.section);
-  if(ex.mediaUrl) return `<div class="pei-thumb">${mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false)}</div>`;
-  return `<div class="pei-thumb" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`;
+  const noMedia = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`;
+  if(ex.mediaUrl) return `<div class="pei-thumb">${mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, noMedia)}</div>`;
+  return `<div class="pei-thumb">${noMedia}</div>`;
 }
 function isExerciseInPhase(id, key){
   if(!key) return false;
@@ -5886,7 +5908,7 @@ function renderDetail(){
       ${similar.map(s=>{
         const sst = secStyle(s.section);
         const thumb = s.mediaUrl
-          ? `<div class="sim-thumb" style="background:${sst.color};">${mediaTagHtml(s.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false)}</div>`
+          ? `<div class="sim-thumb" style="background:${sst.color};">${mediaTagHtml(s.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, sst.icon)}</div>`
           : `<div class="sim-thumb" style="background:${sst.color};color:${sst.textOn==='dark'?'var(--pitch-dark)':'white'};">${sst.icon}</div>`;
         return `
         <button class="sim-card" onclick="openDetail('${s.id}')">
@@ -6126,7 +6148,6 @@ function renderSessionBuilderBox(pickingLabel){
   <div class="session-builder-box">
     <div class="sbb-header">
       <div class="sbb-title">${ICONS.ball} Building Session</div>
-      <button class="sbb-full-view" onclick="nav('build')">Full Session</button>
     </div>
     <div class="sbb-current">${pickingLabel ? `Adding to: <b>${pickingLabel}</b>` : `<b>${escHtml(state.sessionName.trim() || 'Your practice')}</b> — ${count} exercise${count===1?'':'s'} so far`}</div>
     <div class="pps-dots">
@@ -6148,9 +6169,12 @@ function renderSessionBuilderBox(pickingLabel){
       <div class="progress-track" style="height:6px;"><div class="progress-fill ${over?'over':''}" style="width:${pct}%;"></div></div>
       <div class="pps-caption"><span><b>${total}</b>/${state.targetDuration} min</span><span>${count} exercise${count===1?'':'s'} total</span></div>
     </div>
-    ${pickingLabel
-      ? `<button class="pps-next-btn" onclick="nextPickingPhase()">${nextBtnLabel} ${ICONS.chevronRight}</button>`
-      : `<button class="pps-next-btn" onclick="nav('build')">Go to full session ${ICONS.chevronRight}</button>`}
+    <div class="pps-btn-row">
+      ${pickingLabel ? `<button class="pps-secondary-btn" onclick="nav('build')">Full Session</button>` : ''}
+      ${pickingLabel
+        ? `<button class="pps-next-btn" onclick="nextPickingPhase()">${nextBtnLabel} ${ICONS.chevronRight}</button>`
+        : `<button class="pps-next-btn" onclick="nav('build')">Go to full session ${ICONS.chevronRight}</button>`}
+    </div>
   </div>`;
 }
 
@@ -6168,16 +6192,18 @@ function extractBullets(ex, maxBullets){
   return sentences.slice(0, maxBullets);
 }
 
-function buildExRowHtml(id, removeCall){
+function buildExRowHtml(id, key, removeCall, showGrip){
   const ex = exById(id);
   if(!ex) return '';
   const st = secStyle(ex.section);
   const bullets = extractBullets(ex, 3);
+  const exFallback = `<div class="build-ex-image-fallback" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`;
   const img = ex.mediaUrl
-    ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false)
-    : `<div class="build-ex-image-fallback" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`;
+    ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, exFallback)
+    : exFallback;
   return `
-  <div class="build-ex-row">
+  <div class="build-ex-row" data-ex-id="${id}">
+    ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
     <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
@@ -6185,6 +6211,69 @@ function buildExRowHtml(id, removeCall){
       ${bullets.length ? `<ul class="build-ex-bullets">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>` : ''}
     </div>
   </div>`;
+}
+
+/* Long-press-and-drag reorder for exercises already added to a Building Session section -- same
+   gesture/timing as the template-section reorder in Settings (tmplGripDown et al.), just operating
+   over an exercise-id array instead of a sections array. Scoped per section (data-list-key) so
+   dragging in one section's list can't match rows in another section that happens to contain the
+   same exercise. Only shown once a section has 2+ exercises -- nothing to reorder with just one. */
+function exerciseListFor(key){
+  if(state.phaseData[key]) return state.phaseData[key];
+  const es = state.extraSections.find(s=>s.key===key);
+  return es ? es.exercises : null;
+}
+let exDrag = null;
+function exGripDown(e, key, id){
+  e.preventDefault();
+  const startY = e.clientY;
+  const timer = setTimeout(()=>{
+    if(!exDrag) return;
+    exDrag.longPressed = true;
+    const row = document.querySelector(`.build-ex-list[data-list-key="${key}"] .build-ex-row[data-ex-id="${id}"]`);
+    if(row) row.classList.add('dragging');
+    if(navigator.vibrate) navigator.vibrate(15);
+  }, 320);
+  exDrag = {key, id, timer, startY, longPressed:false};
+  document.addEventListener('pointermove', exGripMove);
+  document.addEventListener('pointerup', exGripUp);
+}
+function exGripMove(e){
+  if(!exDrag) return;
+  if(!exDrag.longPressed){
+    if(Math.abs(e.clientY - exDrag.startY) > 8){ exGripCancel(); }
+    return;
+  }
+  e.preventDefault();
+  const y = e.clientY;
+  const list = exerciseListFor(exDrag.key);
+  if(!list) return;
+  let overId = null;
+  list.forEach(exId=>{
+    const el = document.querySelector(`.build-ex-list[data-list-key="${exDrag.key}"] .build-ex-row[data-ex-id="${exId}"]`);
+    if(!el) return;
+    const r = el.getBoundingClientRect();
+    if(y >= r.top && y <= r.bottom) overId = exId;
+  });
+  if(!overId || overId===exDrag.id) return;
+  const fromIdx = list.indexOf(exDrag.id);
+  const toIdx = list.indexOf(overId);
+  if(fromIdx<0 || toIdx<0) return;
+  const [moved] = list.splice(fromIdx,1);
+  list.splice(toIdx,0,moved);
+  render();
+  const id = exDrag.id, key = exDrag.key;
+  setTimeout(()=>{ const row=document.querySelector(`.build-ex-list[data-list-key="${key}"] .build-ex-row[data-ex-id="${id}"]`); if(row) row.classList.add('dragging'); }, 0);
+}
+function exGripCancel(){
+  if(exDrag) clearTimeout(exDrag.timer);
+  exDrag = null;
+  document.removeEventListener('pointermove', exGripMove);
+  document.removeEventListener('pointerup', exGripUp);
+}
+function exGripUp(){
+  exGripCancel();
+  render();
 }
 
 function renderBuild(){
@@ -6222,7 +6311,7 @@ function renderBuild(){
           </div>
         </div>
       </div>
-      ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list">${ids.map(id=>buildExRowHtml(id, `removeFromPhase('${p.key}','${id}')`)).join('')}</div>` : '')}
+      ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
     </div>`;
   };
 
@@ -6244,7 +6333,7 @@ function renderBuild(){
           </div>
         </div>
       </div>
-      ${isCollapsed ? '' : (s.exercises.length ? `<div class="build-ex-list">${s.exercises.map(id=>buildExRowHtml(id, `removeFromPhase('${s.key}','${id}')`)).join('')}</div>` : `<div class="build-ex-empty">No exercises yet</div>`)}
+      ${isCollapsed ? '' : (s.exercises.length ? `<div class="build-ex-list" data-list-key="${s.key}">${s.exercises.map(id=>buildExRowHtml(id, s.key, `removeFromPhase('${s.key}','${id}')`, s.exercises.length>1)).join('')}</div>` : `<div class="build-ex-empty">No exercises yet</div>`)}
     </div>`;
   };
 
