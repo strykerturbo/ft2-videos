@@ -36,7 +36,7 @@
   --radius-sm:0px;
 
   --sec-warmup:#4FAE86;
-  --sec-athletic:#257A5C;
+  --sec-athletic:var(--claret);
   --sec-duels:#2A3346;
   --sec-rondos:#1C2333;
   --sec-ssg:#10141F;
@@ -874,10 +874,15 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .info-banner button svg{width:13px;height:13px;}
 
 /* ---------- picking-mode progress strip ---------- */
+.sbb-sticky-wrap{
+  position:sticky;top:0;z-index:10;
+  background:var(--chalk);
+  margin:-16px -18px 0;padding:16px 18px 12px;
+}
 .session-builder-box{
-  background:var(--bg-surface);border:1.5px solid var(--line);border-left:4px solid var(--cone);
-  border-radius:14px;padding:11px 13px 12px 11px;margin-bottom:12px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.08);
+  background:var(--bg-surface);border:1.5px solid var(--claret);
+  border-radius:14px;padding:11px 13px 12px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08), inset 0 1.5px 0 #fff, inset 0 -1.5px 0 #fff;
 }
 .sbb-header{margin-bottom:6px;}
 .sbb-title{
@@ -885,7 +890,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   font-family:'Inter',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:0.03em;
   color:var(--ink);
 }
-.sbb-title svg{width:15px;height:15px;color:#8a6d00;}
+.sbb-title img{width:15px;height:15px;object-fit:cover;object-position:center;border-radius:50%;flex-shrink:0;}
 .sbb-current{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;}
 .sbb-current b{color:var(--pitch-dark);}
 .tmpl-list{display:flex;flex-direction:column;gap:8px;}
@@ -941,7 +946,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;justify-content:center;
 }
 .pps-next-btn{
-  flex:1;border:none;border-radius:12px;background:var(--cone);color:var(--pitch-dark);
+  flex:1;border:1.5px solid #9B9B9B;border-radius:12px;background:var(--cone);color:var(--pitch-dark);
   padding:12px 0;font-weight:700;font-size:13.5px;
   display:flex;align-items:center;justify-content:center;gap:5px;
 }
@@ -5499,9 +5504,7 @@ function renderExercises(){
       }).join('')}
       <button class="sec-chip morefilters" onclick="toggleFilters(true)">${ICONS.filter}${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
     </div>
-  </div>
 
-  <div class="section-pad" style="padding-top:0;">
     <div class="view-toggle">
       <button class="view-toggle-btn ${state.viewMode!=='list'?'active':''}" onclick="setViewMode('tile')">${ICONS.grid}<span>Tile</span></button>
       <button class="view-toggle-btn ${state.viewMode==='list'?'active':''}" onclick="setViewMode('list')">${ICONS.list}<span>List</span></button>
@@ -6145,9 +6148,10 @@ function renderSessionBuilderBox(pickingLabel){
   const nextPhaseObj = (idx > -1 && idx < PHASES.length - 1) ? PHASES[idx+1] : null;
   const nextBtnLabel = nextPhaseObj ? `Next: ${nextPhaseObj.label}` : 'Review session';
   return `
+  <div class="sbb-sticky-wrap">
   <div class="session-builder-box">
     <div class="sbb-header">
-      <div class="sbb-title">${ICONS.ball} Building Session</div>
+      <div class="sbb-title">${ICONS.soccerBallPhoto} Building Session</div>
     </div>
     <div class="sbb-current">${pickingLabel ? `Adding to: <b>${pickingLabel}</b>` : `<b>${escHtml(state.sessionName.trim() || 'Your practice')}</b> — ${count} exercise${count===1?'':'s'} so far`}</div>
     <div class="pps-dots">
@@ -6175,6 +6179,7 @@ function renderSessionBuilderBox(pickingLabel){
         ? `<button class="pps-next-btn" onclick="nextPickingPhase()">${nextBtnLabel} ${ICONS.chevronRight}</button>`
         : `<button class="pps-next-btn" onclick="nav('build')">Go to full session ${ICONS.chevronRight}</button>`}
     </div>
+  </div>
   </div>`;
 }
 
