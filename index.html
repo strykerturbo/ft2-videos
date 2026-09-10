@@ -160,7 +160,7 @@ a{color:inherit;text-decoration:none;}
 
 /* ---------- bottom nav ---------- */
 .bottomnav{
-  position:absolute;bottom:0;left:0;right:0;
+  position:absolute;bottom:0;left:0;right:0;z-index:50;
   background:var(--pitch);
   display:flex;justify-content:space-around;align-items:center;
   padding:10px 6px 12px;
@@ -367,7 +367,7 @@ a{color:inherit;text-decoration:none;}
 .ex-addbtn.added{background:var(--turf);border-color:var(--turf);color:white;}
 .added-badge{
   position:absolute;bottom:6px;right:6px;
-  background:var(--turf);color:white;width:22px;height:22px;border-radius:50%;
+  background:var(--cone);color:var(--pitch-dark);width:22px;height:22px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 1px 4px rgba(0,0,0,0.3);
 }
@@ -383,14 +383,14 @@ a{color:inherit;text-decoration:none;}
 /* ---------- bottom sheet (filters) ---------- */
 .sheet-backdrop{
   position:absolute;inset:0;background:rgba(20,26,22,0.45);
-  z-index:40;
+  z-index:55;
 }
 .sheet{
   position:absolute;left:0;right:0;bottom:0;
   background:var(--white);border-radius:20px 20px 0 0;
   max-height:82%;overflow-y:auto;
   padding:6px 18px 20px;
-  z-index:41;
+  z-index:56;
   box-shadow:0 -10px 30px rgba(0,0,0,0.2);
 }
 .sheet-handle{
@@ -418,6 +418,16 @@ a{color:inherit;text-decoration:none;}
 }
 .btn-primary{background:var(--pitch);color:white;}
 .btn-ghost{background:var(--chalk-dim);color:var(--ink);}
+
+/* ---------- dark iOS-style alert (in-progress-session guard) ---------- */
+.ios-alert-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:55;display:flex;align-items:center;justify-content:center;}
+.ios-alert{width:min(300px, 84%);background:#2C2C2E;border-radius:16px;padding:20px 18px 16px;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,0.4);}
+.ios-alert h3{font-family:'Inter',sans-serif;font-size:16px;font-weight:700;color:#fff;margin:0 0 6px;}
+.ios-alert p{font-size:13px;color:rgba(255,255,255,0.7);margin:0 0 16px;line-height:1.4;}
+.ios-alert-btns{display:flex;flex-direction:column;gap:8px;}
+.ios-alert-btn{border:none;border-radius:11px;padding:13px 0;font-weight:700;font-size:14px;background:rgba(255,255,255,0.08);color:#fff;width:100%;}
+.ios-alert-btn.primary{background:#0A84FF;color:#fff;}
+.ios-alert-btn.danger{background:rgba(255,255,255,0.08);color:#FF6B4A;}
 
 /* ---------- detail page ---------- */
 .detail-header{
@@ -811,7 +821,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .session-state-tag.new{background:var(--bg-surface);color:var(--ink-soft);border:1px solid var(--line);}
 .session-state-tag.inprogress{background:var(--cone-dim);color:#7a4a10;border:1px solid var(--cone);}
 .session-state-tag.saved{background:rgba(255,255,255,0.18);color:white;position:absolute;top:16px;right:18px;}
-.discard-session-row{display:flex;justify-content:flex-end;margin-top:4px;}
+.discard-session-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
 .discard-session-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--warn);font-size:12px;font-weight:700;padding:6px 0;}
 .discard-session-btn svg{width:13px;height:13px;}
 .build-cta{
@@ -941,16 +951,67 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pps-caption b{color:var(--pitch-dark);}
 .pps-btn-row{display:flex;gap:8px;margin-top:10px;}
 .pps-secondary-btn{
-  flex-shrink:0;border:1.5px solid var(--pitch);border-radius:12px;background:var(--pitch);color:#fff;
-  padding:12px 16px;font-weight:700;font-size:13px;white-space:nowrap;
-  display:flex;align-items:center;justify-content:center;
+  flex:1;min-width:0;border:1.5px solid #48484C;border-radius:12px;background:#48484C;color:#fff;
+  padding:12px 8px;font-weight:700;font-size:13px;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;gap:6px;
 }
+.pps-secondary-btn svg{width:14px;height:14px;flex-shrink:0;}
 .pps-next-btn{
-  flex:1;border:1.5px solid #9B9B9B;border-radius:12px;background:var(--cone);color:var(--pitch-dark);
-  padding:12px 0;font-weight:700;font-size:13.5px;
+  flex:1;min-width:0;border:1.5px solid #48484C;border-radius:12px;background:#48484C;color:#fff;
+  padding:12px 8px;font-weight:700;font-size:13.5px;
   display:flex;align-items:center;justify-content:center;gap:5px;
 }
-.pps-next-btn svg{width:15px;height:15px;}
+.pps-next-btn svg{width:15px;height:15px;flex-shrink:0;}
+
+/* "Adding to: X" is a context label, not a tappable control -- it has no onclick, so it should
+   never look like a button. A colored icon + bold colored phase name on a transparent background,
+   with a thin colored underline for structure, keeps it legible without implying it's interactive. */
+.sbb-adding-pill{display:flex;align-items:center;gap:7px;padding:0 0 9px;font-size:13px;font-weight:600;margin-bottom:10px;border-bottom:1.5px solid var(--line);color:var(--ink-soft);}
+.sbb-adding-pill svg{width:15px;height:15px;flex-shrink:0;}
+.sbb-adding-pill b{font-weight:800;}
+
+/* Shown instead of the full picking box while just browsing the library (not actively adding to a
+   specific phase) with a draft already started elsewhere -- low-profile, tap to jump back in. */
+.draft-pill-banner{display:flex;align-items:center;gap:9px;width:100%;background:var(--bg-surface);border:1.5px solid var(--claret);border-radius:12px;padding:9px 12px;text-align:left;}
+.draft-pill-banner img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.dpb-text{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dpb-text b{color:var(--claret);}
+.dpb-cta{flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--claret);display:flex;align-items:center;gap:2px;}
+.dpb-cta svg{width:12px;height:12px;}
+
+/* Save Draft sits opposite Discard on the same low-emphasis secondary row (turf green vs warn red)
+   -- both are "leave the builder" actions, distinguished by whether the draft survives. */
+.draft-save-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--turf);font-size:12px;font-weight:700;padding:6px 0;}
+.draft-save-btn svg{width:13px;height:13px;}
+
+/* New Training Session page's Save Draft / Discard row -- real full-width buttons underneath
+   the last phase box (Scrimmage), not the plain text links used elsewhere. */
+.build-bottom-actions{display:flex;gap:10px;margin-top:14px;}
+.bba-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 0;font-weight:700;font-size:13.5px;border:1.5px solid var(--line);background:var(--bg-surface);}
+.bba-btn svg{width:14px;height:14px;flex-shrink:0;}
+.bba-btn.save{border-color:var(--turf);color:var(--turf);}
+.bba-btn.discard{border-color:var(--warn);color:var(--warn);}
+
+/* Small translucent icon buttons for a detail-header top row (Edit / Favorite on a saved session),
+   matching .backbtn's treatment at a smaller size since there are two of them side by side. */
+.dh-icon-btn{background:rgba(255,255,255,0.15);border:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;}
+.dh-icon-btn svg{width:16px;height:16px;}
+.dh-icon-btn.on svg{color:var(--turf);}
+
+/* Favorite star on a saved-session list row -- session-row became a div (see renderSessions) so
+   this button is a proper sibling instead of an invalid nested button. */
+.session-fav-btn{background:none;border:none;padding:4px;display:flex;flex-shrink:0;color:var(--ink-soft);}
+.session-fav-btn svg{width:18px;height:18px;}
+.session-fav-btn.on svg{color:var(--turf);}
+
+/* Home screen "you already started one of these" banner -- same claret identity as the main
+   action tiles just below it, so it reads as part of the same screen rather than a foreign alert. */
+.continue-draft-banner{display:flex;align-items:center;gap:12px;width:100%;background:var(--bg-surface);border:1.5px solid var(--claret);border-radius:14px;padding:12px 14px;margin:10px 0 4px;text-align:left;}
+.cdb-icon{width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;}
+.cdb-icon img{width:100%;height:100%;object-fit:cover;}
+.cdb-title{font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;color:var(--claret);}
+.cdb-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+.continue-draft-banner .cdb-chevron{margin-left:auto;color:var(--ink-soft);flex-shrink:0;}
 
 /* ---------- editable fields ---------- */
 [contenteditable="true"]{
@@ -1018,6 +1079,7 @@ input.section-title-input:focus{border-color:var(--turf);}
 .session-row{
   display:flex;align-items:center;gap:12px;background:var(--bg-surface);border:1px solid var(--line);
   border-radius:14px;padding:14px 15px;margin-bottom:10px;text-align:left;width:100%;min-height:64px;
+  cursor:pointer;
 }
 .session-row .srthumb{
   width:44px;height:44px;border-radius:10px;background:var(--pitch);color:white;
@@ -4959,6 +5021,7 @@ function backFromDetail(){
     if(!ok) return;
     state.draftExercise = null;
   }
+  if(state.fromReview){ nav('review'); return; }
   // Always back to Explore Exercises -- when fromBuild is true, state.pickingPhase is still set
   // (they're set together, only ever in pickForPhase()), so this naturally lands the coach back
   // on the same Building Session picker screen they came from rather than the full phase grid.
@@ -4970,6 +5033,7 @@ const state = {
   screen: 'home',            // home | exercises | detail | build | review | sessions | sessionDetail
   detailId: null,
   fromBuild: false,           // came from build-a-session "add exercise" flow
+  fromReview: false,          // came from the unsaved Session Review screen's exercise list
   pickingPhase: null,         // phase key currently being populated
   search: '',
   sectionFilter: null,        // single active quick-filter chip
@@ -4994,6 +5058,7 @@ const state = {
   collapsedPhases: new Set(), // phase/section keys currently collapsed on the Build page
   viewMode: 'tile',           // 'tile' | 'list' -- how Explore Exercises lays out results
   confirmDiscardOpen: false,  // whether the "discard this draft practice?" confirm sheet is showing
+  confirmNewSessionOpen: false, // whether the "you have a session in progress" guard modal is showing
   practiceTemplates: [        // coach's own named library of section/percentage splits -- as many as they want, saved locally on their own device
     {id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:75, sections: defaultTemplateSections()},
     {id:'tmpl-indoor-default',  name:'Indoor Practice',  location:'indoor',  duration:75, sections: defaultTemplateSections()},
@@ -5002,6 +5067,7 @@ const state = {
   editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
   confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
   templatePickerOpen: false,      // Build page: "Load a template" sheet open/closed
+  editingSessionDetail: false,    // whether the saved Session Detail page's name/duration are editable right now
   enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the applied template
   phaseOrder: PHASES.map(p => p.key),     // standard-phase display order -- reorderable in Settings (Warmup always stays first)
 };
@@ -5076,7 +5142,7 @@ function renderBottomnav(){
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.home,"nav('home')")}
-    ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, pickingPhase:null, sectionFilter:null})")}
+    ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null})")}
     <button class="navitem build-fab" onclick="nav('build')" title="Build a Session">${ICONS.soccerBallPhoto}<span>Build</span></button>
     ${item('sessions','Sessions',ICONS.doc,"nav('sessions')",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
@@ -5406,8 +5472,18 @@ function renderHome(){
     ${state.dataSource === 'offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach your live exercise sheet just now — showing the last saved copy on this device. New videos, diagrams, or edits from the sheet won't appear until this reconnects. Try closing and reopening the app, or check your connection.</span></div>` : ''}
     ${state.hasIdCollision ? `<div class="sync-banner">${ICONS.image}<span>Some exercises in your sheet are missing an Exercise ID, or share one with another row. Tapping one of them may open the wrong exercise's details until the IDs are fixed — check the Exercise ID column for blanks or duplicates.</span></div>` : ''}
 
+    ${(() => { const {count} = currentTotalMinutes(); return count>0 ? `
+    <button class="continue-draft-banner" onclick="nav('build')">
+      <div class="cdb-icon">${ICONS.soccerBallPhoto}</div>
+      <div>
+        <div class="cdb-title">Continue Draft Session</div>
+        <div class="cdb-sub">${escHtml(state.sessionName.trim() || 'Untitled session')} — ${count} exercise${count===1?'':'s'} so far</div>
+      </div>
+      <div class="cdb-chevron">${ICONS.chevronRight}</div>
+    </button>` : ''; })()}
+
     <div class="main-actions-row">
-      <button class="mac-tile" onclick="nav('build')">
+      <button class="mac-tile" onclick="requestBuildNewSession()">
         <div class="mact-icon">${ICONS.clipboard}</div>
         <div class="mact-label"><span>Build</span><span>New Session</span></div>
         <div class="mact-stat">Create from Library</div>
@@ -5748,6 +5824,20 @@ function renderOverlay(){
       </div>
     </div>`;
   }
+  if(state.confirmNewSessionOpen){
+    html += `
+    <div class="ios-alert-backdrop" onclick="cancelNewSessionModal()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>You have a session in progress</h3>
+        <p>If you start a new session, your old session will be permanently deleted.</p>
+        <div class="ios-alert-btns">
+          <button class="ios-alert-btn primary" onclick="resumeInProgressSession()">Resume session in progress</button>
+          <button class="ios-alert-btn danger" onclick="startNewSessionDiscardingDraft()">Start new session</button>
+          <button class="ios-alert-btn" onclick="cancelNewSessionModal()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }
   if(state.pendingQuickAdd){
     const ex = exById(state.pendingQuickAdd.id);
     html += `
@@ -5823,6 +5913,7 @@ function renderOverlay(){
 
 /* ============ EXERCISE DETAIL ============ */
 function openDetail(id){ nav('detail', {detailId:id}); }
+function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false}); }
 
 function renderDetail(){
   const ex = exById(state.detailId);
@@ -5838,7 +5929,9 @@ function renderDetail(){
   <div class="detail-header" style="background:${st.color};">
     ${state.fromBuild
       ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
-      : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
+      : state.fromReview
+        ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
+        : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
@@ -6115,7 +6208,7 @@ function removeExtraSection(key){
 
 function pickForPhase(key){
   const p = PHASES.find(p=>p.key===key);
-  nav('exercises', {pickingPhase:key, fromBuild:true, sectionFilter: p ? p.section : null, search:''});
+  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, sectionFilter: p ? p.section : null, search:''});
 }
 /* Switch which phase is being filled WITHOUT leaving the exercise list — lets a coach fill several
    phases back to back instead of bouncing to the Build screen between every add. */
@@ -6142,18 +6235,35 @@ function nextPickingPhase(){
 function renderSessionBuilderBox(pickingLabel){
   const {total, count} = currentTotalMinutes();
   if(!pickingLabel && count===0) return ''; // nothing being built yet -- nothing to show
+  if(!pickingLabel){
+    // Browsing the full library (not actively adding to a specific phase) with a draft already
+    // started elsewhere. The full picking box implies exercises tapped here add to a phase, which
+    // isn't true in this mode -- a low-profile pill instead: acknowledges the in-progress draft
+    // without suggesting this screen feeds it directly. Tap to jump back into the builder.
+    return `
+    <div class="sbb-sticky-wrap">
+      <button class="draft-pill-banner" onclick="nav('build')">
+        ${ICONS.soccerBallPhoto}
+        <span class="dpb-text">Building <b>${escHtml(state.sessionName.trim() || 'session')}</b> — ${count} exercise${count===1?'':'s'} so far</span>
+        <span class="dpb-cta">Continue ${ICONS.chevronRight}</span>
+      </button>
+    </div>`;
+  }
   const pct = Math.min(100, Math.round((total/state.targetDuration)*100));
   const over = total > state.targetDuration;
   const idx = PHASES.findIndex(p => p.key === state.pickingPhase);
   const nextPhaseObj = (idx > -1 && idx < PHASES.length - 1) ? PHASES[idx+1] : null;
   const nextBtnLabel = nextPhaseObj ? `Next: ${nextPhaseObj.label}` : 'Review session';
+  // pickingLabel is always truthy from here down -- the browsing-only case already returned above.
+  const pickingPhaseObj = PHASES.find(p => p.key === state.pickingPhase);
+  const pst = secStyle(pickingPhaseObj ? pickingPhaseObj.section : null);
   return `
   <div class="sbb-sticky-wrap">
   <div class="session-builder-box">
     <div class="sbb-header">
       <div class="sbb-title">${ICONS.soccerBallPhoto} Building Session</div>
     </div>
-    <div class="sbb-current">${pickingLabel ? `Adding to: <b>${pickingLabel}</b>` : `<b>${escHtml(state.sessionName.trim() || 'Your practice')}</b> — ${count} exercise${count===1?'':'s'} so far`}</div>
+    <div class="sbb-adding-pill" style="border-bottom-color:${pst.color};"><span style="color:${pst.color};display:flex;">${pst.icon}</span><span>Adding to: <b style="color:${pst.color};">${pickingLabel}</b></span></div>
     <div class="pps-dots">
       ${orderedPhases().filter(p => state.enabledPhaseKeys.has(p.key)).map(p => {
         const has = state.phaseData[p.key].length > 0;
@@ -6174,10 +6284,8 @@ function renderSessionBuilderBox(pickingLabel){
       <div class="pps-caption"><span><b>${total}</b>/${state.targetDuration} min</span><span>${count} exercise${count===1?'':'s'} total</span></div>
     </div>
     <div class="pps-btn-row">
-      ${pickingLabel ? `<button class="pps-secondary-btn" onclick="nav('build')">Full Session</button>` : ''}
-      ${pickingLabel
-        ? `<button class="pps-next-btn" onclick="nextPickingPhase()">${nextBtnLabel} ${ICONS.chevronRight}</button>`
-        : `<button class="pps-next-btn" onclick="nav('build')">Go to full session ${ICONS.chevronRight}</button>`}
+      <button class="pps-secondary-btn" onclick="nav('build')">${ICONS.back} Full Session</button>
+      <button class="pps-next-btn" onclick="nextPickingPhase()">${nextBtnLabel} ${ICONS.chevronRight}</button>
     </div>
   </div>
   </div>`;
@@ -6380,13 +6488,16 @@ function renderBuild(){
 
     ${renderTimeComparisonPanel()}
 
-    ${state.practiceTemplates.length ? `<button class="addsection-btn" style="margin-top:14px;" onclick="openTemplatePicker()">${ICONS.doc} Load from a template</button>` : ''}
+    ${(state.practiceTemplates.length && count===0) ? `<button class="addsection-btn" style="margin-top:14px;" onclick="openTemplatePicker()">${ICONS.doc} Load from a template</button>` : ''}
 
     <div class="phase-grid">
       ${activePhases.map(p=>phaseBoxHtml(p)).join('')}
       ${state.extraSections.map(s=>extraBoxHtml(s)).join('')}
     </div>
-    ${count>0 ? `<div class="discard-session-row"><button class="discard-session-btn" onclick="requestDiscardSession()">${ICONS.trash} Discard this practice</button></div>` : ''}
+    ${count>0 ? `<div class="build-bottom-actions">
+      <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
+      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard Session</button>
+    </div>` : ''}
 
   </div>
   <div class="build-cta">
@@ -6422,7 +6533,7 @@ function completeSession(){
     id, name,
     totalMin: total, exCount: count, createdAt: Date.now(), createdBy: CURRENT_USER,
     targetDuration: state.targetDuration, phases: phasesSnapshot,
-    rating: 0, comment: '',
+    rating: 0, comment: '', favorited: false,
   });
   // reset builder
   PHASES.forEach(p => state.phaseData[p.key] = []);
@@ -6434,6 +6545,13 @@ function completeSession(){
 function dayName(){
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
 }
+function saveDraftAndExit(){
+  // The active build already auto-persists to localStorage on every render (see
+  // saveAppStateToStorage) -- this just gives the coach an explicit, reassuring exit point instead
+  // of silently trusting that background persistence.
+  showToast('Draft saved — find it on Home');
+  nav('home');
+}
 function requestDiscardSession(){ state.confirmDiscardOpen = true; renderOverlay(); }
 function cancelDiscardSession(){ state.confirmDiscardOpen = false; renderOverlay(); }
 function confirmDiscardSession(){
@@ -6443,6 +6561,23 @@ function confirmDiscardSession(){
   state.confirmDiscardOpen = false;
   showToast('Draft practice discarded');
   nav('home');
+}
+// Guards the Home "Build New Session" tile: that tile means "start fresh", but the app only has
+// one active draft slot, so jumping straight into it would silently wipe out an in-progress
+// session. If nothing's in progress, go straight to Build like before.
+function requestBuildNewSession(){
+  const {count} = currentTotalMinutes();
+  if(count>0){ state.confirmNewSessionOpen = true; renderOverlay(); }
+  else { nav('build'); }
+}
+function cancelNewSessionModal(){ state.confirmNewSessionOpen = false; renderOverlay(); }
+function resumeInProgressSession(){ state.confirmNewSessionOpen = false; nav('build'); }
+function startNewSessionDiscardingDraft(){
+  PHASES.forEach(p => state.phaseData[p.key] = []);
+  state.extraSections = [];
+  state.sessionName = defaultSessionName();
+  state.confirmNewSessionOpen = false;
+  nav('build');
 }
 function togglePhaseCollapsed(key){
   if(state.collapsedPhases.has(key)) state.collapsedPhases.delete(key); else state.collapsedPhases.add(key);
@@ -6467,12 +6602,9 @@ function renderReview(){
 
   return `
   <div class="section-pad">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-      <div>
-        <div class="eyebrow">Session Review (unsaved)</div>
-        ${state.sessionName.trim() ? `<h2 style="font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;font-size:20px;margin:2px 0 0;">${escHtml(state.sessionName)}</h2>` : ''}
-      </div>
-      <button class="phase-box-edit" style="margin-top:3px;" onclick="nav('build')" title="Edit session">${ICONS.pencil}</button>
+    <div>
+      <div class="eyebrow">Session Review (unsaved)</div>
+      ${state.sessionName.trim() ? `<h2 style="font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;font-size:20px;margin:2px 0 0;">${escHtml(state.sessionName)}</h2>` : ''}
     </div>
     <div class="review-total-mini">${total} total minutes &middot; ${count} exercises</div>
 
@@ -6493,7 +6625,7 @@ function renderReview(){
             <div class="phase-exlist">
               ${state.phaseData[p.key].map(id=>{
                 const ex=exById(id);
-                return `<div class="phase-ex-item" ${ex?`onclick="openDetail('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span></div>`;
+                return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span></div>`;
               }).join('')}
             </div>
           </div>
@@ -6504,21 +6636,42 @@ function renderReview(){
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div></div>
             <div class="phase-exlist">
-              ${s.exercises.map(id=>{const ex=exById(id);return `<div class="phase-ex-item" ${ex?`onclick="openDetail('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span></div>`;}).join('')}
+              ${s.exercises.map(id=>{const ex=exById(id);return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span></div>`;}).join('')}
             </div>
           </div>
         </div>`).join('')}
     </div>
 
     <div class="review-cta-row">
-      <button class="btn btn-ghost" onclick="nav('build')">${ICONS.pencil} Continue editing</button>
+      <button class="btn btn-ghost" onclick="nav('build')">${ICONS.pencil} Edit</button>
       <button class="btn btn-primary" onclick="completeSession()">Save Session</button>
+    </div>
+    <div class="discard-session-row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+      <button class="draft-save-btn" onclick="saveDraftAndExit()">${ICONS.check} Save as Draft</button>
+      <button class="discard-session-btn" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
     </div>
   </div>`;
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
-function openSessionDetail(id){ nav('sessionDetail', {viewingSessionId:id}); }
+function openSessionDetail(id){ state.editingSessionDetail = false; nav('sessionDetail', {viewingSessionId:id}); }
+function toggleEditSessionDetail(){ state.editingSessionDetail = !state.editingSessionDetail; render(); }
+function renameSavedSession(id, val){
+  const s = state.savedSessions.find(s=>s.id===id);
+  if(s){ const v = (val||'').trim(); if(v) s.name = v; }
+  render();
+}
+function setSavedSessionDuration(id, val){
+  const s = state.savedSessions.find(s=>s.id===id);
+  const n = parseInt(val, 10);
+  if(s && !isNaN(n) && n>0) s.targetDuration = n;
+  render();
+}
+function toggleSessionFavorite(id){
+  const s = state.savedSessions.find(s=>s.id===id);
+  if(s) s.favorited = !s.favorited;
+  render();
+}
 
 function renderSessions(){
   if(!state.savedSessions.length){
@@ -6536,16 +6689,17 @@ function renderSessions(){
   <div class="section-pad">
     <div class="eyebrow">All Sessions</div>
     <div class="sh" style="margin-top:2px;"><h2>${state.savedSessions.length} saved</h2></div>
-    ${state.savedSessions.slice().reverse().map(s => `
-      <button class="session-row" onclick="openSessionDetail('${s.id}')">
+    ${state.savedSessions.slice().reverse().sort((a,b) => (b.favorited?1:0) - (a.favorited?1:0)).map(s => `
+      <div class="session-row" role="button" tabindex="0" onclick="openSessionDetail('${s.id}')">
         <div class="srthumb">${ICONS.ball}</div>
-        <div>
-          <div class="srname">${s.name}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="srname">${escHtml(s.name)}</div>
           <div class="srmeta">${ICONS.user} ${s.createdBy} &middot; ${formatWhen(s.createdAt)}</div>
           <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises</div>
         </div>
+        <button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>
         <div class="srchevron">${ICONS.chevronRight}</div>
-      </button>`).join('')}
+      </div>`).join('')}
   </div>`;
 }
 
@@ -6561,16 +6715,27 @@ function setSessionComment(id, val){
 function renderSessionDetail(){
   const s = state.savedSessions.find(s=>s.id===state.viewingSessionId);
   if(!s) return `<div class="empty-state">${ICONS.empty}<p>Session not found.</p></div>`;
+  const editing = state.editingSessionDetail;
   return `
   <div class="detail-header" style="background:var(--pitch);">
-    <button class="backbtn" onclick="nav('sessions')">${ICONS.back}</button>
-    <div class="session-state-tag saved">Saved</div>
-    <div class="dpill">${ICONS.soccerBallPhoto} Saved Session</div>
-    <h1>${s.name}</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')">${ICONS.back}</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>
+        <button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>
+        <div class="session-state-tag saved" style="position:static;">Saved</div>
+      </div>
+    </div>
+    <div class="dpill" style="margin-top:14px;">${ICONS.soccerBallPhoto} Saved Session</div>
+    ${editing
+      ? `<h1 class="editable-title" contenteditable="true" onblur="renameSavedSession('${s.id}', this.innerText)">${escHtml(s.name)}</h1>`
+      : `<h1>${escHtml(s.name)}</h1>`}
     <div class="stat-row">
       <div class="stat"><div class="snum">${s.totalMin}</div><div class="slbl">Minutes</div></div>
       <div class="stat"><div class="snum">${s.exCount}</div><div class="slbl">Exercises</div></div>
-      <div class="stat"><div class="snum">${s.targetDuration}</div><div class="slbl">Target</div></div>
+      <div class="stat">${editing
+        ? `<div class="snum-row"><span class="snum-editable" contenteditable="true" onblur="setSavedSessionDuration('${s.id}', this.innerText)">${s.targetDuration}</span></div>`
+        : `<div class="snum">${s.targetDuration}</div>`}<div class="slbl">Target</div></div>
     </div>
   </div>
   <div class="section-pad">
@@ -6638,6 +6803,7 @@ function saveAppStateToStorage(){
       sectionFilter: state.sectionFilter,
       viewingSessionId: state.viewingSessionId,
       fromBuild: state.fromBuild,
+      fromReview: state.fromReview,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
   }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
@@ -6681,6 +6847,7 @@ function loadAppStateFromStorage(){
       state.sectionFilter = snap.sectionFilter ?? null;
       state.viewingSessionId = snap.viewingSessionId ?? null;
       state.fromBuild = !!snap.fromBuild;
+      state.fromReview = !!snap.fromReview;
       if(restoredScreen === 'detail' && !exById(state.detailId)) restoredScreen = 'home';
       if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
       state.screen = restoredScreen;
