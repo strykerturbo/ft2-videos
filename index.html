@@ -35,13 +35,13 @@
   --radius:0px;
   --radius-sm:0px;
 
-  --sec-warmup:#4FAE86;
+  --sec-warmup:var(--claret);
   --sec-athletic:var(--claret);
   --sec-duels:#2A3346;
   --sec-rondos:#1C2333;
   --sec-ssg:#10141F;
   --sec-scrimmage:#D9A54A;
-  --claret:#7A263A;
+  --claret:#7A263A; /* the app's one claret -- Warmup and Athletic both use it directly now */
   --claret-dim:#F0E1E5;
   --burnt-orange:#B5561E;
   --sky-blue:#7EC8E3;
@@ -240,13 +240,14 @@ a{color:inherit;text-decoration:none;}
 .searchbar{
   display:flex;align-items:center;gap:8px;
   background:var(--white);border:1px solid var(--line);border-radius:12px;
-  padding:12px 14px;
+  padding:7px 14px;
 }
 .searchbar svg{width:18px;height:18px;color:var(--ink-soft);flex-shrink:0;}
 .searchbar input{
   /* 16px minimum keeps iOS Safari from auto-zooming the page when this field gets focus */
   border:none;outline:none;flex:1;font-size:16px;background:transparent;color:var(--ink);
 }
+.searchbar input::placeholder{font-size:13px;color:var(--ink-soft);}
 .search-clear-btn{
   background:var(--chalk-dim);border:none;border-radius:50%;flex-shrink:0;
   width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
@@ -285,14 +286,58 @@ a{color:inherit;text-decoration:none;}
   white-space:nowrap;
 }
 .balance-btn svg{width:14px;height:14px;}
+.balance-btn-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+/* ---------- Quick Pick (+ Add Exercise flow) ---------- */
+.qp-iconbtn{
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  width:35px;height:35px;border-radius:12px;border:1.5px solid var(--turf);
+  background:var(--turf-dim);color:var(--turf);
+}
+.qp-iconbtn svg{width:16px;height:16px;color:var(--turf);}
+.qp-iconbtn:active{opacity:0.7;}
+.qp-filter-btn{
+  position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  width:35px;height:35px;border-radius:12px;border:1px solid var(--line);
+  background:var(--white);color:var(--ink-soft);
+}
+.qp-filter-btn svg{width:16px;height:16px;}
+.qp-filter-btn:active{background:var(--chalk-dim);}
+/* ---------- Batch 60: combined Search + Advanced Filters row, compact section heading ---------- */
+.discovery-row{display:flex;align-items:center;gap:8px;}
+.discovery-row .searchbar{flex:1;min-width:0;}
+.ex-section-heading{display:flex;align-items:baseline;gap:6px;margin:14px 0 10px;}
+.ex-section-heading .esh-name{font-family:'Inter',sans-serif;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:0.03em;color:var(--text-primary);}
+.ex-section-heading .esh-count{font-size:12px;font-weight:600;color:var(--ink-soft);}
+.qp-customize-btn{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--line) !important;}
+.qp-customize-btn svg{width:15px;height:15px;flex-shrink:0;}
+.qp-viewall-btn{border:1.5px solid var(--line) !important;}
+.qp-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.qp-info-btn{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;border:1.5px solid var(--ink-soft);
+  background:transparent;color:var(--ink-soft);font-style:italic;font-weight:700;font-size:12px;
+  font-family:Georgia,'Times New Roman',serif;display:flex;align-items:center;justify-content:center;
+  line-height:1;padding:0;
+}
+.qp-info-btn:active{background:var(--chalk-dim);}
+.qp-close-btn{
+  flex-shrink:0;width:30px;height:30px;border-radius:50%;border:none;
+  background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;
+}
+.qp-close-btn svg{width:15px;height:15px;}
+.qp-close-btn:active{background:var(--line);}
+.qp-info-panel{
+  background:var(--turf-dim);border:1px solid var(--turf);border-radius:10px;
+  padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--ink);margin:2px 0 10px;
+}
+.qp-fewer-note{font-size:12px;color:var(--ink-soft);font-style:italic;margin:-2px 0 12px;line-height:1.4;}
 .balance-sheet-title{display:flex;align-items:center;gap:7px;}
 .balance-sheet-title svg{width:19px;height:19px;flex-shrink:0;color:var(--turf);}
 .balance-sub{font-size:13px;color:var(--ink-soft);line-height:1.5;margin:-2px 0 14px;}
 .balance-sub b{color:var(--ink);}
+.balance-sub.qp-sub-dark{color:var(--ink);}
 .balance-target-heading{
-  font-size:13px;font-weight:800;color:var(--pitch-dark);
-  background:var(--turf-dim);border:1px solid var(--turf);border-radius:10px;
-  padding:8px 12px;margin:0 0 12px;
+  font-size:13px;font-weight:400;color:var(--ink);
+  margin:0 0 12px;
 }
 .balance-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
 .balance-card-head{display:flex;align-items:center;gap:10px;}
@@ -355,6 +400,17 @@ a{color:inherit;text-decoration:none;}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .view-toggle-btn.active{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.14);color:var(--text-primary);}
 }
+/* ---------- Batch 60: exercise count + a compact, visually-secondary view toggle share one row ---------- */
+.ex-count-line-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;margin-bottom:8px;}
+.ex-count-line-row .ex-count-line{margin-bottom:0;}
+.view-toggle-compact{display:flex;gap:4px;flex-shrink:0;}
+.vtc-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg-surface);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;}
+.vtc-btn svg{width:15px;height:15px;flex-shrink:0;}
+.vtc-btn.active{background:var(--pitch);border-color:var(--pitch);color:white;}
+:root[data-theme="dark"] .vtc-btn.active{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.14);color:var(--text-primary);}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .vtc-btn.active{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.14);color:var(--text-primary);}
+}
 .ex-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;
 }
@@ -386,6 +442,12 @@ a{color:inherit;text-decoration:none;}
 }
 .ex-pinned-label svg{width:12px;height:12px;}
 .ex-pinned-divider{height:1px;background:var(--line);margin:6px 0 10px;}
+/* ---------- Batch 60: collapsed "N in [Section]" row replacing pinned full cards by default ---------- */
+.ex-added-toggle-row{grid-column:1/-1;margin:0 0 10px;}
+.ex-added-toggle{display:flex;align-items:center;gap:6px;width:100%;background:var(--turf-dim);border:1px solid var(--turf);border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;color:var(--turf);}
+.ex-added-toggle svg:first-child{width:13px;height:13px;flex-shrink:0;}
+.ex-added-toggle span{flex:1;text-align:left;}
+.ex-added-toggle svg:last-child{width:12px;height:12px;flex-shrink:0;}
 .ex-card{
   background:var(--white);border-radius:14px;border:1px solid var(--line);
   overflow:hidden;text-align:left;padding:0;position:relative;
@@ -393,16 +455,18 @@ a{color:inherit;text-decoration:none;}
 }
 .ex-card.added{box-shadow:0 0 0 3px var(--cone);}
 .new-ex-card{
-  border:1.5px dashed var(--turf);background:var(--turf-dim);
+  border:1.5px dashed var(--line);background:var(--chalk-dim);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:9px;min-height:184px;color:var(--turf);
+  gap:6px;min-height:76px;color:var(--ink-soft);
+  align-self:start; /* grid rows default to stretch -- without this it matches whatever taller
+                        exercise card it lands next to instead of staying short */
 }
 .new-ex-icon{
-  width:40px;height:40px;border-radius:50%;background:var(--turf);color:white;
+  width:26px;height:26px;border-radius:50%;background:var(--ink-soft);color:white;
   display:flex;align-items:center;justify-content:center;
 }
-.new-ex-icon svg{width:18px;height:18px;}
-.new-ex-label{font-family:'Inter',sans-serif;font-weight:700;font-size:14px;text-align:center;line-height:1.2;color:var(--turf);}
+.new-ex-icon svg{width:13px;height:13px;}
+.new-ex-label{font-family:'Inter',sans-serif;font-weight:700;font-size:12px;text-align:center;line-height:1.2;color:var(--ink-soft);}
 .ex-thumb{
   height:84px;position:relative;
   display:flex;align-items:center;justify-content:center;
@@ -443,7 +507,7 @@ a{color:inherit;text-decoration:none;}
 .ex-addbtn svg{width:12px;height:12px;}
 .ex-addbtn.added{background:var(--cone);border:1.5px solid #9B9B9B;color:var(--pitch-dark);}
 .added-badge{
-  position:absolute;bottom:6px;right:6px;
+  position:absolute;top:6px;left:6px;
   background:var(--cone);color:var(--pitch-dark);width:22px;height:22px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 1px 4px rgba(0,0,0,0.3);
@@ -672,8 +736,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .iconbtn-lg svg{width:21px;height:21px;color:var(--ink);}
-.iconbtn-lg.on{background:var(--cone-dim);border-color:var(--cone);}
-.iconbtn-lg.on svg{color:var(--cone);}
+/* Bookmarked state intentionally keeps the same gray box (no cone tint) -- the solid
+   bookmarkFilled shape (vs. the outline bookmark shape) is already what signals "bookmarked,"
+   so the icon simply renders solid black like its outline counterpart, not a color change. */
 .add-session-btn{
   flex:1;background:var(--pitch);color:white;border:none;border-radius:12px;padding:15px 0;
   font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -801,6 +866,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .phase-add-pill svg{width:12px;height:12px;flex-shrink:0;}
 .phase-time-divider{width:1px;height:14px;background:var(--line);flex-shrink:0;}
+/* "Warmup + Athletic" style subtitle under a merged phase-group's title, naming which of the
+   original 6 sections were combined into it. */
+.phase-group-sub{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:1px 0 8px;}
 .phase-exlist{margin-top:9px;display:flex;flex-direction:column;gap:8px;}
 .phase-ex-item{
   display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1px solid var(--line);
@@ -823,6 +891,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;justify-content:center;gap:6px;
 }
 .addsection-btn svg{width:14px;height:14px;flex-shrink:0;}
+.settings-toggle-row{
+  width:100%;border:1px solid var(--line);background:var(--chalk-dim);border-radius:10px;
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:10px;
+}
+.settings-toggle-row .stl-label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink);}
+.settings-toggle-row .stl-label svg{width:16px;height:16px;color:var(--ink-soft);flex-shrink:0;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 
 /* ---------- build screen: one full-width section per row ---------- */
@@ -897,7 +972,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-ex-image-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
 .build-ex-image-fallback svg{width:24px;height:24px;}
 .build-ex-info{flex:1;min-width:0;}
-.build-ex-name{font-size:13.5px;font-weight:700;margin-bottom:4px;line-height:1.3;}
+.build-ex-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.build-ex-name{font-size:13.5px;font-weight:700;line-height:1.3;}
+.build-ex-dur{font-size:11.5px;color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;}
 .build-ex-bullets{margin:0;padding-left:15px;}
 .build-ex-bullets li{font-size:11.5px;color:var(--ink-soft);line-height:1.45;margin-bottom:2px;}
 .build-ex-grip{width:20px;align-self:stretch;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;margin-left:-4px;}
@@ -922,6 +999,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .session-state-tag.saved{background:rgba(255,255,255,0.18);color:white;position:absolute;top:16px;right:18px;}
 .discard-session-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
 .discard-session-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--warn);font-size:12px;font-weight:700;padding:6px 0;}
+.discard-session-btn.tmpl-del-btn{color:var(--ink-soft);}
 .discard-session-btn svg{width:13px;height:13px;}
 .build-cta{
   position:sticky;bottom:0;background:linear-gradient(180deg, rgba(246,244,236,0) 0%, var(--chalk) 30%);
@@ -933,7 +1011,17 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .review-cta-row{display:flex;gap:10px;margin-top:8px;}
 .review-cta-row .btn{display:flex;align-items:center;justify-content:center;gap:6px;}
 .review-cta-row .btn svg{width:14px;height:14px;}
-.review-total-mini{font-size:12px;color:var(--ink-soft);font-weight:600;margin-top:4px;}
+.review-stats-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.review-total-mini{font-size:12px;color:var(--ink-soft);font-weight:600;}
+.review-session-toggle{
+  display:flex;align-items:center;gap:4px;flex-shrink:0;
+  padding:6px 10px;border-radius:20px;border:1px solid var(--line);
+  background:var(--white);font-size:12px;font-weight:700;color:var(--ink-soft);
+}
+.review-session-toggle:active{background:var(--chalk-dim);}
+.review-session-toggle .tp-chevron svg{width:14px;height:14px;}
+.time-panel.standalone{margin-top:8px;}
+.time-panel.standalone .tp-body{border-top:none;padding-top:13px;}
 .toast{
   position:absolute;left:50%;bottom:96px;transform:translateX(-50%);
   background:var(--ink);color:white;padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;
@@ -1009,21 +1097,25 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .tmpl-grip{width:20px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;}
 .tmpl-grip svg{width:14px;height:14px;}
 .tmpl-grip-spacer{width:20px;flex-shrink:0;}
-.tmpl-pct-input{width:32px;text-align:center;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:6px;background:var(--bg-main);color:var(--text-primary);font-size:13px;font-weight:700;padding:3px 2px;font-family:inherit;}
+.tmpl-pct-input{width:40px;text-align:center;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:7px;background:var(--bg-main);color:var(--text-primary);font-size:15.5px;font-weight:800;padding:5px 3px;font-family:inherit;}
 .tmpl-pct-input:disabled{opacity:0.4;}
 .tmpl-row-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .tmpl-row-icon svg{width:16px;height:16px;}
 .tmpl-row-icon.custom{background:var(--chalk-dim);color:var(--ink-soft);}
-.tmpl-row-label{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--text-primary);}
-.tmpl-row-hint{font-size:10.5px;font-weight:600;color:var(--ink-soft);text-transform:none;margin-top:1px;}
-.tmpl-row-pct{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;flex-shrink:0;}
+.tmpl-row-label{flex:1;min-width:0;font-size:15px;font-weight:700;color:var(--text-primary);}
+.tmpl-row-hint{font-size:11.5px;font-weight:600;color:var(--ink-soft);text-transform:none;margin-top:1px;}
+.tmpl-row-pct{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:700;flex-shrink:0;}
 .tmpl-row-pct span{min-width:30px;text-align:center;font-variant-numeric:tabular-nums;}
-.tmpl-step{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--chalk);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.tmpl-step svg{width:11px;height:11px;}
+/* Percentage steppers here intentionally read a size step below the chevrons on Training Session
+   Default Settings (34px/16px icon vs. 44px/22px) -- same up-left/down-right chevron language,
+   scaled down since a template screen also carries its name/location/duration/other rows. */
+.tmpl-step{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg-surface);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tmpl-step svg{width:16px;height:16px;}
 .tmpl-step:disabled{opacity:0.35;}
+.tmpl-step:active:not(:disabled){background:var(--chalk-dim);}
 .tmpl-toggle{width:26px;height:26px;border-radius:50%;border:none;background:none;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .tmpl-toggle svg{width:14px;height:14px;}
-.tmpl-toggle.remove{color:var(--warn);}
+.tmpl-toggle.remove{color:var(--ink-soft);}
 .tmpl-lib-list{display:flex;flex-direction:column;gap:8px;}
 .tmpl-lib-row{display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 10px 10px 12px;}
 .tmpl-lib-icon{width:32px;height:32px;border-radius:9px;background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -1033,9 +1125,30 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .tmpl-lib-meta{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:1px;}
 .tmpl-lib-chevron{color:var(--ink-soft);display:flex;flex-shrink:0;}
 .tmpl-lib-chevron svg{width:15px;height:15px;}
+/* Deleting a whole template is a lighter-weight action than discarding an in-progress session, so
+   its trash icons read as neutral gray here rather than the alarming red used elsewhere. */
+.tmpl-lib-row .phase-box-del{color:var(--ink-soft);}
 .tmpl-sum-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--chalk-dim);color:var(--ink);}
 .tmpl-sum-row.bad .tmpl-sum-warn{color:var(--warn);}
 .tmpl-sum-row.ok .tmpl-sum-warn{color:var(--turf);}
+/* ---------- Training Session Settings (Settings > Training Session Settings) ---------- */
+.tsg-card{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;margin-bottom:14px;}
+.tsg-card-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.tsg-card-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tsg-card-icon svg{width:18px;height:18px;}
+.tsg-card-headtext{flex:1;min-width:0;}
+.tsg-card-title{font-family:'Inter',sans-serif;font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:0.02em;color:var(--text-primary);}
+.tsg-card-sub{font-size:13.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+.tsg-card-pctbadge{font-size:19px;font-weight:800;color:var(--turf);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.tsg-phase-rows{display:flex;flex-direction:column;gap:10px;}
+.tsg-phase-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--chalk-dim);border-radius:12px;padding:10px 12px 10px 14px;}
+.tsg-phase-label{font-size:16px;font-weight:700;color:var(--text-primary);}
+.tsg-stepper{display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0;}
+.tsg-chev{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg-surface);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tsg-chev svg{width:22px;height:22px;}
+.tsg-chev:disabled{opacity:0.35;}
+.tsg-chev:active:not(:disabled){background:var(--chalk-dim);}
+.tsg-pct-val{font-size:21px;font-weight:800;min-width:52px;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1;}
 .settings-wip{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:60px 20px;color:var(--ink-soft);}
 .settings-wip svg{width:40px;height:40px;opacity:.5;}
 .settings-wip-title{font-size:18px;font-weight:800;color:var(--ink);}
@@ -1061,13 +1174,43 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pps-secondary-btn svg{width:14px;height:14px;flex-shrink:0;}
 .pps-next-btn{
   flex:1;min-width:0;border:1.5px solid #48484C;border-radius:12px;background:#48484C;color:#fff;
-  height:41px;padding:6px 4px;font-weight:700;font-size:13px;white-space:nowrap;
-  display:flex;align-items:center;justify-content:center;gap:3px;
+  height:41px;padding:6px 10px;font-weight:700;font-size:13px;white-space:nowrap;
+  display:flex;align-items:center;justify-content:flex-start;gap:6px;
 }
 .pps-next-btn svg{width:13px;height:13px;flex-shrink:0;}
 .pps-next-lines{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0;line-height:1.05;}
 .pps-next-line1{font-size:10.5px;font-weight:600;opacity:0.78;}
 .pps-next-line2{font-size:13px;font-weight:700;letter-spacing:-0.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+/* ---------- Batch 60: compact "Building Practice" header (picking mode) ---------- */
+.sbb-compact-row1{display:flex;align-items:center;gap:6px;}
+.sbb-compact-title{
+  flex:1;min-width:0;text-align:center;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sbb-title-spacer{width:74px;flex-shrink:0;}
+.sbb-compact-stats{font-size:12.5px;font-weight:700;color:var(--ink-soft);white-space:nowrap;flex-shrink:0;}
+.sbb-compact-stats b{color:var(--ink);}
+.sbb-compact-row2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;}
+.sbb-compact-count{font-size:12px;font-weight:600;color:var(--ink-soft);}
+.sbb-full-link{
+  position:relative;z-index:1;display:flex;align-items:center;gap:4px;
+  background:var(--ink-soft);border:1px solid var(--ink-soft);border-radius:8px;
+  padding:5px 8px;font-size:11.5px;font-weight:700;color:white;flex-shrink:0;
+}
+.sbb-full-link svg{width:12px;height:12px;}
+.sbb-full-link:active{background:var(--ink);border-color:var(--ink);}
+/* Batch 61: back to the pre-batch-60 dots' equal-width, always-one-line proportions -- no
+   horizontal scroll -- but each chip now stacks its icon above a short label instead of being
+   icon-only. */
+.pps-nav-row{display:flex;gap:6px;}
+.pps-navchip{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  height:auto;min-height:46px;padding:6px 2px;border-radius:10px;border:none;
+}
+.pps-navchip svg{width:16px;height:16px;flex-shrink:0;}
+.pps-navchip span{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.01em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 
 /* "Adding to: X" is a context label, not a tappable control -- it has no onclick, so it should
    never look like a button. A colored icon + bold colored phase name on a transparent background,
@@ -1237,7 +1380,7 @@ button,.btn,.ex-card,.mac-tile,.phase-box,.session-builder-box,.stat,.feed-item,
    Both rules above and here are !important, so this one wins on higher selector specificity
    (.navitem.build-fab, a compound class) and matching source order (.icon-btn/.avatar, same
    specificity as their mention above but declared later). */
-.icon-btn,.avatar,.navitem.build-fab{
+.icon-btn,.avatar,.navitem.build-fab,.qp-info-btn,.qp-close-btn{
   border-radius:50% !important;
 }
 .btn-primary,.build-cta .btn-primary{
@@ -5684,6 +5827,8 @@ const ICONS = {
   bell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M9.5 20a2.5 2.5 0 005 0"/></svg>`,
   empty: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
   chevronRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
+  chevronUp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>`,
+  chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`,
   image: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5.5-5.5L4 21"/></svg>`,
   play: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>`,
   pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>`,
@@ -5698,6 +5843,7 @@ const ICONS = {
   // section icons
   flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s-5 5.5-5 10a5 5 0 0010 0c0-1.5-1-2.5-1-2.5s-.5 2-2 2c-1.8 0-2-2-1-3.5C13.5 6.5 12 2 12 2z"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>`,
+  dice: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>`,
   swords: `<svg viewBox="0 0 24 24" fill="none"><text x="12" y="16.5" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-weight="800" font-size="12.5" letter-spacing="-0.5" fill="currentColor" transform="rotate(-14 12 12)">VS</text></svg>`,
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.2"/></svg>`,
@@ -5997,12 +6143,47 @@ const PHASES = [
 
 const SECTION_LIST = ['Warmup','Athletic','Duels','Rondos','SSGs','Scrimmage'];
 
-/* Default practice-template split per the coach's own suggested percentages: Warmup+Athletic
-   together read as "25% Athletic-based training" in the Settings UI, Duels 15%, Rondos 20%,
-   Small Sided Games 20%, Scrimmage 20% -- sums to exactly 100%. */
+/* Coach-adjustable defaults for a brand-new practice template's starting percentages -- editable
+   from Settings > Training Session Settings below, and what seeds the built-in Outdoor/Indoor
+   default templates on a fresh install. Kept as its own module-level object (not a field of
+   `state`) since defaultTemplateSections() is called while the `state` object literal itself is
+   still being constructed further down this file. Defaults sum to the recommended Activate 25%
+   (Warmup 5 + Athletic 20) / Develop 50% (Duels 10 + Rondos 20 + Small Sided Games 20) / Play 25%
+   (Scrimmage 25) split -- exactly 100%. */
+const DEFAULT_SECTION_PCTS = {warmup:5, athletic:20, duels:10, rondos:20, ssg:20, scrimmage:25};
+const sectionDefaultPcts = {...DEFAULT_SECTION_PCTS};
 function defaultTemplateSections(){
-  const pctByKey = {warmup:12, athletic:13, duels:15, rondos:20, ssg:20, scrimmage:20};
-  return PHASES.map(p => ({key:p.key, label:p.label, pct:pctByKey[p.key]||0, standard:true, enabled:true}));
+  return PHASES.map(p => ({key:p.key, label:p.label, pct:sectionDefaultPcts[p.key]||0, standard:true, enabled:true}));
+}
+function defaultSectionPctSum(){
+  return PHASES.reduce((a,p)=>a+(sectionDefaultPcts[p.key]||0), 0);
+}
+function openTrainingSettings(){
+  state.viewingTrainingSettings = true;
+  render();
+  const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+}
+function closeTrainingSettings(){
+  state.viewingTrainingSettings = false;
+  render();
+}
+function openTemplatesList(){
+  state.viewingTemplatesList = true;
+  render();
+  const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+}
+function closeTemplatesList(){
+  state.viewingTemplatesList = false;
+  render();
+}
+function adjustDefaultSectionPct(key, delta){
+  sectionDefaultPcts[key] = Math.max(0, Math.min(100, (sectionDefaultPcts[key]||0) + delta));
+  render();
+}
+function resetDefaultSectionPcts(){
+  PHASES.forEach(p => { sectionDefaultPcts[p.key] = DEFAULT_SECTION_PCTS[p.key]; });
+  showToast('Reset to the recommended split');
+  render();
 }
 // PHASES in the order the coach has saved/dragged them into (state.phaseOrder) -- falls back to
 // declaration order for any key not yet present (e.g. before a template has ever been saved).
@@ -6010,20 +6191,25 @@ function orderedPhases(){
   return state.phaseOrder.map(k => PHASES.find(p => p.key===k)).filter(Boolean);
 }
 
-// Coaching guideline for how a session's time should roughly break down across phase groups.
-const SUGGESTED_SPLIT = [
-  {key:'warmupAthletic', label:'Warmup + Athletic', pct:25, color:'var(--sec-warmup)', textOn:'white'},
-  {key:'duels',          label:'Duels',             pct:15, color:'var(--sec-duels)',  textOn:'white'},
-  {key:'rondos',         label:'Rondos',             pct:20, color:'var(--sec-duels)',  textOn:'white'},
-  {key:'ssg',            label:'SSGs',               pct:20, color:'var(--sec-duels)',  textOn:'white'},
-  {key:'scrimmage',      label:'Scrimmage',          pct:20, color:'var(--sec-scrimmage)', textOn:'dark'},
+// Coaching guideline for how a session's time should roughly break down -- simplified from 6
+// equal-weight sections into 3 higher-level practice phases, easier for a coach to read at a
+// glance: Activate (Warmup + Athletic), Develop (Duels + Rondos + Small Sided Games), and Play
+// (Scrimmage). phaseKeys lists which PHASES entries roll up into each group (in display order);
+// sublabel is the human-readable "what's in this phase" line shown under each group's heading.
+// This is also the single source of truth for the PHASES-to-phase-group mapping --
+// computeGroupMinutes(), computeGroupMinutesFromPhases(), reviewPhaseGroups(), and
+// sessionDetailPhaseGroups() all derive from it, so the grouping is only ever defined once.
+const PHASE_GROUPS = [
+  {key:'activate', label:'Activate', pct:25, phaseKeys:['warmup','athletic'],    sublabel:'Warmup + Athletic',                  color:'var(--sec-warmup)',    textOn:'white', icon: ICONS.flame},
+  {key:'develop',  label:'Develop',  pct:50, phaseKeys:['duels','rondos','ssg'], sublabel:'Duels + Rondos + Small Sided Games', color:'var(--sec-duels)',     textOn:'white', icon: ICONS.circleArrows},
+  {key:'play',     label:'Play',     pct:25, phaseKeys:['scrimmage'],            sublabel:'Scrimmage',                          color:'var(--sec-scrimmage)', textOn:'dark',  icon: ICONS.trophy},
 ];
 /* Suggested-split minutes, rounded to the nearest 5m for a cleaner readout (e.g. ~11m -> 10m,
    ~19m -> 20m) without letting the rounded total run over the session's target length when
    avoidable -- trims 5m at a time from whichever phase group is currently furthest above its
    own raw (un-rounded) share until the rounded total fits, or every group has hit 0. */
 function suggestedSplitMinutes(target){
-  const raw = SUGGESTED_SPLIT.map(s => target * s.pct / 100);
+  const raw = PHASE_GROUPS.map(s => target * s.pct / 100);
   const rounded = raw.map(r => Math.max(0, Math.round(r/5)*5));
   let total = rounded.reduce((a,b)=>a+b,0);
   while(total > target){
@@ -6372,6 +6558,17 @@ function practiceProfileInterpretation(profile){
   if(secondary.length===1) return `Moderate ${secondary[0].label} demand across this session.`;
   return 'Light emphasis across all four training dimensions in this practice.';
 }
+/* Shared by both places "Training profile" appears (the live Review page and a saved session's
+   read-only Detail page) so the heading + its "i" explanation can't drift out of sync between
+   the two. */
+function trainingProfileHeadingHtml(){
+  return `<h4 style="display:flex;align-items:center;gap:6px;"><span>Training profile</span><button class="qp-info-btn" onclick="toggleTrainingProfileInfo()" title="What is the Training Profile?" aria-label="What is the Training Profile?">i</button></h4>`;
+}
+function trainingProfileInfoPanelHtml(){
+  return state.trainingProfileInfoOpen ? `<div class="qp-info-panel">Your Training Profile shows how much this practice leans into each of the four core dimensions of player development &mdash; Technical, Tactical, Physical, and Cognitive &mdash; based on the exercises in it. Use it to see at a glance which dimension might be getting the least attention.</div>` : '';
+}
+function toggleTrainingProfileInfo(){ state.trainingProfileInfoOpen = !state.trainingProfileInfoOpen; render(); }
+function toggleBalanceInfo(){ state.balanceInfoOpen = !state.balanceInfoOpen; render(); }
 
 /* ============ TRAINING-PROFILE-AWARE DISCOVERY & QUICK PICK ============ */
 /* Maps a tag VALUE (e.g. "Speed", "Possession", "Decision Making") to the single Training
@@ -6466,12 +6663,35 @@ function exerciseRankingScore(ex, rankDims, balanceDim){
    (closer to the practice's remaining time budget ranks higher among equally-scored
    candidates), never a hard cutoff -- an empty remaining budget just turns that tiebreaker
    off instead of producing zero recommendations. */
+/* Given a Training Dimension key, returns the PHASES key most associated with training it --
+   used only when Balance My Practice is opened without an active picking-phase context (i.e.
+   from the Review page, batch 55, rather than from inside "+ Add Exercise" for a specific
+   section as before). Reuses Quick Pick's own SECTION_PRIMARY_DIMENSIONS mapping (declared
+   further down this file) rather than inventing a second one -- prefers a section where the
+   dimension is that section's PRIMARY (first-listed) focus before falling back to any section
+   where it's only a secondary one, so e.g. a practice that's lightest on Physical routes to
+   Athletic (Physical is its sole/primary focus) rather than Duels (where Physical is only
+   secondary to Tactical). */
+function bestSectionKeyForDimension(dim){
+  const primary = PHASES.find(p => (SECTION_PRIMARY_DIMENSIONS[p.key]||[])[0] === dim);
+  if(primary) return primary.key;
+  const secondary = PHASES.find(p => (SECTION_PRIMARY_DIMENSIONS[p.key]||[]).includes(dim));
+  return secondary ? secondary.key : (PHASES[0]?.key || null);
+}
+/* Recomputes Balance My Practice's recommendation set and freezes it into state.balanceSnapshot,
+   exactly like refreshQuickPickResults() does for Quick Pick (batch 58) -- otherwise recomputing
+   fresh on every render (including right after tapping [+ Add]) could change which exercises are
+   shown, or even silently retarget which section/dimension is being balanced, mid-interaction. */
+function refreshBalanceResults(){
+  state.balanceSnapshot = computeBalanceRecommendations();
+}
 function computeBalanceRecommendations(){
   const dim = leastEmphasizedDimension();
-  if(!dim || !state.pickingPhase) return {dim:null, section:null, items:[]};
-  const phase = PHASES.find(p=>p.key===state.pickingPhase);
+  if(!dim) return {dim:null, section:null, phaseKey:null, items:[]};
+  const phaseKey = bestSectionKeyForDimension(dim);
+  const phase = PHASES.find(p=>p.key===phaseKey);
   const section = phase ? phase.section : state.sectionFilter;
-  if(!section) return {dim, section:null, items:[]};
+  if(!section) return {dim, section:null, phaseKey:null, items:[]};
 
   const alreadyIn = new Set();
   PHASES.forEach(p => state.phaseData[p.key].forEach(id=>alreadyIn.add(id)));
@@ -6480,8 +6700,9 @@ function computeBalanceRecommendations(){
   const {total} = currentTotalMinutes();
   const remaining = Math.max(0, state.targetDuration - total);
 
+  // Balance My Practice is Review-only (batch 55) -- there's no active Quick Filter concept
+  // on that page, so the pool is always the full section (no leftover-filter scoping).
   let pool = EXERCISES.filter(ex => ex.section === section);
-  if(state.quickFilterValue) pool = pool.filter(ex => allTagsFor(ex).includes(state.quickFilterValue));
 
   let candidates = pool.filter(ex => !alreadyIn.has(ex.id));
   if(candidates.length < 3) candidates = pool; // "exclude already-included when possible"
@@ -6498,7 +6719,7 @@ function computeBalanceRecommendations(){
       return a.ex.name.localeCompare(b.ex.name);
     });
 
-  return {dim, section, items: scored.slice(0,3).map(s=>s.ex)};
+  return {dim, section, phaseKey, items: scored.slice(0,3).map(s=>s.ex)};
 }
 /* Short, data-traceable "why this fits" sentence -- every clause maps directly to a real field
    on the exercise (its score for the dimension being balanced, and, when a Quick Filter is
@@ -6510,17 +6731,27 @@ function balanceRecommendationReason(ex, dim){
   const hasScore = score !== null;
   const tier = hasScore && score>=4 ? 'Strong ' : (hasScore && score>=3 ? 'Good ' : '');
   let sentence = hasScore ? `${tier}${label} Score (${score})` : `No ${label} Score recorded yet`;
-  if(state.quickFilterValue && allTagsFor(ex).includes(state.quickFilterValue)){
-    sentence += ` and matches ${state.quickFilterValue}`;
-  }
   return sentence + '.';
 }
-function openBalanceSheet(){ state.balanceSheetOpen = true; renderOverlay(); }
-function closeBalanceSheet(){ state.balanceSheetOpen = false; renderOverlay(); }
+function openBalanceSheet(){ state.balanceSheetOpen = true; state.quickPickOpen = false; state.quickPickCustomizeOpen = false; refreshBalanceResults(); renderOverlay(); }
+function closeBalanceSheet(){ state.balanceSheetOpen = false; state.balanceSnapshot = null; renderOverlay(); }
 function balanceAddExercise(id){
   const ex = exById(id);
-  const targetKey = state.pickingPhase;
-  if(!ex || !targetKey) return;
+  if(!ex) return;
+  // Toggle, exactly like quickPickAddExercise(): tapping an already-added card removes it again
+  // from wherever it's actually sitting, rather than only ever adding.
+  const currentKey = findPhaseKeyContaining(id);
+  if(currentKey){
+    removeFromPhase(currentKey, id);
+    showToast(`Removed "${ex.name}" from ${phaseLabel(currentKey)}`);
+    renderOverlay();
+    return;
+  }
+  // Add to the section frozen in state.balanceSnapshot at open time, not a freshly-recomputed
+  // one -- otherwise adding this exercise could shift the practice's least-emphasized dimension
+  // and silently redirect the very next Add to a different section mid-interaction.
+  const targetKey = (state.balanceSnapshot && state.balanceSnapshot.phaseKey) || bestSectionKeyForDimension(leastEmphasizedDimension());
+  if(!targetKey) return;
   addToPhase(targetKey, id);
   showToast(`Added "${ex.name}" to ${phaseLabel(targetKey)}`);
   renderOverlay(); // keep the sheet open, just refresh each card's Added state
@@ -6558,16 +6789,19 @@ function balanceCardHtml(ex, i, dim){
   </div>`;
 }
 function renderBalanceSheetHtml(){
-  const {dim, section, items} = computeBalanceRecommendations();
+  const {dim, section, items} = state.balanceSnapshot || computeBalanceRecommendations();
   const dimMeta = dim ? TRAINING_DIMENSIONS.find(d=>d.key===dim) : null;
   const label = dimMeta ? dimMeta.label : '';
   return `
   <div class="sheet-backdrop" onclick="closeBalanceSheet()"></div>
   <div class="sheet balance-sheet">
     <div class="sheet-handle"></div>
-    <h3 class="balance-sheet-title">${ICONS.target}<span>Balance My Practice</span></h3>
+    <div class="qp-sheet-header">
+      <h3 class="balance-sheet-title">${ICONS.target}<span>Balance My Practice</span></h3>
+      <button class="qp-close-btn" onclick="closeBalanceSheet()" title="Close" aria-label="Close">${ICONS.x}</button>
+    </div>
     ${dim
-      ? `<div class="balance-sub">This practice is currently lightest on <b>${label}</b>${state.quickFilterValue?` &mdash; showing ${escHtml(state.quickFilterValue)} exercises that could help`:' &mdash; here are a few exercises that could help'}.</div>`
+      ? `<div class="balance-sub">This practice is currently lightest on <b>${label}</b> &mdash; here are a few exercises that could help.</div>`
       : `<div class="balance-sub">Add a couple of exercises first so there's a practice profile to balance against.</div>`}
     ${(section && items.length) ? `<div class="balance-target-heading">${balanceTargetHeadingText(section, items.length)}</div>` : ''}
     ${items.length ? items.map((ex,i) => balanceCardHtml(ex, i, dim)).join('') : (dim ? `<div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>No matching ${section?escHtml(section)+' ':''}exercises found right now.</p></div>` : '')}
@@ -6585,6 +6819,341 @@ function balanceTargetHeadingText(section, count){
   const phrase = countWords[count] || `one of these ${count} exercises`;
   return `Add ${phrase} to ${escHtml(section)}`;
 }
+
+/* ============ QUICK PICK ============
+   "Give me 3 good exercises for this part of my practice" -- a fast, section-aware, one-click
+   alternative to browsing the full list, living entirely inside the existing "+ Add Exercise"
+   flow (never a separate page, never a bottom-nav item, never a second "build by training
+   intent" workflow). Deliberately distinct from two other existing features it can look similar
+   to at a glance:
+     - Filters = "I want to precisely search the database" (exhaustive, multi-criteria, coach
+       reads every result). Quick Pick never duplicates that interface -- it always returns
+       exactly 3 (or fewer, if that's really all there is) and stays a single tap to use.
+     - Balance My Practice = "which ONE dimension is this practice lightest on, and what could
+       help with specifically that" (always ranks by the single most under-represented
+       dimension). Quick Pick's primary signal is instead "what does THIS SECTION typically
+       train" (see SECTION_PRIMARY_DIMENSIONS below) -- the practice's lightest dimension is only
+       ever a secondary nudge here, exactly the same reduced weight leastEmphasizedDimension()
+       already gets from exerciseRankingScore() elsewhere in this file.
+   Fully deterministic -- no LLM, no randomness. Every ranking factor below reads a real field
+   already on the exercise record or the current practice/session state, so any result can be
+   traced back to quickPickReason() below, which only ever describes data that's actually true of
+   that exercise. */
+
+// Which Training Dimension score(s) a section's exercises are chosen for -- Quick Pick's PRIMARY
+// ranking signal for that section. Not derived from the data (the repository has no "this section
+// trains this dimension" field) -- a fixed coaching judgment call, matching the two examples given
+// explicitly (Athletic -> Physical; Rondos -> Tactical + Cognitive) and extended to the remaining
+// four sections with the same reasoning: Warmup is technical ball-mastery work; Duels are 1v1
+// contests (tactical decision-making expressed physically); SSGs and Scrimmage are game-realistic
+// small-sided play (tactical primary, physical secondary). A coach can always override this for one
+// Quick Pick via Customize > Training Dimension.
+const SECTION_PRIMARY_DIMENSIONS = {
+  warmup:    ['technicalScore'],
+  athletic:  ['physicalScore'],
+  duels:     ['tacticalScore','physicalScore'],
+  rondos:    ['tacticalScore','cognitiveScore'],
+  ssg:       ['tacticalScore','physicalScore'],
+  scrimmage: ['tacticalScore','physicalScore'],
+};
+/* This section's suggested minutes, from the coach's own Settings > Training Session Default
+   Settings split (sectionDefaultPcts, batch 51) applied to the current session's target length --
+   the closest thing this app already tracks to a per-section time budget, reused rather than
+   inventing a new one. Never a hard cap (see quickPickScore()'s soft duration-fit bonus below). */
+function sectionPlannedMinutes(phaseKey){
+  const pct = sectionDefaultPcts[phaseKey] || 0;
+  return Math.max(5, Math.round(state.targetDuration * pct / 100));
+}
+function sectionRemainingMinutes(phaseKey){
+  const used = (state.phaseData[phaseKey]||[]).reduce((a,id)=>a+(exById(id)?.duration||10),0);
+  return Math.max(0, sectionPlannedMinutes(phaseKey) - used);
+}
+// What Quick Pick shows as "SECTION • N MIN" and soft-prioritizes duration around -- remaining
+// budget for this section if there's any left, otherwise its full planned share (never 0/blank).
+function quickPickTargetMinutes(phaseKey){
+  return sectionRemainingMinutes(phaseKey) || sectionPlannedMinutes(phaseKey);
+}
+// Distinct Format Tag values that actually appear on exercises in one section, in canonical Valid
+// Values order (same derivation as filterValueOptions(), just pre-scoped to a section) -- this is
+// how Duels naturally offers 1v1/2v1/2v2 and Rondos naturally offers 4v2/5v2/6v3 in Customize,
+// without a hardcoded per-section list that could drift from the real repository.
+function formatOptionsForSection(section){
+  const canonical = state.validValues['Format Tags'] || [];
+  const used = new Set();
+  EXERCISES.filter(ex => ex.section === section).forEach(ex => (ex.formatTags||[]).forEach(v => { if(v) used.add(v); }));
+  const ordered = canonical.filter(v => used.has(v));
+  const extra = [...used].filter(v => !canonical.includes(v)).sort((a,b)=>a.localeCompare(b));
+  return [...ordered, ...extra];
+}
+
+function openQuickPick(){
+  // Always starts fresh -- "immediately return exactly 3 recommendations," never a leftover
+  // Customize choice from a previous phase or a previous open.
+  state.quickPickCustom = {focus:null, dimension:null, time:null, format:null};
+  state.quickPickCustomizeOpen = false;
+  state.quickPickInfoOpen = false;
+  state.quickPickOpen = true;
+  state.balanceSheetOpen = false;
+  state.filtersOpen = false;
+  refreshQuickPickResults();
+  renderOverlay();
+}
+function closeQuickPick(){
+  state.quickPickOpen = false;
+  state.quickPickCustomizeOpen = false;
+  state.quickPickInfoOpen = false;
+  state.quickPickSnapshot = null;
+  renderOverlay();
+}
+function toggleQuickPickInfo(){ state.quickPickInfoOpen = !state.quickPickInfoOpen; renderOverlay(); }
+function openQuickPickCustomize(){ state.quickPickCustomizeOpen = true; renderOverlay(); }
+function closeQuickPickCustomize(){ state.quickPickCustomizeOpen = false; renderOverlay(); }
+// Tapping an already-active chip again clears it back to "Any" -- same toggle feel as the rest of
+// this app's single-select chip rows (e.g. Quick Filters' setQuickFilter()).
+function setQuickPickCustomVal(field, value){
+  state.quickPickCustom[field] = (state.quickPickCustom[field] === value) ? null : value;
+  renderOverlay();
+}
+function resetQuickPickCustomize(){
+  state.quickPickCustom = {focus:null, dimension:null, time:null, format:null};
+  renderOverlay();
+}
+function applyQuickPickCustomize(){
+  state.quickPickCustomizeOpen = false;
+  refreshQuickPickResults();
+  renderOverlay();
+}
+function viewAllFromQuickPick(){
+  state.quickPickOpen = false;
+  state.quickPickCustomizeOpen = false;
+  state.quickPickSnapshot = null;
+  state.quickFilterValue = null; // "view ALL" -- clear any leftover Quick Filter chip too
+  render();
+}
+function quickPickAddExercise(id){
+  const ex = exById(id);
+  if(!ex) return;
+  // Toggle: tapping an already-added card's button removes it again, mirroring quickAdd()'s
+  // own add-or-remove behavior everywhere else in the app -- removal always targets wherever
+  // the exercise is actually sitting, not just state.pickingPhase (it may have been added to a
+  // different phase since).
+  const currentKey = findPhaseKeyContaining(id);
+  if(currentKey){
+    removeFromPhase(currentKey, id);
+    showToast(`Removed "${ex.name}" from ${phaseLabel(currentKey)}`);
+    renderOverlay();
+    return;
+  }
+  const targetKey = state.pickingPhase;
+  if(!targetKey) return;
+  addToPhase(targetKey, id);
+  showToast(`Added "${ex.name}" to ${phaseLabel(targetKey)}`);
+  renderOverlay(); // keep the sheet open, just refresh this card's Added state
+}
+/* Combined ranking score for one candidate exercise. Same weight convention as the existing
+   exerciseRankingScore(): an explicit signal (this section's primary dimension(s), or the coach's
+   own Customize > Training Dimension override) counts x3 per score point; the softer practice-
+   balance nudge counts x1, and only when it isn't already one of the primary dimensions (so it's
+   never double-counted). A Customize Focus/Format tag match and a close duration fit each add a
+   smaller, capped bonus -- present, but never able to outrank a real Training Dimension score
+   advantage on their own. */
+function quickPickScore(ex, ctx){
+  let score = 0;
+  ctx.primaryDims.forEach(k => { const v = clampScore(ex[k]); if(v !== null) score += v*3; });
+  if(ctx.balanceDim && !ctx.primaryDims.includes(ctx.balanceDim)){
+    const v = clampScore(ex[ctx.balanceDim]);
+    if(v !== null) score += v*1;
+  }
+  if(ctx.focusTag && allTagsFor(ex).includes(ctx.focusTag)) score += 4;
+  if(ctx.formatTag && (ex.formatTags||[]).includes(ctx.formatTag)) score += 4;
+  if(ctx.targetMin > 0){
+    const diff = Math.abs((ex.duration||10) - ctx.targetMin);
+    score += Math.max(0, 2 - diff/5); // full +2 at an exact match, fading to 0 by ~10min away
+  }
+  return score;
+}
+/* Short, data-traceable "why this fits" sentence -- every clause maps to a real field on the
+   exercise (its own Training Dimension score, an actual tag it carries, its actual duration),
+   same discipline as the existing balanceRecommendationReason(). Never invents a benefit the
+   exercise's own tags/scores don't support. */
+function quickPickReason(ex, ctx){
+  const dimLabel = k => (TRAINING_DIMENSIONS.find(d=>d.key===k)||{}).label || '';
+  const clauses = [];
+  const primaryScored = ctx.primaryDims
+    .map(k => ({k, v: clampScore(ex[k])}))
+    .filter(d => d.v !== null)
+    .sort((a,b) => b.v-a.v);
+  if(primaryScored.length && primaryScored[0].v >= 4){
+    clauses.push(`${primaryScored[0].v>=5?'Very high':'High'} ${dimLabel(primaryScored[0].k)} Score (${primaryScored[0].v})`);
+  } else if(primaryScored.length && primaryScored[0].v >= 3){
+    clauses.push(`Good ${dimLabel(primaryScored[0].k)} Score (${primaryScored[0].v})`);
+  }
+  if(ctx.focusTag && allTagsFor(ex).includes(ctx.focusTag)) clauses.push(`matches ${ctx.focusTag}`);
+  if(ctx.formatTag && (ex.formatTags||[]).includes(ctx.formatTag) && ctx.formatTag !== ctx.focusTag) clauses.push(`matches ${ctx.formatTag}`);
+  if(ctx.balanceDim && !ctx.primaryDims.includes(ctx.balanceDim)){
+    const v = clampScore(ex[ctx.balanceDim]);
+    if(v !== null && v >= 3) clauses.push(`helps build up ${dimLabel(ctx.balanceDim)}, currently lightest in this practice`);
+  }
+  const dur = ex.duration || 10;
+  if(ctx.targetMin > 0 && Math.abs(dur-ctx.targetMin) <= 2) clauses.push(`a ${dur}-minute fit for the time available`);
+  if(!clauses.length){
+    // Fallback stays grounded in something real rather than a generic platitude.
+    const best = TRAINING_DIMENSIONS.map(d=>({label:d.label, v:clampScore(ex[d.key])})).filter(d=>d.v!==null).sort((a,b)=>b.v-a.v)[0];
+    clauses.push(best ? `${best.label} Score of ${best.v}` : `a fit for ${ex.section}`);
+  }
+  // Cap at 2 clauses -- "Keep it concise," even when 3-4 signals all genuinely applied.
+  const sentence = clauses.slice(0,2).join(' and ');
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+}
+/* Up to 3 recommendations for the section currently being picked for -- always section-scoped
+   (rule 4: only ever the current section's own exercises), applies the coach's optional Customize
+   choices if any are active, prefers exercises not already in the practice ("when possible" --
+   falls back to including them rather than starving the list below 3, exactly like
+   computeBalanceRecommendations() already does), and ranks the remainder by quickPickScore(). */
+/* Recomputes Quick Pick's recommendation set and freezes it into state.quickPickSnapshot.
+   Called only when the sheet opens or Customize is applied (a genuine change of criteria) --
+   NEVER on a plain re-render, so tapping [+ Add] on a result doesn't cause computeQuickPicks()'s
+   own "exclude already-in-practice when possible" rule to immediately kick the just-added
+   exercise out of its own card and swap in a 4th suggestion. */
+function refreshQuickPickResults(){
+  state.quickPickSnapshot = computeQuickPicks();
+}
+function computeQuickPicks(){
+  const phaseKey = state.pickingPhase;
+  const phase = PHASES.find(p=>p.key===phaseKey);
+  if(!phase) return {section:null, targetMin:0, primaryDims:[], balanceDim:null, items:[], poolSize:0};
+  const section = phase.section;
+  const c = state.quickPickCustom;
+  const primaryDims = c.dimension ? [c.dimension] : (SECTION_PRIMARY_DIMENSIONS[phaseKey] || []);
+  const balanceDim = leastEmphasizedDimension();
+  const targetMin = quickPickTargetMinutes(phaseKey);
+
+  let pool = EXERCISES.filter(ex => ex.section === section);
+  if(c.focus) pool = pool.filter(ex => allTagsFor(ex).includes(c.focus));
+  if(c.format) pool = pool.filter(ex => (ex.formatTags||[]).includes(c.format));
+  if(c.time){
+    // Same 3-bucket convention as matchesFilters()' own Duration filter: <=5, <=10, else "15+".
+    pool = pool.filter(ex => {
+      const d = ex.duration||10;
+      const bucket = d<=5 ? '5' : (d<=10 ? '10' : '15');
+      return bucket === c.time;
+    });
+  }
+
+  const alreadyIn = new Set();
+  PHASES.forEach(p => state.phaseData[p.key].forEach(id=>alreadyIn.add(id)));
+  state.extraSections.forEach(s => s.exercises.forEach(id=>alreadyIn.add(id)));
+
+  let candidates = pool.filter(ex => !alreadyIn.has(ex.id));
+  if(candidates.length < 3) candidates = pool; // prefer unused, but don't starve the list below 3
+
+  const ctx = {primaryDims, balanceDim, targetMin, focusTag: c.focus, formatTag: c.format};
+  const scored = candidates
+    .map(ex => ({ex, score: quickPickScore(ex, ctx)}))
+    .sort((a,b) => b.score-a.score || a.ex.name.localeCompare(b.ex.name));
+
+  return {section, targetMin, primaryDims, balanceDim, items: scored.slice(0,3).map(s=>s.ex), poolSize: pool.length};
+}
+function quickPickCardHtml(ex, i, ctx){
+  const inPhase = isExerciseInAnyPhase(ex.id);
+  // Pin whichever dimension(s) actually drove this recommendation into the displayed scores
+  // first (same "never contradict the reason text" rule balanceCardHtml() already follows), then
+  // fill any remaining slot with the exercise's next-strongest other dimension for context.
+  const pinnedKeys = new Set(ctx.primaryDims);
+  const pinned = ctx.primaryDims
+    .map(k => ({label: (TRAINING_DIMENSIONS.find(d=>d.key===k)||{}).label, score: clampScore(ex[k])}))
+    .filter(d => d.score !== null);
+  const others = TRAINING_DIMENSIONS
+    .filter(d => !pinnedKeys.has(d.key))
+    .map(d => ({label:d.label, score:clampScore(ex[d.key])}))
+    .filter(d => d.score !== null)
+    .sort((a,b) => b.score-a.score);
+  const topScores = [...pinned, ...others].slice(0,2);
+  const tags = allTagsFor(ex).slice(0,3);
+  return `
+  <div class="balance-card">
+    <div class="balance-card-head">
+      <div class="balance-card-num">${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="balance-card-name" onclick="openDetail('${ex.id}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
+        <div class="balance-card-meta">${ex.duration||10} min</div>
+      </div>
+      <button class="balance-add-btn ${inPhase?'added':''}" onclick="quickPickAddExercise('${ex.id}')">${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}</button>
+    </div>
+    ${topScores.length ? `<div class="balance-card-scores">${topScores.map(d=>`<span>${d.label} <b>${d.score}</b></span>`).join('')}</div>` : ''}
+    ${tags.length ? `<div class="tag-wrap" style="margin-top:6px;">${tags.map(t=>`<span class="tagpill">${escHtml(t)}</span>`).join('')}</div>` : ''}
+    <div class="balance-card-reason">"${escHtml(quickPickReason(ex, ctx))}"</div>
+  </div>`;
+}
+function renderQuickPickCustomizeHtml(){
+  const phaseKey = state.pickingPhase;
+  const phase = PHASES.find(p=>p.key===phaseKey);
+  const c = state.quickPickCustom;
+  const focusValues = QUICK_FILTERS_BY_PHASE[phaseKey] || [];
+  const formatValues = phase ? formatOptionsForSection(phase.section) : [];
+  return `
+  <div class="sheet-backdrop" onclick="closeQuickPickCustomize()"></div>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="back-pill-flat" style="margin-bottom:4px;" onclick="closeQuickPickCustomize()">${ICONS.back} Back to Quick Picks</button>
+    <h3>Focus</h3>
+    <div class="optrow">
+      <button class="opt ${!c.focus?'active':''}" onclick="setQuickPickCustomVal('focus', null)">Any</button>
+      ${focusValues.map(v => `<button class="opt ${c.focus===v?'active':''}" onclick="setQuickPickCustomVal('focus','${v}')">${escHtml(v)}</button>`).join('')}
+    </div>
+    <h3>Training Dimension</h3>
+    <div class="optrow">
+      <button class="opt ${!c.dimension?'active':''}" onclick="setQuickPickCustomVal('dimension', null)">Any</button>
+      ${TRAINING_DIMENSIONS.map(d => `<button class="opt ${c.dimension===d.key?'active':''}" onclick="setQuickPickCustomVal('dimension','${d.key}')">${d.label}</button>`).join('')}
+    </div>
+    <h3>Time</h3>
+    <div class="optrow">
+      ${['5','10','15'].map(t => `<button class="opt ${c.time===t?'active':''}" onclick="setQuickPickCustomVal('time','${t}')">${t==='15'?'15+':t} min</button>`).join('')}
+    </div>
+    ${formatValues.length ? `
+    <h3>Format</h3>
+    <div class="optrow">
+      <button class="opt ${!c.format?'active':''}" onclick="setQuickPickCustomVal('format', null)">Any</button>
+      ${formatValues.map(v => `<button class="opt ${c.format===v?'active':''}" onclick="setQuickPickCustomVal('format','${v}')">${escHtml(v)}</button>`).join('')}
+    </div>` : ''}
+    <div class="sheet-footer">
+      <button class="btn btn-ghost" onclick="resetQuickPickCustomize()">Reset</button>
+      <button class="btn btn-primary" onclick="applyQuickPickCustomize()">Show 3 Picks</button>
+    </div>
+  </div>`;
+}
+function renderQuickPickSheetHtml(){
+  if(state.quickPickCustomizeOpen) return renderQuickPickCustomizeHtml();
+  const phaseKey = state.pickingPhase;
+  const phase = PHASES.find(p=>p.key===phaseKey);
+  const result = state.quickPickSnapshot || computeQuickPicks(); // frozen at open/Customize-apply (batch 58) -- see refreshQuickPickResults()
+  const label = phase ? phase.label : '';
+  const ctx = {primaryDims: result.primaryDims, balanceDim: result.balanceDim, targetMin: result.targetMin, focusTag: state.quickPickCustom.focus, formatTag: state.quickPickCustom.format};
+  const n = result.items.length;
+  return `
+  <div class="sheet-backdrop" onclick="closeQuickPick()"></div>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="qp-sheet-header">
+      <h3 class="balance-sheet-title">${ICONS.dice}<span>Quick Picks</span></h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="qp-info-btn" onclick="toggleQuickPickInfo()" title="What is Quick Pick?" aria-label="What is Quick Pick?">i</button>
+        <button class="qp-close-btn" onclick="closeQuickPick()" title="Close" aria-label="Close">${ICONS.x}</button>
+      </div>
+    </div>
+    ${state.quickPickInfoOpen ? `<div class="qp-info-panel">Quick Pick instantly suggests exercises that fit this section of your practice, based on your session length and this practice's training needs. It's a fast shortcut alongside the full exercise list below &mdash; you can always browse everything yourself or fine-tune these suggestions with Customize.</div>` : ''}
+    ${n ? `<div class="balance-sub qp-sub-dark">Here ${n===1?'is':'are'} ${n} suggested exercise${n===1?'':'s'} based on the ${escHtml(label)} section, targeting about ${result.targetMin} min.</div>` : ''}
+    ${n ? result.items.map((ex,i) => quickPickCardHtml(ex, i, ctx)).join('') : `
+    <div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>Couldn't find a strong match.</p></div>`}
+    ${(n>0 && n<3) ? `<div class="qp-fewer-note">Only ${n} strong match${n===1?'':'es'} right now${(state.quickPickCustom.focus||state.quickPickCustom.format||state.quickPickCustom.time||state.quickPickCustom.dimension)?' for your Customize choices':''} -- showing what's available.</div>` : ''}
+    <div class="sheet-footer" style="flex-direction:column;gap:8px;">
+      ${n ? `<button class="btn btn-ghost qp-customize-btn" style="width:100%;" onclick="openQuickPickCustomize()">${ICONS.filter}<span>Customize</span></button>` : ''}
+      <button class="btn ${n?'btn-ghost qp-viewall-btn':'btn-primary'}" style="width:100%;" onclick="viewAllFromQuickPick()">View all ${escHtml(label)} exercises</button>
+      <button class="btn btn-primary" style="width:100%;" onclick="closeQuickPick()">Done</button>
+    </div>
+  </div>`;
+}
+
 function nextExerciseId(){
   let max = 0;
   EXERCISES.forEach(e => { const m = /EX(\d+)/.exec(e.id); if(m) max = Math.max(max, parseInt(m[1],10)); });
@@ -6642,6 +7211,15 @@ const state = {
   sectionFilter: null,        // single active quick-filter chip
   filtersOpen: false,
   balanceSheetOpen: false,   // whether the "Balance My Practice" recommendation sheet is showing
+  quickPickOpen: false,           // whether the Quick Pick results sheet is showing (+ Add Exercise flow)
+  quickPickCustomizeOpen: false,  // whether Quick Pick's Customize refinement panel is showing, instead of results
+  quickPickCustom: {focus:null, dimension:null, time:null, format:null}, // coach's optional Quick Pick refinements -- reset fresh every time Quick Pick opens; intentionally separate from state.filters, since Quick Pick is not Filters (see QUICK PICK section below)
+  quickPickSnapshot: null,        // the 3 (or fewer) recommendations frozen at open/Customize-apply time -- NOT recomputed on every render, so tapping [+ Add] on a card can't cause it to vanish and get replaced (batch 58)
+  quickPickInfoOpen: false,       // whether the "i" info explanation under the Quick Picks title is expanded
+  showAddedInPractice: false,     // whether the "N in [Section]" already-added toggle (batch 60) is expanded -- always reset false on entering/switching a picking phase so every section starts collapsed
+  balanceSnapshot: null,          // Balance My Practice's frozen recommendation set (batch 63) -- see refreshBalanceResults(), mirrors state.quickPickSnapshot
+  balanceInfoOpen: false,         // whether the "i" explanation next to the Balance My Practice button is expanded
+  trainingProfileInfoOpen: false, // whether the "i" explanation next to the "Training profile" heading is expanded
   filters: { durations: new Set(), tags: new Set(), bookmarkedOnly: false, difficulty: new Set(), focusCategories: new Set(), location: new Set() },
   bookmarks: new Set(),
   targetDuration: 75,
@@ -6654,6 +7232,8 @@ const state = {
   validValues: VALID_VALUES_FALLBACK,   // category -> [values], from the spreadsheet's "Valid Values" tab -- overwritten by a live sync
   validValuesSource: 'unknown',         // 'unknown' | 'live' | 'offline' -- only synced lazily, the first time Settings > Tag Valid Values is opened
   viewingValidValues: false,            // whether Settings is showing the Tag Valid Values sub-page
+  viewingTrainingSettings: false,       // whether Settings is showing the Training Session Settings sub-page
+  viewingTemplatesList: false,          // whether Settings is showing the Training Session Templates (practice-template library) sub-page
   pendingQuickAdd: null,      // {id, targetKey} awaiting the in-app "start a new session?" confirm sheet (native confirm() is silently swallowed in iOS home-screen mode)
   phaseData: Object.fromEntries(PHASES.map(p => [p.key, []])), // key -> [exerciseId,...]
   extraSections: [],          // user-added custom sections {key,label,exercises:[]}
@@ -6703,7 +7283,6 @@ function renderTopbar(){
       </div>
     </div>
     <div class="topbar-icons">
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle light/dark theme">${document.documentElement.getAttribute('data-theme')==='dark'?ICONS.sun:ICONS.moon}</button>
       <button class="icon-btn" onclick="openSearch()" title="Search">${ICONS.search}</button>
       <button class="icon-btn" style="${bmActive?'background:var(--cone);color:var(--pitch-dark);':''}" onclick="openBookmarks()" title="Bookmarks">${bmActive?ICONS.bookmarkFilled:ICONS.bookmark}</button>
       <div class="avatar" title="Coach profile">TA</div>
@@ -7005,6 +7584,50 @@ function renderSettings(){
       </div>`).join('')}
     </div>`;
   }
+  if(state.viewingTrainingSettings){
+    const sum = defaultSectionPctSum();
+    return `
+    <div class="section-pad">
+      <button class="back-pill-flat" onclick="closeTrainingSettings()">${ICONS.back} Back to Settings</button>
+      <div class="eyebrow" style="margin-top:14px;">Settings</div>
+      <div class="sh" style="margin-top:2px;"><h2>Training Session Settings</h2></div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">This is the starting percentage split for a brand-new practice template -- including the built-in Outdoor and Indoor ones. Use the arrows to fine-tune each phase. Editing a template you've already saved won't change here, and changing this won't retroactively update templates you've already customized.</div>
+      ${PHASE_GROUPS.map(group => {
+        const groupPct = group.phaseKeys.reduce((a,k)=>a+(sectionDefaultPcts[k]||0),0);
+        return `
+        <div class="tsg-card">
+          <div class="tsg-card-head">
+            <div class="tsg-card-icon" style="background:${group.color};color:${group.textOn==='dark'?'var(--pitch-dark)':'white'};">${group.icon}</div>
+            <div class="tsg-card-headtext">
+              <div class="tsg-card-title">${group.label}</div>
+              <div class="tsg-card-sub">${group.sublabel}</div>
+            </div>
+            <div class="tsg-card-pctbadge">${groupPct}%</div>
+          </div>
+          <div class="tsg-phase-rows">
+            ${group.phaseKeys.map(key => {
+              const phase = PHASES.find(p=>p.key===key);
+              const val = sectionDefaultPcts[key]||0;
+              return `
+              <div class="tsg-phase-row">
+                <div class="tsg-phase-label">${phase.label}</div>
+                <div class="tsg-stepper">
+                  <button class="tsg-chev" onclick="adjustDefaultSectionPct('${key}',1)" title="Increase ${escAttr(phase.label)}" ${val>=100?'disabled':''}>${ICONS.chevronUp}</button>
+                  <div class="tsg-pct-val">${val}%</div>
+                  <button class="tsg-chev" onclick="adjustDefaultSectionPct('${key}',-1)" title="Decrease ${escAttr(phase.label)}" ${val<=0?'disabled':''}>${ICONS.chevronDown}</button>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="tmpl-sum-row ${sum===100?'ok':'bad'}" style="margin-top:6px;">
+        <span>${sum}% of 100% allocated</span>
+        <span class="tmpl-sum-warn">${sum===100 ? 'Balanced' : (sum<100?'Add '+(100-sum)+'% to balance':'Remove '+(sum-100)+'% to balance')}</span>
+      </div>
+      <button class="addsection-btn" style="margin-top:10px;" onclick="resetDefaultSectionPcts()">${ICONS.circleArrows} Reset to recommended split</button>
+    </div>`;
+  }
   if(state.editingTemplateId){
     const id = state.editingTemplateId;
     const tmpl = getTemplate(id);
@@ -7036,7 +7659,7 @@ function renderSettings(){
             : `<button class="dtarget compact ${isTmplDurCustom?'active':''}" onclick="toggleTemplateDurationEdit('${id}')">${isTmplDurCustom?tmpl.duration:'+'}</button>`}
         </div>
       </div>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Set how much of this practice each section should take up. Suggested split: <b>25% Athletic-based training</b> (Warmup + Athletic combined) &middot; 15% Duels &middot; 20% Rondos &middot; 20% Small Sided Games (SSG) &middot; 20% Scrimmage. Long-press the grip and drag to reorder a section (Warmup always stays first).</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Set how much of this practice each section should take up. Suggested split: <b>25% Athletic-based training</b> (Warmup + Athletic combined) &middot; 10% Duels &middot; 20% Rondos &middot; 20% Small Sided Games (SSG) &middot; 25% Scrimmage. Long-press the grip and drag to reorder a section (Warmup always stays first).</div>
 
       <div class="tmpl-list">
         ${tmpl.sections.map(s=>{
@@ -7056,9 +7679,9 @@ function renderSettings(){
                 : `<input class="extra-box-title-input" style="font-size:13.5px;" value="${escAttr(s.label)}" onblur="renameTemplateCustomSection('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`}
             </div>
             <div class="tmpl-row-pct">
-              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',-1)" ${isOff?'disabled':''}>${ICONS.minus}</button>
+              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',1)" ${isOff?'disabled':''} title="Increase ${escAttr(s.label)}">${ICONS.chevronUp}</button>
               <input class="tmpl-pct-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${s.pct}" ${isOff?'disabled':''} onblur="setTemplatePct('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">%
-              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',1)" ${isOff?'disabled':''}>${ICONS.plus}</button>
+              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',-1)" ${isOff?'disabled':''} title="Decrease ${escAttr(s.label)}">${ICONS.chevronDown}</button>
             </div>
             ${s.standard
               ? `<button class="tmpl-toggle" onclick="toggleTemplateSection('${id}','${s.key}')" title="${isOff?'Include':'Exclude'} ${escAttr(s.label)}">${isOff?ICONS.plus:ICONS.minus}</button>`
@@ -7074,23 +7697,35 @@ function renderSettings(){
         <span class="tmpl-sum-warn">${sum===100 ? 'Ready to save' : (sum<100?'Add '+(100-sum)+'% to save':'Remove '+(sum-100)+'% to save')}</span>
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:10px;" ${sum!==100?'disabled':''} onclick="saveTemplate('${id}')">Save Template</button>
-      <button class="discard-session-btn" style="margin-top:10px;" onclick="requestDeleteTemplate('${id}')">${ICONS.trash} Delete this template</button>
+      <button class="discard-session-btn tmpl-del-btn" style="margin-top:10px;" onclick="requestDeleteTemplate('${id}')">${ICONS.trash} Delete this template</button>
+    </div>`;
+  }
+
+  if(state.viewingTemplatesList){
+    return `
+    <div class="section-pad">
+      <button class="back-pill-flat" onclick="closeTemplatesList()">${ICONS.back} Back to Settings</button>
+      <div class="eyebrow" style="margin-top:14px;">Settings</div>
+      <div class="sh" style="margin-top:2px;"><h2>Training Session Templates</h2></div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Save your own section/percentage splits, name as many as you want, and load one from the Build page whenever you start a new session. Templates live on this device only -- each coach saves their own.</div>
+      <div class="tmpl-lib-list">
+        ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, false)).join('') : `<div class="build-ex-empty">No templates saved yet</div>`}
+      </div>
+      <button class="addsection-btn" style="margin-top:10px;" onclick="createTemplate()">${ICONS.plus} New template</button>
     </div>`;
   }
 
   return `
   <div class="section-pad">
     <div class="eyebrow">Settings</div>
-    <div class="sh" style="margin-top:2px;"><h2>Practice Templates</h2></div>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Save your own section/percentage splits, name as many as you want, and load one from the Build page whenever you start a new session. Templates live on this device only -- each coach saves their own.</div>
-    <div class="tmpl-lib-list">
-      ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, false)).join('') : `<div class="build-ex-empty">No templates saved yet</div>`}
+    <div class="sh" style="margin-top:2px;"><h2>Settings</h2></div>
+    <button class="addsection-btn" onclick="openTrainingSettings()">${ICONS.gear} Training Session Default Settings</button>
+    <button class="addsection-btn" onclick="openTemplatesList()">${ICONS.clipboard} Training Session Templates</button>
+    <button class="addsection-btn" onclick="openValidValues()">${ICONS.list} View all Tags</button>
+    <div class="settings-toggle-row">
+      <span class="stl-label">${ICONS.moon}<span>Dark Mode</span></span>
+      <button class="switch ${document.documentElement.getAttribute('data-theme')==='dark'?'on':''}" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode"><span class="dot"></span></button>
     </div>
-    <button class="addsection-btn" style="margin-top:10px;" onclick="createTemplate()">${ICONS.plus} New template</button>
-
-    <div class="divider" style="margin:26px 0;"></div>
-    <div class="sh" style="margin-top:0;"><h2>More settings</h2></div>
-    <button class="addsection-btn" onclick="openValidValues()">${ICONS.list} Tag Valid Values</button>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-top:10px;">More configuration options are coming soon.</div>
   </div>`;
 }
@@ -7216,6 +7851,11 @@ function renderExercises(){
   // Quick Filters only apply to the guided "+ Add Exercise" picking flow -- general library
   // browsing (pickingLabel null) keeps the original All/Warmup/.../Scrimmage chip row untouched.
   const quickFilterValues = state.pickingPhase ? (QUICK_FILTERS_BY_PHASE[state.pickingPhase] || []) : null;
+  // Section's total exercise count regardless of any active search/Quick Filter narrowing -- used
+  // only by the compact section heading below, so it always reads e.g. "18 exercises" for the
+  // section as a whole (the separate ex-count-line further down still reflects the narrowed list).
+  const pickingPhaseObj = state.pickingPhase ? PHASES.find(p=>p.key===state.pickingPhase) : null;
+  const sectionTotalCount = pickingPhaseObj ? EXERCISES.filter(e=>e.section===pickingPhaseObj.section).length : 0;
 
   return `
   <div class="section-pad" style="padding-bottom:4px;">
@@ -7226,28 +7866,38 @@ function renderExercises(){
         <button onclick="clearBookmarkFilter()">Show all</button>
       </div>` : ''}
 
-    ${pickingLabel ? `<div class="sh" style="margin-top:0;"><h2>Add to ${escHtml(pickingLabel)}</h2></div>` : ''}
+    ${pickingLabel ? `<div class="ex-section-heading"><span class="esh-name">${escHtml(pickingLabel)}</span><span class="esh-count">${sectionTotalCount} exercise${sectionTotalCount===1?'':'s'}</span></div>` : ''}
 
+    ${pickingLabel ? `
+    <div class="discovery-row">
+      <div class="searchbar">
+        ${ICONS.search}
+        <input id="searchInput" placeholder="Search exercises, tags, setup..." value="${escAttr(state.search)}" oninput="onSearch(this.value)">
+        ${state.search ? `<button class="search-clear-btn" onclick="clearSearch()" title="Clear search">${ICONS.x}</button>` : ''}
+      </div>
+      <button class="qp-iconbtn" onclick="openQuickPick()" title="Quick Pick" aria-label="Quick Pick">${ICONS.dice}</button>
+      <button class="qp-filter-btn" onclick="toggleFilters(true)" title="Filters" aria-label="Filters">${ICONS.filter}${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
+    </div>
+    <div class="quickfilter-row">
+      <button class="qf-chip ${!state.quickFilterValue?'active':''}" onclick="setQuickFilter(null)">All</button>
+      ${quickFilterValues.map(v => `<button class="qf-chip ${state.quickFilterValue===v?'active':''}" onclick="setQuickFilter('${v}')">${escHtml(v)}</button>`).join('')}
+    </div>
+    <div class="ex-count-line-row">
+      <div class="ex-count-line">
+        ${state.quickFilterValue
+          ? `<div class="ex-count-eyebrow">${escHtml(pickingLabel).toUpperCase()} &middot; ${escHtml(state.quickFilterValue).toUpperCase()}</div><div>${list.length} exercise${list.length===1?'':'s'}</div>`
+          : `<div>${list.length} ${escHtml(pickingLabel)} exercise${list.length===1?'':'s'}</div>`}
+      </div>
+      <div class="view-toggle-compact">
+        <button class="vtc-btn ${state.viewMode!=='list'?'active':''}" onclick="setViewMode('tile')" title="Tile view" aria-label="Tile view">${ICONS.grid}</button>
+        <button class="vtc-btn ${state.viewMode==='list'?'active':''}" onclick="setViewMode('list')" title="List view" aria-label="List view">${ICONS.list}</button>
+      </div>
+    </div>` : `
     <div class="searchbar">
       ${ICONS.search}
       <input id="searchInput" placeholder="Search exercises, tags, setup..." value="${escAttr(state.search)}" oninput="onSearch(this.value)">
       ${state.search ? `<button class="search-clear-btn" onclick="clearSearch()" title="Clear search">${ICONS.x}</button>` : ''}
     </div>
-
-    ${quickFilterValues ? `
-    <div class="quickfilter-row">
-      <button class="qf-chip ${!state.quickFilterValue?'active':''}" onclick="setQuickFilter(null)">All</button>
-      ${quickFilterValues.map(v => `<button class="qf-chip ${state.quickFilterValue===v?'active':''}" onclick="setQuickFilter('${v}')">${escHtml(v)}</button>`).join('')}
-    </div>
-    <div class="qf-advanced-row">
-      ${currentTotalMinutes().count>0 ? `<button class="balance-btn" onclick="openBalanceSheet()">${ICONS.target}<span>Balance My Practice</span></button>` : '<span></span>'}
-      <button class="qf-advanced-btn" onclick="toggleFilters(true)">${ICONS.filter}<span>Filters</span>${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
-    </div>
-    <div class="ex-count-line">
-      ${state.quickFilterValue
-        ? `<div class="ex-count-eyebrow">${escHtml(pickingLabel).toUpperCase()} &middot; ${escHtml(state.quickFilterValue).toUpperCase()}</div><div>${list.length} exercise${list.length===1?'':'s'}</div>`
-        : `<div>${list.length} ${escHtml(pickingLabel)} exercise${list.length===1?'':'s'}</div>`}
-    </div>` : `
     <div class="filter-chip-row">
       <button class="sec-chip ${!state.sectionFilter?'active':''}" style="${!state.sectionFilter?`background:var(--pitch);border-color:var(--pitch);color:white;`:''}" onclick="setSectionFilter(null)">${ICONS.grid}<span>All</span></button>
       ${SECTION_LIST.map(s => {
@@ -7257,12 +7907,12 @@ function renderExercises(){
         return `<button class="sec-chip ${active?'active':''}" style="${style}" onclick="setSectionFilter('${s}')">${st.icon}<span>${s}</span></button>`;
       }).join('')}
       <button class="sec-chip morefilters" onclick="toggleFilters(true)">${ICONS.filter}${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
-    </div>`}
-
+    </div>
     <div class="view-toggle">
       <button class="view-toggle-btn ${state.viewMode!=='list'?'active':''}" onclick="setViewMode('tile')">${ICONS.grid}<span>Tile</span></button>
       <button class="view-toggle-btn ${state.viewMode==='list'?'active':''}" onclick="setViewMode('list')">${ICONS.list}<span>List</span></button>
-    </div>
+    </div>`}
+
     <div class="ex-grid ${state.viewMode==='list'?'list-mode':''}">
       ${pickingLabel ? renderPickingExerciseList(list) : list.map(exCard).join('')}
       ${newExerciseTileHtml()}
@@ -7281,9 +7931,21 @@ function renderPickingExerciseList(list){
   const added = list.filter(ex => isExerciseInAnyPhase(ex.id));
   const rest = list.filter(ex => !isExerciseInAnyPhase(ex.id));
   if(!added.length) return rest.map(exCard).join('');
-  const label = `<div class="ex-pinned-label" style="grid-column:1/-1;">${ICONS.check} Added to this practice</div>`;
+  // Collapsed by default (batch 60): a compact "[check] N in [Section]" toggle row instead of full
+  // pinned cards, so the coach reaches the browsable library immediately instead of scrolling past
+  // exercises they've already added. Tapping it expands back into the exact same pinned-cards+
+  // divider layout this function always had -- still only regrouping the already-filtered/sorted
+  // `list` into two blocks, never changing what's in it or its within-group order.
+  const sectionLabel = state.pickingPhase ? (PHASES.find(p=>p.key===state.pickingPhase)?.label || phaseLabel(state.pickingPhase)) : '';
+  const expanded = !!state.showAddedInPractice;
+  const toggle = `<div class="ex-added-toggle-row"><button class="ex-added-toggle" onclick="toggleAddedInPractice()">${ICONS.check}<span>${added.length} exercise${added.length===1?'':'s'} in ${escHtml(sectionLabel)}</span>${expanded?ICONS.chevronUp:ICONS.chevronDown}</button></div>`;
+  if(!expanded) return toggle + rest.map(exCard).join('');
   const divider = rest.length ? `<div class="ex-pinned-divider" style="grid-column:1/-1;"></div>` : '';
-  return label + added.map(exCard).join('') + divider + rest.map(exCard).join('');
+  return toggle + added.map(exCard).join('') + divider + rest.map(exCard).join('');
+}
+function toggleAddedInPractice(){
+  state.showAddedInPractice = !state.showAddedInPractice;
+  render();
 }
 function newExerciseTileHtml(){
   return `
@@ -7487,7 +8149,7 @@ function renderSoft(){
 }
 
 /* ============ FILTER SHEET ============ */
-function toggleFilters(open){ state.filtersOpen = open; renderOverlay(); }
+function toggleFilters(open){ state.filtersOpen = open; if(open){ state.quickPickOpen = false; state.quickPickCustomizeOpen = false; } renderOverlay(); }
 function toggleSetVal(setName, val){
   const s = state.filters[setName];
   if(s.has(val)) s.delete(val); else s.add(val);
@@ -7596,6 +8258,10 @@ function renderOverlay(){
     <div class="sheet-backdrop" onclick="toggleFilters(false)"></div>
     <div class="sheet">
       <div class="sheet-handle"></div>
+      <div class="qp-sheet-header">
+        <h3 style="margin:0;">Filters</h3>
+        <button class="qp-close-btn" onclick="toggleFilters(false)" title="Close" aria-label="Close">${ICONS.x}</button>
+      </div>
       <h3>Training Focus</h3>
       <div class="optrow">
         ${FOCUS_CATEGORIES.map(c => `<button class="opt ${state.filters.focusCategories.has(c.key)?'active':''}" onclick="toggleSetVal('focusCategories','${c.key}')">${c.label}</button>`).join('')}
@@ -7629,8 +8295,11 @@ function renderOverlay(){
       </div>
     </div>`;
   }
-  if(state.balanceSheetOpen && state.pickingPhase){
+  if(state.balanceSheetOpen){
     html += renderBalanceSheetHtml();
+  }
+  if(state.quickPickOpen && state.pickingPhase){
+    html += renderQuickPickSheetHtml();
   }
   if(state.toast){
     html += `<div class="toast">${state.toast}</div>`;
@@ -7713,7 +8382,7 @@ function renderDetail(){
   </div>
   ${isDraft ? `<div class="draft-hint">${ICONS.pencil} Adding this to a session will also save it to your library</div>` : ''}
 
-  <div class="detail-block"><h4>Setup <span class="edit-hint">${ICONS.pencil} tap to edit</span></h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','setup',this.innerText)">${escHtml(ex.setup||'—')}</p></div><div class="divider"></div>
+  <div class="detail-block"><h4>Setup</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','setup',this.innerText)">${escHtml(ex.setup||'—')}</p></div><div class="divider"></div>
   <div class="detail-block"><h4>Objective &amp; how it works</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','description',this.innerText)">${escHtml(ex.description||'—')}</p></div><div class="divider"></div>
   <div class="detail-block"><h4>Coaching points</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','coachingPoints',this.innerText)">${escHtml(ex.coachingPoints||'—')}</p></div><div class="divider"></div>
   <div class="detail-block"><h4>Variations</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','variations',this.innerText)">${escHtml(ex.variations||'—')}</p></div><div class="divider"></div>
@@ -7861,18 +8530,34 @@ function updateExerciseFormat(id, value){
 
 /* ============ TIME-SPLIT GUIDANCE ============ */
 /* Collapsible: always shows a colored one-line summary (planned vs target), expands to a
-   direct comparison between what's actually been chosen and the suggested phase-group split. */
-function renderTimeComparisonPanel(){
-  const {total} = currentTotalMinutes();
-  const target = state.targetDuration;
+   direct comparison between what's actually been chosen and the suggested phase-group split.
+   Defaults to the live in-progress draft (Build/Review) when called with no arguments; saved
+   Session Detail passes its own frozen total/target/group-minutes instead, so the exact same
+   panel and math serve both a live draft and a historical record. */
+// Shared by renderTimeComparisonPanel() below and the Review page's compact row (batch 65) --
+// the actual-vs-suggested split bars + legend, independent of whatever triggers showing them.
+function timeComparisonBodyHtml(total, target, groups){
+  const suggestedMins = suggestedSplitMinutes(target);
+  const actualSegs = PHASE_GROUPS.map(s => `<div style="width:${Math.max(0, groups[s.key]/target*100)}%;background:${s.color};"></div>`).join('');
+  const suggestedSegs = PHASE_GROUPS.map(s => `<div style="width:${s.pct}%;background:${s.color};"></div>`).join('');
+  return `
+    <div class="tp-body">
+      <div class="tp-row-label">Your session</div>
+      <div class="split-bar">${actualSegs}</div>
+      <div class="tp-row-label" style="margin-top:9px;">Suggested split</div>
+      <div class="split-bar">${suggestedSegs}</div>
+      <div class="split-legend" style="margin-top:10px;">
+        ${PHASE_GROUPS.map((s,i) => `<div class="split-legend-item"><i style="background:${s.color};"></i>${s.label} &middot; ${groups[s.key]}m <span>(sugg. ~${suggestedMins[i]}m)</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+function renderTimeComparisonPanel(totalOverride, targetOverride, groupsOverride){
+  const total = totalOverride !== undefined ? totalOverride : currentTotalMinutes().total;
+  const target = targetOverride !== undefined ? targetOverride : state.targetDuration;
   const over = total > target;
   const diff = over ? total-target : target-total;
   const diffColor = total===0 ? 'var(--ink-soft)' : (over ? 'var(--warn)' : 'var(--turf)');
-  const groups = computeGroupMinutes();
-  const suggestedMins = suggestedSplitMinutes(target);
-
-  const actualSegs = SUGGESTED_SPLIT.map(s => `<div style="width:${Math.max(0, groups[s.key]/target*100)}%;background:${s.color};"></div>`).join('');
-  const suggestedSegs = SUGGESTED_SPLIT.map(s => `<div style="width:${s.pct}%;background:${s.color};"></div>`).join('');
+  const groups = groupsOverride || computeGroupMinutes();
 
   return `
   <div class="time-panel">
@@ -7884,16 +8569,7 @@ function renderTimeComparisonPanel(){
       </div>
       <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
     </button>
-    ${state.splitExpanded ? `
-    <div class="tp-body">
-      <div class="tp-row-label">Your session</div>
-      <div class="split-bar">${actualSegs}</div>
-      <div class="tp-row-label" style="margin-top:9px;">Suggested split</div>
-      <div class="split-bar">${suggestedSegs}</div>
-      <div class="split-legend" style="margin-top:10px;">
-        ${SUGGESTED_SPLIT.map((s,i) => `<div class="split-legend-item"><i style="background:${s.color};"></i>${s.label} &middot; ${groups[s.key]}m <span>(sugg. ~${suggestedMins[i]}m)</span></div>`).join('')}
-      </div>
-    </div>` : ''}
+    ${state.splitExpanded ? timeComparisonBodyHtml(total, target, groups) : ''}
   </div>`;
 }
 
@@ -7919,13 +8595,25 @@ function setSessionName(v){ state.sessionName = v; }
 function toggleSplitExpanded(){ state.splitExpanded = !state.splitExpanded; render(); }
 function computeGroupMinutes(){
   const sum = (ids) => (ids||[]).reduce((a,id)=>a+(exById(id)?.duration||10),0);
-  return {
-    warmupAthletic: sum(state.phaseData.warmup) + sum(state.phaseData.athletic),
-    duels: sum(state.phaseData.duels),
-    rondos: sum(state.phaseData.rondos),
-    ssg: sum(state.phaseData.ssg),
-    scrimmage: sum(state.phaseData.scrimmage),
-  };
+  const g = {};
+  PHASE_GROUPS.forEach(group => { g[group.key] = group.phaseKeys.reduce((a,k)=>a+sum(state.phaseData[k]),0); });
+  return g;
+}
+/* Same shape as computeGroupMinutes() above, but reads from a SAVED session's own frozen
+   `phases` snapshot (matched by each entry's `.section` name, not a live phaseData phase key)
+   instead of the live draft -- lets Session Detail show the identical time-comparison panel for
+   a completed session. A custom/extra section (section:null, not one of the 6 standard PHASES)
+   contributes to no group, matching reviewPhaseGroups()/sessionDetailPhaseGroups() below. */
+function computeGroupMinutesFromPhases(phases){
+  const g = {};
+  PHASE_GROUPS.forEach(group => { g[group.key] = 0; });
+  (phases||[]).forEach(p => {
+    const phaseObj = PHASES.find(ph => ph.section === p.section);
+    if(!phaseObj) return;
+    const group = PHASE_GROUPS.find(gr => gr.phaseKeys.includes(phaseObj.key));
+    if(group) g[group.key] += (p.exercises||[]).reduce((a,e)=>a+(e.duration||10),0);
+  });
+  return g;
 }
 
 function currentTotalMinutes(){
@@ -7956,7 +8644,7 @@ function removeExtraSection(key){
 
 function pickForPhase(key){
   const p = PHASES.find(p=>p.key===key);
-  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false});
+  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
 }
 /* Switch which phase is being filled WITHOUT leaving the exercise list — lets a coach fill several
    phases back to back instead of bouncing to the Build screen between every add. */
@@ -7966,6 +8654,9 @@ function switchPickingPhase(key){
   state.sectionFilter = p ? p.section : null;
   state.quickFilterValue = null;
   state.balanceSheetOpen = false;
+  state.quickPickOpen = false;
+  state.quickPickCustomizeOpen = false;
+  state.showAddedInPractice = false;
   render();
   const c = document.getElementById('content'); if(c) c.scrollTop = 0;
 }
@@ -8001,41 +8692,39 @@ function renderSessionBuilderBox(pickingLabel){
   }
   const pct = Math.min(100, Math.round((total/state.targetDuration)*100));
   const over = total > state.targetDuration;
-  const idx = PHASES.findIndex(p => p.key === state.pickingPhase);
-  const nextPhaseObj = (idx > -1 && idx < PHASES.length - 1) ? PHASES[idx+1] : null;
-  const nextBtnLabel = nextPhaseObj ? `Next: ${nextPhaseObj.label}` : 'Review session';
   // pickingLabel is always truthy from here down -- the browsing-only case already returned above.
-  const pickingPhaseObj = PHASES.find(p => p.key === state.pickingPhase);
-  const pst = secStyle(pickingPhaseObj ? pickingPhaseObj.section : null);
+  // Compact header (batch 60, revised batch 61/64): a "< Full Session" button (left) back to the
+  // Build/Review screen, with "Building Session" centered on that same row; exercise count + total
+  // minutes share the row below; then a thin progress bar and the equal-width section-chip row. No
+  // separate "Adding to: X" row -- the active chip below already communicates the current section.
+  const NAV_CHIP_LABEL = {warmup:'Warmup', athletic:'Ath', duels:'Duels', rondos:'Rondos', ssg:'SSG', scrimmage:'Scrim'};
   return `
   <div class="sbb-sticky-wrap">
   <div class="session-builder-box">
-    <div class="sbb-header">
-      <div class="sbb-title">${ICONS.soccerBallPhoto} Building Session</div>
+    <div class="sbb-compact-row1">
+      <button class="sbb-full-link" onclick="nav('build')">${ICONS.back} Full Session</button>
+      <div class="sbb-compact-title">Building Session</div>
+      <div class="sbb-title-spacer" aria-hidden="true"></div>
     </div>
-    <div class="sbb-adding-pill" style="border-bottom-color:${pst.color};"><span style="color:${pst.color};display:flex;">${pst.icon}</span><span>Adding to: <b style="color:${pst.color};">${pickingLabel}</b></span></div>
-    <div class="pps-dots">
+    <div class="sbb-compact-row2">
+      <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>
+      <div class="sbb-compact-stats"><b>${total}</b>/${state.targetDuration} min</div>
+    </div>
+    <div class="progress-track" style="height:4px;margin:7px 0 9px;"><div class="progress-fill ${over?'over':''}" style="width:${pct}%;"></div></div>
+    <div class="pps-nav-row">
       ${orderedPhases().filter(p => state.enabledPhaseKeys.has(p.key)).map(p => {
         const has = state.phaseData[p.key].length > 0;
         const active = state.pickingPhase === p.key;
         const st = secStyle(p.section);
         const bg = has ? st.color : 'var(--chalk-dim)';
         const fg = has ? (st.textOn==='dark'?'var(--pitch-dark)':'white') : 'var(--ink-soft)';
-        return `<button class="pps-dot ${active?'active':''}" style="background:${bg};color:${fg};${active?`box-shadow:0 0 0 2px white, 0 0 0 3.5px ${st.color};`:''}" onclick="switchPickingPhase('${p.key}')" title="${escAttr(p.label)}">${st.icon}</button>`;
+        return `<button class="pps-navchip ${active?'active':''}" style="background:${bg};color:${fg};${active?`box-shadow:0 0 0 2px var(--bg-surface), 0 0 0 3.5px ${st.color};`:''}" onclick="switchPickingPhase('${p.key}')" title="${escAttr(p.label)}">${st.icon}<span>${escHtml(NAV_CHIP_LABEL[p.key] || p.label)}</span></button>`;
       }).join('')}
       ${state.extraSections.map(s => {
         const has = s.exercises.length > 0;
         const active = state.pickingPhase === s.key;
-        return `<button class="pps-dot ${active?'active':''}" style="background:${has?'var(--pitch)':'var(--chalk-dim)'};color:${has?'white':'var(--ink-soft)'};${active?`box-shadow:0 0 0 2px white, 0 0 0 3.5px var(--pitch);`:''}" onclick="switchPickingPhase('${s.key}')" title="${escAttr(s.label)}">${ICONS.doc}</button>`;
+        return `<button class="pps-navchip ${active?'active':''}" style="background:${has?'var(--pitch)':'var(--chalk-dim)'};color:${has?'white':'var(--ink-soft)'};${active?`box-shadow:0 0 0 2px var(--bg-surface), 0 0 0 3.5px var(--pitch);`:''}" onclick="switchPickingPhase('${s.key}')" title="${escAttr(s.label)}">${ICONS.doc}<span>${escHtml(s.label)}</span></button>`;
       }).join('')}
-    </div>
-    <div class="pps-progress">
-      <div class="progress-track" style="height:6px;"><div class="progress-fill ${over?'over':''}" style="width:${pct}%;"></div></div>
-      <div class="pps-caption"><span><b>${total}</b>/${state.targetDuration} min</span><span>${count} exercise${count===1?'':'s'} total</span></div>
-    </div>
-    <div class="pps-btn-row">
-      <button class="pps-secondary-btn" onclick="nav('build')">${ICONS.back} Full Session</button>
-      <button class="pps-next-btn" onclick="nextPickingPhase()" title="${escAttr(nextBtnLabel)}">${nextPhaseObj ? `<span class="pps-next-lines"><span class="pps-next-line1">Next:</span><span class="pps-next-line2">${escHtml(nextPhaseObj.label)}</span></span>` : `<span>${escHtml(nextBtnLabel)}</span>`}${ICONS.chevronRight}</button>
     </div>
   </div>
   </div>`;
@@ -8070,7 +8759,7 @@ function buildExRowHtml(id, key, removeCall, showGrip){
     <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
-      <div class="build-ex-name">${escHtml(ex.name)}</div>
+      <div class="build-ex-name-row"><div class="build-ex-name">${escHtml(ex.name)}</div><span class="build-ex-dur">${ex.duration||10}m</span></div>
       ${bullets.length ? `<ul class="build-ex-bullets">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>` : ''}
     </div>
   </div>`;
@@ -8334,9 +9023,24 @@ function togglePhaseCollapsed(key){
   render();
 }
 
+/* Groups the live in-progress draft's phaseData into the 3 PHASE_GROUPS for the Session Review
+   summary -- flattens each group's constituent phases (e.g. Warmup + Athletic) into one combined
+   exercise list, in PHASES order, and skips any group with nothing in it yet (mirrors the old
+   per-phase behavior of only showing a card once it has exercises). Each item keeps its original
+   phaseKey so the remove control still targets the correct underlying phase. */
+function reviewPhaseGroups(){
+  return PHASE_GROUPS.map(group => {
+    const items = [];
+    group.phaseKeys.forEach(key => {
+      state.phaseData[key].forEach(id => items.push({id, phaseKey:key}));
+    });
+    const mins = items.reduce((a,it)=>a+(exById(it.id)?.duration||10),0);
+    return {...group, items, mins};
+  }).filter(group => group.items.length);
+}
 function renderReview(){
   const {total, count} = currentTotalMinutes();
-  const usedPhases = orderedPhases().filter(p => state.phaseData[p.key].length);
+  const groups = reviewPhaseGroups();
   const usedExtras = state.extraSections.filter(s => s.exercises.length);
   const practiceProfile = practiceTrainingProfile(currentPracticeTrainingItems());
 
@@ -8357,33 +9061,39 @@ function renderReview(){
       <div class="eyebrow">Session Review (unsaved)</div>
       ${state.sessionName.trim() ? `<h2 style="font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;font-size:20px;margin:2px 0 0;">${escHtml(state.sessionName)}</h2>` : ''}
     </div>
-    <div class="review-total-mini">${total} total minutes &middot; ${count} exercises</div>
+    <div class="review-stats-row">
+      <div class="review-total-mini">${total} total minutes &middot; ${count} exercises</div>
+      <button class="review-session-toggle" onclick="toggleSplitExpanded()">
+        <span>Breakdown</span>
+        <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
+      </button>
+    </div>
+    ${state.splitExpanded ? `<div class="time-panel standalone" style="margin-top:8px;">${timeComparisonBodyHtml(total, state.targetDuration, computeGroupMinutes())}</div>` : ''}
 
     <div class="phase-strip">
-      ${usedPhases.map((p,i)=>{
-        const st = secStyle(p.section);
-        return `
+      ${groups.map((g,i)=>`
         <div class="phase-card">
           <div class="phase-line">
-            <div class="phase-num" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${i+1}</div>
-            ${i===usedPhases.length-1 && usedExtras.length===0 ? '' : '<div class="phase-connector"></div>'}
+            <div class="phase-num" style="background:${g.color};color:${g.textOn==='dark'?'var(--pitch-dark)':'white'};">${i+1}</div>
+            ${i===groups.length-1 && usedExtras.length===0 ? '' : '<div class="phase-connector"></div>'}
           </div>
           <div class="phase-content">
             <div class="phase-title-row">
-              <div class="phase-title" style="display:flex;align-items:center;gap:6px;"><span style="color:${st.color};display:flex;">${st.icon}</span>${p.label}</div>
-              <div class="phase-time">${state.phaseData[p.key].reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div>
+              <div class="phase-title">${g.label}</div>
+              <div class="phase-time">${g.mins} min</div>
             </div>
+            <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
             <div class="phase-exlist">
-              ${state.phaseData[p.key].map(id=>{
-                const ex=exById(id);
-                return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${p.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
+              ${g.items.map(it=>{
+                const ex=exById(it.id);
+                return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
               }).join('')}
             </div>
           </div>
-        </div>`;}).join('')}
+        </div>`).join('')}
       ${usedExtras.map((s,i)=>`
         <div class="phase-card">
-          <div class="phase-line"><div class="phase-num">${usedPhases.length+i+1}</div></div>
+          <div class="phase-line"><div class="phase-num">${groups.length+i+1}</div></div>
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div></div>
             <div class="phase-exlist">
@@ -8394,9 +9104,15 @@ function renderReview(){
     </div>
 
     <div class="pprof-block">
-      <h4>Training profile</h4>
+      ${trainingProfileHeadingHtml()}
+      ${trainingProfileInfoPanelHtml()}
       <div class="pprof-rows">${practiceProfile.map(practiceProfileRowHtml).join('')}</div>
       <div class="pprof-interpretation">${practiceProfileInterpretation(practiceProfile)}</div>
+      <div class="balance-btn-row">
+        <button class="balance-btn" style="flex:1;justify-content:center;" onclick="openBalanceSheet()">${ICONS.target}<span>Balance My Practice</span></button>
+        <button class="qp-info-btn" onclick="toggleBalanceInfo()" title="What is Balance My Practice?" aria-label="What is Balance My Practice?">i</button>
+      </div>
+      ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Practice looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
     </div>
 
     <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="completeSession()">Save Session</button>
@@ -8468,11 +9184,28 @@ function setSessionComment(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
   if(s) s.comment = val;
 }
+/* Same grouping as reviewPhaseGroups(), but for a SAVED session's frozen `phases` snapshot
+   (matched by `.section` name back to a PHASES entry, since a snapshot doesn't carry phase
+   keys) instead of the live draft. A custom/extra section (section:null) belongs to no group
+   and is rendered separately, exactly as it already was before this batch. */
+function sessionDetailPhaseGroups(s){
+  return PHASE_GROUPS.map(group => {
+    const items = [];
+    s.phases.forEach(p => {
+      const phaseObj = PHASES.find(ph => ph.section === p.section);
+      if(phaseObj && group.phaseKeys.includes(phaseObj.key)) items.push(...p.exercises);
+    });
+    const mins = items.reduce((a,e)=>a+(e.duration||10),0);
+    return {...group, items, mins};
+  }).filter(group => group.items.length);
+}
 function renderSessionDetail(){
   const s = state.savedSessions.find(s=>s.id===state.viewingSessionId);
   if(!s) return `<div class="empty-state">${ICONS.empty}<p>Session not found.</p></div>`;
   const editing = state.editingSessionDetail;
   const practiceProfile = practiceTrainingProfile(savedSessionTrainingItems(s));
+  const groups = sessionDetailPhaseGroups(s);
+  const extras = s.phases.filter(p => !PHASES.some(ph=>ph.section===p.section));
   return `
   <div class="detail-header" style="background:var(--pitch);">
     <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -8509,29 +9242,41 @@ function renderSessionDetail(){
       <div class="sd-meta"><div class="smnum">${formatWhen(s.createdAt)}</div><div class="smlbl">Date &amp; time</div></div>
     </div>
 
+    <div style="margin-top:22px;">${renderTimeComparisonPanel(s.totalMin, s.targetDuration, computeGroupMinutesFromPhases(s.phases))}</div>
+
     <div class="phase-strip sd-phases" style="margin-top:22px;">
-      ${s.phases.map((p,i)=>{
-        const st = secStyle(p.section);
-        return `
+      ${groups.map((g,i)=>`
         <div class="phase-card">
           <div class="phase-line">
-            <div class="phase-num" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${i+1}</div>
-            ${i===s.phases.length-1?'':'<div class="phase-connector"></div>'}
+            <div class="phase-num" style="background:${g.color};color:${g.textOn==='dark'?'var(--pitch-dark)':'white'};">${i+1}</div>
+            ${i===groups.length-1 && extras.length===0 ? '' : '<div class="phase-connector"></div>'}
           </div>
           <div class="phase-content">
             <div class="phase-title-row">
-              <div class="phase-title" style="display:flex;align-items:center;gap:6px;"><span style="color:${st.color};display:flex;">${st.icon}</span>${p.label}</div>
-              <div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div>
+              <div class="phase-title">${g.label}</div>
+              <div class="phase-time">${g.mins} min</div>
             </div>
+            <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
+            <div class="phase-exlist">
+              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetail('${e.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span></div>`).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+      ${extras.map((p,i)=>`
+        <div class="phase-card">
+          <div class="phase-line"><div class="phase-num">${groups.length+i+1}</div></div>
+          <div class="phase-content">
+            <div class="phase-title-row"><div class="phase-title">${p.label}</div><div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div></div>
             <div class="phase-exlist">
               ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetail('${e.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span></div>`).join('')}
             </div>
           </div>
-        </div>`;}).join('')}
+        </div>`).join('')}
     </div>
 
     <div class="pprof-block" style="margin-top:22px;">
-      <h4>Training profile</h4>
+      ${trainingProfileHeadingHtml()}
+      ${trainingProfileInfoPanelHtml()}
       <div class="pprof-rows">${practiceProfile.map(practiceProfileRowHtml).join('')}</div>
       <div class="pprof-interpretation">${practiceProfileInterpretation(practiceProfile)}</div>
     </div>
@@ -8557,6 +9302,7 @@ function saveAppStateToStorage(){
       enabledPhaseKeys: [...state.enabledPhaseKeys],
       phaseOrder: state.phaseOrder,
       practiceTemplates: state.practiceTemplates,
+      sectionDefaultPcts: {...sectionDefaultPcts},
       // Navigation context -- so a reload lands the coach back on the screen they were actually
       // on (mid-build, picking exercises, reviewing) instead of bouncing to Home even though the
       // underlying data survived. Validated against live data below before being trusted.
@@ -8599,6 +9345,9 @@ function loadAppStateFromStorage(){
       if(snap.practiceTemplates.outdoor) migrated.push({id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:snap.practiceTemplates.outdoor.duration||75, sections:snap.practiceTemplates.outdoor.sections||defaultTemplateSections()});
       if(snap.practiceTemplates.indoor) migrated.push({id:'tmpl-indoor-default', name:'Indoor Practice', location:'indoor', duration:snap.practiceTemplates.indoor.duration||75, sections:snap.practiceTemplates.indoor.sections||defaultTemplateSections()});
       if(migrated.length) state.practiceTemplates = migrated;
+    }
+    if(snap.sectionDefaultPcts && typeof snap.sectionDefaultPcts === 'object'){
+      PHASES.forEach(p => { if(typeof snap.sectionDefaultPcts[p.key] === 'number') sectionDefaultPcts[p.key] = snap.sectionDefaultPcts[p.key]; });
     }
 
     // Restore navigation context last, once savedSessions/etc. above are already in place, so the
