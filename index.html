@@ -435,6 +435,7 @@ a{color:inherit;text-decoration:none;}
 .ex-grid.list-mode .ex-bookmark.on svg{color:var(--turf);}
 .ex-grid.list-mode .added-badge{top:6px;left:6px;bottom:auto;right:auto;}
 .ex-grid.list-mode .new-ex-card{flex-direction:row;min-height:84px;height:84px;padding:0 16px;gap:12px;}
+.ex-grid.list-mode .ex-card-tags{display:none;}
 .ex-pinned-label{
   display:flex;align-items:center;gap:6px;
   font-size:11px;font-weight:800;color:var(--turf);text-transform:uppercase;letter-spacing:0.04em;
@@ -906,7 +907,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-progress-line span{font-size:11.5px;color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;}
 .phase-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px;}
 .phase-box{background:var(--bg-surface);border:1.5px solid var(--line);border-radius:14px;padding:13px 12px 14px;}
-.phase-box.next-up{border-color:var(--cone);box-shadow:0 0 0 1px var(--cone);}
+.phase-box.next-up{background:var(--chalk-dim);}
 /* "Filled" = this section already has exercises in it. Previously looked identical to an empty
    section (aside from the tiny minute count), so a coach couldn't tell at a glance what was done.
    Turf green (the app's established "added/complete" color, same as exercise-card added badges)
@@ -956,6 +957,39 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-box-edit svg{width:14px;height:14px;}
 .phase-box-del{background:none;border:none;color:var(--warn);flex-shrink:0;padding:7px;display:flex;margin:-6px -7px -6px 0;}
 .phase-box-del svg{width:15px;height:15px;}
+
+/* ---------- Build Practice redesign (batch 69) ---------- */
+.phase-box{padding:15px 14px 14px;}
+.pcard-toprow{display:flex;align-items:flex-start;gap:8px;}
+.pcard-num{font-family:'Anton',sans-serif;font-weight:400;font-size:15px;line-height:1.55;flex-shrink:0;opacity:0.9;}
+.pcard-mins{margin-left:auto;display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:4px;text-align:right;font-size:11.5px;font-weight:700;color:var(--ink-soft);max-width:150px;line-height:1.35;}
+.pcard-mins.empty{opacity:0.6;}
+.pcard-mins svg{width:11px;height:11px;color:var(--turf);flex-shrink:0;}
+.pcard-mins .pcard-sugg{font-weight:600;opacity:0.75;white-space:nowrap;}
+.pcard-starthere{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin:4px 0 0;padding-left:28px;}
+.pcard-sugg-line{font-size:11px;font-weight:600;color:var(--ink-soft);opacity:0.7;margin:4px 0 0;padding-left:28px;}
+.pcard-add-btn{
+  margin-top:11px;width:100%;background:none;border:1.5px dashed var(--line);color:var(--ink-soft);
+  border-radius:10px;padding:10px 0;font-size:12.5px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.phase-box.filled .pcard-add-btn{border-style:solid;}
+.bp-name-row{display:flex;align-items:center;gap:6px;margin-top:14px;}
+.bp-name-input{flex:1;min-width:0;border:none;background:transparent;padding:2px 0;font-family:'Inter',sans-serif;font-weight:800;font-size:15px;color:var(--ink);}
+.bp-name-input::placeholder{color:var(--ink-soft);opacity:0.6;font-weight:700;}
+.bp-name-pencil{display:flex;flex-shrink:0;color:var(--ink-soft);opacity:0.45;}
+.bp-name-pencil svg{width:12px;height:12px;display:block;}
+.bp-meta-line{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.bp-meta-edit-btn{background:none;border:none;color:var(--ink-soft);opacity:0.55;padding:3px;display:flex;flex-shrink:0;}
+.bp-meta-edit-btn svg{width:12px;height:12px;}
+.bp-details-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+.bp-progress{margin-top:18px;}
+.bp-progress-toprow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.bp-progress-label{font-family:'Inter',sans-serif;font-weight:800;font-size:13px;letter-spacing:0.02em;color:var(--ink);text-transform:uppercase;}
+.bp-progress-remaining{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.02em;white-space:nowrap;}
+.bp-progress-remaining.over{color:var(--warn);}
+.ex-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px;}
+.tagpill.sm{font-size:10px;font-weight:700;padding:3px 8px;border-radius:7px;}
 .extra-box-title-input{
   font-family:'Inter',sans-serif;font-weight:700;font-size:14.5px;text-transform:uppercase;
   border:none;border-bottom:1.5px dashed var(--line);background:transparent;color:var(--ink);
@@ -1006,6 +1040,55 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   padding:16px 18px 6px;
 }
 .build-cta .btn-primary{width:100%;padding:16px 0;font-size:15.5px;border-radius:12px;background:var(--pitch);}
+
+/* ---------- Practice Setup (batch 68) ---------- */
+.setup-page-title{
+  font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;
+  font-size:28px;margin:8px 0 4px;color:var(--ink);
+}
+.setup-block{margin-top:18px;}
+.setup-block .session-name-wrap{margin-top:4px;}
+.setup-date-input{
+  width:100%;margin-top:4px;padding:12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg-surface);font-family:inherit;font-size:14.5px;font-weight:600;color:var(--ink);
+}
+.setup-scratch-card{
+  position:relative;width:100%;text-align:left;display:flex;flex-direction:column;gap:7px;
+  background:var(--bg-surface);border:1.5px solid var(--line);border-radius:14px;
+  padding:14px 42px 14px 16px;margin-top:12px;
+}
+.setup-scratch-card.selected{border-color:var(--pitch);background:var(--chalk-dim);}
+.setup-scratch-dots{display:flex;gap:5px;}
+.setup-scratch-dots span{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.setup-scratch-title{font-family:'Inter',sans-serif;font-weight:800;font-size:14.5px;color:var(--ink);text-transform:uppercase;letter-spacing:0.02em;}
+.setup-scratch-sub{font-size:12.5px;color:var(--ink-soft);line-height:1.4;}
+.setup-card-check{
+  position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  background:var(--pitch);color:white;display:flex;align-items:center;justify-content:center;
+}
+.setup-card-check svg{width:12px;height:12px;}
+.setup-card-check.static{position:static;margin-left:8px;}
+.setup-tmpl-scroll{
+  display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin-top:8px;
+}
+.setup-tmpl-scroll::-webkit-scrollbar{display:none;}
+.setup-tmpl-card{
+  position:relative;flex-shrink:0;width:158px;text-align:left;display:flex;flex-direction:column;gap:6px;
+  background:var(--bg-surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 34px 12px 14px;
+}
+.setup-tmpl-card.selected{border-color:var(--pitch);background:var(--chalk-dim);}
+.setup-tmpl-card .setup-card-check{top:10px;right:10px;width:20px;height:20px;}
+.setup-tmpl-card .setup-card-check svg{width:11px;height:11px;}
+.setup-tmpl-badge{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);}
+.setup-tmpl-badge svg{width:11px;height:11px;}
+.setup-tmpl-name{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.setup-tmpl-meta{font-size:11px;color:var(--ink-soft);font-weight:600;}
+.setup-viewall-btn{
+  display:flex;align-items:center;justify-content:center;gap:5px;width:100%;margin-top:10px;
+  padding:11px 0;border:none;background:none;font-size:12.5px;font-weight:700;color:var(--claret);
+}
+.setup-viewall-btn svg{width:13px;height:13px;}
+.tmpl-lib-row.selected{border-color:var(--pitch);background:var(--chalk-dim);}
 
 /* ---------- session review ---------- */
 .review-cta-row{display:flex;gap:10px;margin-top:8px;}
@@ -1184,23 +1267,25 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 /* ---------- Batch 60: compact "Building Practice" header (picking mode) ---------- */
 .sbb-compact-row1{display:flex;align-items:center;gap:6px;}
+.sbb-back-row{display:flex;}
 .sbb-compact-title{
   flex:1;min-width:0;text-align:center;
   font-family:'Inter',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.sbb-title-spacer{width:74px;flex-shrink:0;}
+.sbb-compact-title.left{text-align:left;margin-top:8px;}
+.sbb-title-spacer{width:58px;flex-shrink:0;}
 .sbb-compact-stats{font-size:12.5px;font-weight:700;color:var(--ink-soft);white-space:nowrap;flex-shrink:0;}
 .sbb-compact-stats b{color:var(--ink);}
 .sbb-compact-row2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;}
 .sbb-compact-count{font-size:12px;font-weight:600;color:var(--ink-soft);}
 .sbb-full-link{
-  position:relative;z-index:1;display:flex;align-items:center;gap:4px;
-  background:var(--ink-soft);border:1px solid var(--ink-soft);border-radius:8px;
-  padding:5px 8px;font-size:11.5px;font-weight:700;color:white;flex-shrink:0;
+  position:relative;z-index:1;display:flex;align-items:center;gap:5px;
+  background:var(--pitch-dark);border:1px solid var(--pitch-dark);border-radius:8px;
+  padding:7px 11px;font-size:13px;font-weight:700;color:white;flex-shrink:0;
 }
-.sbb-full-link svg{width:12px;height:12px;}
-.sbb-full-link:active{background:var(--ink);border-color:var(--ink);}
+.sbb-full-link svg{width:14px;height:14px;}
+.sbb-full-link:active{opacity:0.7;}
 /* Batch 61: back to the pre-batch-60 dots' equal-width, always-one-line proportions -- no
    horizontal scroll -- but each chip now stacks its icon above a short label instead of being
    icon-only. */
@@ -1238,7 +1323,6 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-bottom-actions{display:flex;gap:10px;margin-top:14px;}
 .bba-btn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 0;font-weight:700;font-size:13.5px;border:1.5px solid var(--line);background:var(--bg-surface);}
 .bba-btn svg{width:14px;height:14px;flex-shrink:0;}
-.bba-btn.save{border-color:var(--turf);color:var(--turf);}
 .bba-btn.discard{border-color:var(--warn);color:var(--warn);}
 /* Review page's row only: Discard Session toned down to gray (this is the "softer" review-stage
    discard -- Save Draft is right next to it as the safe option), and all three buttons sized to
@@ -5843,7 +5927,7 @@ const ICONS = {
   // section icons
   flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s-5 5.5-5 10a5 5 0 0010 0c0-1.5-1-2.5-1-2.5s-.5 2-2 2c-1.8 0-2-2-1-3.5C13.5 6.5 12 2 12 2z"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>`,
-  dice: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>`,
+  sparkles: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/><circle cx="19" cy="5" r="1.3"/><circle cx="5" cy="18.5" r="1"/></svg>`,
   swords: `<svg viewBox="0 0 24 24" fill="none"><text x="12" y="16.5" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-weight="800" font-size="12.5" letter-spacing="-0.5" fill="currentColor" transform="rotate(-14 12 12)">VS</text></svg>`,
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.2"/></svg>`,
@@ -7135,7 +7219,7 @@ function renderQuickPickSheetHtml(){
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="qp-sheet-header">
-      <h3 class="balance-sheet-title">${ICONS.dice}<span>Quick Picks</span></h3>
+      <h3 class="balance-sheet-title">${ICONS.sparkles}<span>Quick Picks</span></h3>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="qp-info-btn" onclick="toggleQuickPickInfo()" title="What is Quick Pick?" aria-label="What is Quick Pick?">i</button>
         <button class="qp-close-btn" onclick="closeQuickPick()" title="Close" aria-label="Close">${ICONS.x}</button>
@@ -7201,7 +7285,7 @@ function backFromDetail(){
 
 /* ============ STATE ============ */
 const state = {
-  screen: 'home',            // home | exercises | detail | build | review | sessions | sessionDetail
+  screen: 'home',            // home | exercises | detail | build | review | sessions | sessionDetail | practiceSetup
   detailId: null,
   fromBuild: false,           // came from build-a-session "add exercise" flow
   fromReview: false,          // came from the unsaved Session Review screen's exercise list
@@ -7224,6 +7308,7 @@ const state = {
   bookmarks: new Set(),
   targetDuration: 75,
   editingDuration: false,     // whether the custom-duration input is active
+  buildDetailsExpanded: false, // whether the compact duration/location editor is expanded on the Build Practice page (batch 69)
   splitExpanded: false,       // whether the time-comparison panel is expanded
   sessionName: defaultSessionName(),  // coach-editable name for the session currently being built
   practiceLocation: 'outdoor',        // 'indoor' | 'outdoor' — where this session is being run
@@ -7258,6 +7343,22 @@ const state = {
   editingSessionDetail: false,    // whether the saved Session Detail page's name/duration are editable right now
   enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the applied template
   phaseOrder: PHASES.map(p => p.key),     // standard-phase display order -- reorderable in Settings (Warmup always stays first)
+
+  // ---- Practice Setup (batch 68) ----
+  practiceDate: todayISODate(),   // the committed practice's own date -- separate from createdAt (when it was saved). Retained on the saved-session record.
+  activeTemplateId: null,         // which template (if any) the CURRENT draft was started from -- cleared on discard/save, carried onto the saved-session record as "Selected template, if any"
+  templatePickerContext: 'build', // 'build' (existing "Load a template" flow on the Build page -- applies immediately) | 'setup' (Practice Setup's "View All Templates" -- selects only, no immediate apply)
+  // Setup's own draft copies of name/date/duration/location -- deliberately separate from
+  // sessionName/targetDuration/practiceLocation above so nothing in the live/committed practice
+  // is touched until the coach taps the bottom CTA. null means "not yet initialized this visit";
+  // initSetupDraft() (called on entry, and defensively by renderPracticeSetup itself) fills them
+  // in fresh every time Setup is opened for a brand-new practice.
+  setupName: null,
+  setupDate: null,
+  setupDuration: null,
+  setupLocation: null,
+  setupSelectedTemplateId: null,  // null = Start From Scratch (the default); a template's id once chosen
+  setupEditingDuration: false,    // whether Setup's own custom-duration input is active (separate from the Build page's state.editingDuration)
 };
 
 function setState(patch){ Object.assign(state, patch); render(); }
@@ -7481,11 +7582,23 @@ function commitTemplateCustomDuration(id, rawVal){
   setTimeout(render, 0);
 }
 /* Build page: pick a saved template to apply to the session currently being built. */
-function openTemplatePicker(){ state.templatePickerOpen = true; renderOverlay(); }
+function openTemplatePicker(){ state.templatePickerOpen = true; state.templatePickerContext = 'build'; renderOverlay(); }
+// Practice Setup's "View All Templates" -- same sheet, but selecting a row only marks it chosen
+// on the Setup page (see chooseTemplate()'s branch below) instead of immediately applying it.
+function openTemplatePickerForSetup(){ state.templatePickerOpen = true; state.templatePickerContext = 'setup'; renderOverlay(); }
 function closeTemplatePicker(){ state.templatePickerOpen = false; renderOverlay(); }
 function chooseTemplate(id){
   const t = getTemplate(id);
+  if(state.templatePickerContext === 'setup'){
+    // Tapping the already-selected template again deselects it, back to Start From Scratch --
+    // matches selectSetupTemplate()'s own toggle behavior below.
+    state.setupSelectedTemplateId = (state.setupSelectedTemplateId === id) ? null : id;
+    state.templatePickerOpen = false;
+    render();
+    return;
+  }
   applyTemplateToBuilder(id);
+  markTemplateUsed(id);
   state.templatePickerOpen = false;
   showToast(`Applied "${t?t.name:'template'}" to this session`);
 }
@@ -7556,14 +7669,15 @@ function templateLibRowHtml(t, forPicker){
   const locLabel = t.location==='indoor' ? 'Indoor' : t.location==='outdoor' ? 'Outdoor' : 'Any location';
   const sectionCount = t.sections.filter(s=>s.enabled!==false).length;
   const sum = templateSum(t.id);
+  const isSetupSelected = forPicker && state.templatePickerContext==='setup' && state.setupSelectedTemplateId===t.id;
   return `
-  <div class="tmpl-lib-row" onclick="${forPicker ? `chooseTemplate('${t.id}')` : `openTemplateEditor('${t.id}')`}">
+  <div class="tmpl-lib-row ${isSetupSelected?'selected':''}" onclick="${forPicker ? `chooseTemplate('${t.id}')` : `openTemplateEditor('${t.id}')`}">
     <div class="tmpl-lib-icon">${locIcon}</div>
     <div class="tmpl-lib-info">
       <div class="tmpl-lib-name">${escHtml(t.name || 'Untitled template')}</div>
       <div class="tmpl-lib-meta">${locLabel} &middot; ${t.duration}m &middot; ${sectionCount} section${sectionCount===1?'':'s'}${sum!==100?` &middot; <span style="color:var(--warn);">${sum}% allocated</span>`:''}</div>
     </div>
-    ${forPicker ? '' : `<button class="phase-box-del" onclick="event.stopPropagation(); requestDeleteTemplate('${t.id}')" title="Delete template">${ICONS.trash}</button>`}
+    ${forPicker ? (isSetupSelected ? `<span class="setup-card-check static">${ICONS.check}</span>` : '') : `<button class="phase-box-del" onclick="event.stopPropagation(); requestDeleteTemplate('${t.id}')" title="Delete template">${ICONS.trash}</button>`}
     <span class="tmpl-lib-chevron">${ICONS.chevronRight}</span>
   </div>`;
 }
@@ -7875,7 +7989,7 @@ function renderExercises(){
         <input id="searchInput" placeholder="Search exercises, tags, setup..." value="${escAttr(state.search)}" oninput="onSearch(this.value)">
         ${state.search ? `<button class="search-clear-btn" onclick="clearSearch()" title="Clear search">${ICONS.x}</button>` : ''}
       </div>
-      <button class="qp-iconbtn" onclick="openQuickPick()" title="Quick Pick" aria-label="Quick Pick">${ICONS.dice}</button>
+      <button class="qp-iconbtn" onclick="openQuickPick()" title="Quick Pick" aria-label="Quick Pick">${ICONS.sparkles}</button>
       <button class="qp-filter-btn" onclick="toggleFilters(true)" title="Filters" aria-label="Filters">${ICONS.filter}${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
     </div>
     <div class="quickfilter-row">
@@ -7963,6 +8077,7 @@ function exCard(ex){
   const inPhase = isExerciseInAnyPhase(ex.id);
   const isBookmarked = state.bookmarks.has(ex.id);
   const st = secStyle(ex.section);
+  const cardTags = allTagsFor(ex).slice(0,3);
   return `
   <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${ex.id}')" style="cursor:pointer;">
     <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${ex.id}')">
@@ -7973,6 +8088,7 @@ function exCard(ex){
     <div class="ex-body">
       <div class="ex-sect">${ex.section}${ex.duration?' · '+ex.duration+' min':''}</div>
       <div class="ex-name" onclick="openDetail('${ex.id}')" style="cursor:pointer;">${ex.name}</div>
+      ${cardTags.length ? `<div class="ex-card-tags">${cardTags.map(t=>`<span class="tagpill sm">${escHtml(t)}</span>`).join('')}</div>` : ''}
       <button class="ex-addbtn ${inPhase?'added':''}" onclick="quickAdd(event,'${ex.id}')">
         ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}
       </button>
@@ -8243,8 +8359,8 @@ function renderOverlay(){
     <div class="sheet-backdrop" onclick="closeTemplatePicker()"></div>
     <div class="sheet">
       <div class="sheet-handle"></div>
-      <h3>Load a template</h3>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin:-4px 0 10px;">Replaces which sections show up on this page (and their order) with this template's setup. Exercises you've already added to a section that stays enabled aren't removed.</div>
+      <h3>${state.templatePickerContext==='setup' ? 'Choose a template' : 'Load a template'}</h3>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin:-4px 0 10px;">${state.templatePickerContext==='setup' ? 'Templates set up which of the six sections are included, their order, and roughly how long each gets. Tap one to select it, or tap it again to go back to starting from scratch.' : `Replaces which sections show up on this page (and their order) with this template's setup. Exercises you've already added to a section that stays enabled aren't removed.`}</div>
       <div class="tmpl-lib-list" style="max-height:48vh;overflow-y:auto;">
         ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, true)).join('') : `<div class="build-ex-empty">No templates saved yet -- add one in Settings</div>`}
       </div>
@@ -8576,6 +8692,10 @@ function renderTimeComparisonPanel(totalOverride, targetOverride, groupsOverride
 /* ============ BUILD A SESSION ============ */
 function setTargetDuration(v){ state.targetDuration = v; state.editingDuration = false; render(); }
 function setPracticeLocation(loc){ state.practiceLocation = loc; render(); }
+// Build Practice (batch 69): duration/location now live behind a small compact editor instead of
+// a permanently-visible row, since Practice Setup is where those get set in the normal flow -- this
+// just keeps the existing ability to change them without reintroducing the old page-dominating UI.
+function toggleBuildDetails(){ state.buildDetailsExpanded = !state.buildDetailsExpanded; render(); }
 function toggleCustomDurationEdit(){
   state.editingDuration = true;
   render();
@@ -8590,6 +8710,58 @@ function commitCustomDuration(rawVal){
 function defaultSessionName(){
   const d = new Date();
   return d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'}) + ' Practice';
+}
+// YYYY-MM-DD in the coach's own local time (not UTC) -- what an <input type="date"> needs, and
+// what state.practiceDate/state.setupDate are stored as throughout.
+function todayISODate(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+// Compact "SAT, SEP 12" style label for the Build Practice page's practice-summary line, from a
+// YYYY-MM-DD state.practiceDate. Parses year/month/day directly (never `new Date(isoString)`) so a
+// coach west of UTC doesn't see the date roll back a day -- the same off-by-one that ISO-string
+// date parsing is prone to.
+function formatPracticeDateShort(iso){
+  if(!iso) return '';
+  const parts = iso.split('-').map(Number);
+  if(parts.length!==3 || parts.some(isNaN)) return '';
+  const d = new Date(parts[0], parts[1]-1, parts[2]);
+  return d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+}
+// Fills in Practice Setup's own draft fields fresh -- called whenever Setup is entered to start a
+// brand-new practice. Duration/location default to whatever was last used (state.targetDuration/
+// state.practiceLocation already persist across sessions today -- this preserves that instead of
+// hardcoding a fresh default), matching how the Build page's own settings already behave.
+function initSetupDraft(){
+  state.setupName = defaultSessionName();
+  state.setupDate = todayISODate();
+  state.setupDuration = state.targetDuration;
+  state.setupLocation = state.practiceLocation;
+  state.setupSelectedTemplateId = null;
+  state.setupEditingDuration = false;
+}
+// The up-to-3 templates Practice Setup surfaces directly on the page, in priority order: most
+// recently used, then most frequently used, then (for anything never used) the library's own
+// order -- Array.prototype.sort is stable, so ties fall back to that order rather than anything
+// fabricated. lastUsedAt/useCount are only ever set by real use (markTemplateUsed below), never
+// seeded with fake numbers.
+function rankedSetupTemplates(){
+  return state.practiceTemplates.slice().sort((a,b) => {
+    const aUsed = a.lastUsedAt||0, bUsed = b.lastUsedAt||0;
+    if(aUsed !== bUsed) return bUsed - aUsed;
+    const aCount = a.useCount||0, bCount = b.useCount||0;
+    if(aCount !== bCount) return bCount - aCount;
+    return 0;
+  }).slice(0,3);
+}
+// Real usage tracking -- called whenever a template is actually used to start or configure a
+// practice (both from Practice Setup's CTA and the Build page's existing "Load a template").
+function markTemplateUsed(id){
+  const t = getTemplate(id);
+  if(!t) return;
+  t.lastUsedAt = Date.now();
+  t.useCount = (t.useCount||0) + 1;
 }
 function setSessionName(v){ state.sessionName = v; }
 function toggleSplitExpanded(){ state.splitExpanded = !state.splitExpanded; render(); }
@@ -8701,11 +8873,10 @@ function renderSessionBuilderBox(pickingLabel){
   return `
   <div class="sbb-sticky-wrap">
   <div class="session-builder-box">
-    <div class="sbb-compact-row1">
+    <div class="sbb-back-row">
       <button class="sbb-full-link" onclick="nav('build')">${ICONS.back} Full Session</button>
-      <div class="sbb-compact-title">Building Session</div>
-      <div class="sbb-title-spacer" aria-hidden="true"></div>
     </div>
+    <div class="sbb-compact-title left">Building Session</div>
     <div class="sbb-compact-row2">
       <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>
       <div class="sbb-compact-stats"><b>${total}</b>/${state.targetDuration} min</div>
@@ -8832,38 +9003,57 @@ function renderBuild(){
   const presets = [60,75,90];
   const isCustomActive = !presets.includes(state.targetDuration);
   const activePhases = orderedPhases().filter(p => state.enabledPhaseKeys.has(p.key));
-  const filledPhaseCount = activePhases.filter(p => state.phaseData[p.key].length).length;
-  const firstEmptyPhase = activePhases.find(p => !state.phaseData[p.key].length);
+  const {total, count} = currentTotalMinutes();
+  const pct = state.targetDuration ? Math.min(100, Math.round((total/state.targetDuration)*100)) : 0;
+  const over = total > state.targetDuration;
+  const remain = state.targetDuration - total;
 
-  const phaseBoxHtml = (p) => {
+  // Numbered practice-plan cards (batch 69): "01 WARMUP", "02 ATHLETIC", etc., in whatever order
+  // the coach's own Settings > phase order currently is (orderedPhases()/enabledPhaseKeys are a
+  // persistent coach preference, unrelated to this one practice, and untouched here) -- for a coach
+  // who's never reordered anything this is exactly the canonical 01-06 Warmup..Scrimmage sequence.
+  // "Start here" is now a one-time cue on phase #1 only, and only while the whole practice is still
+  // empty -- it does not chase whichever phase is next like the old "next-up" pointer did, since the
+  // builder is a planner a coach can jump around in, not a six-step wizard.
+  const phaseBoxHtml = (p, idx) => {
     const ids = state.phaseData[p.key];
     const st = secStyle(p.section);
     const mins = ids.reduce((a,id)=>a+(exById(id)?.duration||10),0);
-    const isNextUp = firstEmptyPhase && p.key === firstEmptyPhase.key;
     const isEmpty = ids.length === 0;
+    const isFirstPhaseWhileEmpty = count===0 && idx===0;
     // Empty sections start (and stay) collapsed -- there's nothing to expand yet, so no chevron
     // is shown at all. Once the first exercise is added, a chevron appears and the box defaults
     // to expanded so the coach immediately sees what they just added.
     const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
+    const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
+    const numStr = String(idx+1).padStart(2,'0');
+
+    let minsHtml;
+    if(isEmpty){
+      minsHtml = `<span class="pcard-mins empty">0 MIN</span>`;
+    } else if(mins >= suggested){
+      // Meets or exceeds its guideline share -- a plain checkmark, no color implying "done right,"
+      // just "on pace." Never a warning color either way (per PHASE TIME GUIDANCE: deviation is fine).
+      minsHtml = `<span class="pcard-mins"><span>${mins} min</span>${ICONS.check}</span>`;
+    } else {
+      minsHtml = `<span class="pcard-mins"><span>${mins} min</span><span class="pcard-sugg">&middot; ${suggested} min suggested</span></span>`;
+    }
+
+    let subLine = '';
+    if(isFirstPhaseWhileEmpty) subLine = `<div class="pcard-starthere">Start here</div>`;
+    else if(isEmpty) subLine = `<div class="pcard-sugg-line">${suggested} min suggested</div>`;
+
     return `
-    <div class="phase-box ${isNextUp?'next-up':''} ${isEmpty?'':'filled'}">
-      <div class="phase-box-header with-icon">
-        <div class="pb-icon-wrap">
-          <div class="pb-icon md" style="background:${st.color};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>
-          ${isEmpty ? '' : `<span class="pb-filled-badge">${ICONS.check}</span>`}
-        </div>
-        <div class="phase-box-body">
-          <div class="phase-box-toprow">
-            <div class="phase-box-title">${p.label}${isNextUp?' <span class="next-up-pill">Start here</span>':''}</div>
-            ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
-          </div>
-          <div class="phase-box-subrow">
-            <div class="phase-box-time">${ids.length ? ids.length+' exercise'+(ids.length===1?'':'s')+' \u00b7 ' : ''}${mins}m</div>
-            <button class="phase-box-add-btn" onclick="pickForPhase('${p.key}')">+ Add Exercises</button>
-          </div>
-        </div>
+    <div class="phase-box ${isFirstPhaseWhileEmpty?'next-up':''} ${isEmpty?'':'filled'}">
+      <div class="pcard-toprow">
+        <span class="pcard-num" style="color:${st.color};">${numStr}</span>
+        <span class="phase-box-title">${p.label}</span>
+        ${minsHtml}
+        ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
       </div>
+      ${subLine}
       ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
+      <button class="pcard-add-btn" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
     </div>`;
   };
 
@@ -8889,58 +9079,73 @@ function renderBuild(){
     </div>`;
   };
 
-  const {count} = currentTotalMinutes();
+  const dateLabel = formatPracticeDateShort(state.practiceDate).toUpperCase();
+  const locLabel = state.practiceLocation === 'indoor' ? 'INDOOR' : 'OUTDOOR';
+
+  // REVIEW button (batch 71): back to a single static "Review Session" label -- secondary/
+  // disabled with nothing added yet, same wording once anything exists. Never required to hit
+  // every phase or reach the target length first.
+  const ctaLabel = 'Review Session';
+  const ctaDisabled = count===0;
 
   return `
   <div class="section-pad">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div class="eyebrow">New Training Session</div>
+    <button class="back-pill-flat" onclick="editPracticeSetup()">${ICONS.back} Setup</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+      <h1 class="setup-page-title" style="margin:0;">Build Session</h1>
       <div class="session-state-tag ${count>0?'inprogress':'new'}">${count>0?'In Progress':'New'}</div>
     </div>
-    <div class="session-name-wrap">
-      <input class="session-name-input" placeholder="Name this session (e.g. Tue U11 Practice)" value="${escAttr(state.sessionName)}" oninput="setSessionName(this.value)">
-      <span class="session-name-pencil">${ICONS.pencil}</span>
-    </div>
-    <div class="build-progress-line">
-      <div class="progress-track" style="height:5px;"><div class="progress-fill" style="width:${Math.round(filledPhaseCount/PHASES.length*100)}%;"></div></div>
-      <span>${filledPhaseCount} of ${activePhases.length} phases planned${firstEmptyPhase ? (filledPhaseCount > 0 ? ` — next section is ${firstEmptyPhase.label}` : ` — start with ${firstEmptyPhase.label}`) : ' — ready to review'}</span>
-    </div>
 
-    <div class="practice-settings-row">
-      <div class="practice-setting-group">
-        <div class="ps-label">Practice Duration</div>
-        <div class="duration-target compact">
-          ${presets.map(v => `<button class="dtarget compact ${state.targetDuration===v?'active':''}" onclick="setTargetDuration(${v})">${v}</button>`).join('')}
-          ${state.editingDuration
-            ? `<input id="customDurInput" class="dtarget-input compact" type="text" inputmode="numeric" pattern="[0-9]*" value="${isCustomActive?state.targetDuration:''}" placeholder="#" onblur="commitCustomDuration(this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
-            : `<button class="dtarget compact ${isCustomActive?'active':''}" onclick="toggleCustomDurationEdit()">${isCustomActive?state.targetDuration:'+'}</button>`}
+    <div class="bp-name-row">
+      <input class="bp-name-input" placeholder="Name this practice" value="${escAttr(state.sessionName)}" oninput="setSessionName(this.value)">
+      <span class="bp-name-pencil">${ICONS.pencil}</span>
+    </div>
+    <div class="bp-meta-line">
+      <span>${dateLabel} &middot; ${state.targetDuration} MIN &middot; ${locLabel}</span>
+      <button class="bp-meta-edit-btn" onclick="toggleBuildDetails()" title="Edit duration or location" aria-label="Edit duration or location">${ICONS.pencil}</button>
+    </div>
+    ${state.buildDetailsExpanded ? `
+    <div class="bp-details-panel">
+      <div class="practice-settings-row" style="margin-top:0;">
+        <div class="practice-setting-group">
+          <div class="ps-label">Practice Duration</div>
+          <div class="duration-target compact">
+            ${presets.map(v => `<button class="dtarget compact ${state.targetDuration===v?'active':''}" onclick="setTargetDuration(${v})">${v}</button>`).join('')}
+            ${state.editingDuration
+              ? `<input id="customDurInput" class="dtarget-input compact" type="text" inputmode="numeric" pattern="[0-9]*" value="${isCustomActive?state.targetDuration:''}" placeholder="#" onblur="commitCustomDuration(this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
+              : `<button class="dtarget compact ${isCustomActive?'active':''}" onclick="toggleCustomDurationEdit()">${isCustomActive?state.targetDuration:'+'}</button>`}
+          </div>
+        </div>
+        <div class="practice-setting-group">
+          <div class="ps-label">Location</div>
+          <div class="location-toggle">
+            <button class="loc-btn ${state.practiceLocation==='outdoor'?'active':''}" onclick="setPracticeLocation('outdoor')">${ICONS.sun} Outdoor</button>
+            <button class="loc-btn ${state.practiceLocation==='indoor'?'active':''}" onclick="setPracticeLocation('indoor')">${ICONS.home} Indoor</button>
+          </div>
         </div>
       </div>
-      <div class="practice-setting-group">
-        <div class="ps-label">Location</div>
-        <div class="location-toggle">
-          <button class="loc-btn ${state.practiceLocation==='outdoor'?'active':''}" onclick="setPracticeLocation('outdoor')">${ICONS.sun} Outdoor</button>
-          <button class="loc-btn ${state.practiceLocation==='indoor'?'active':''}" onclick="setPracticeLocation('indoor')">${ICONS.home} Indoor</button>
-        </div>
+    </div>` : ''}
+
+    <div class="bp-progress">
+      <div class="bp-progress-toprow">
+        <span class="bp-progress-label">${total} / ${state.targetDuration} MIN PLANNED</span>
+        ${total>0 ? `<span class="bp-progress-remaining ${over?'over':''}">${over ? `+${-remain} MIN OVER` : `${remain} MIN REMAINING`}</span>` : ''}
       </div>
+      <div class="progress-track" style="height:6px;margin-top:7px;"><div class="progress-fill ${over?'over':''}" style="width:${pct}%;"></div></div>
     </div>
-
-    ${renderTimeComparisonPanel()}
-
-    ${(state.practiceTemplates.length && count===0) ? `<button class="addsection-btn" style="margin-top:14px;" onclick="openTemplatePicker()">${ICONS.doc} Load from a template</button>` : ''}
 
     <div class="phase-grid">
-      ${activePhases.map(p=>phaseBoxHtml(p)).join('')}
+      ${activePhases.map((p,idx)=>phaseBoxHtml(p,idx)).join('')}
       ${state.extraSections.map(s=>extraBoxHtml(s)).join('')}
     </div>
     ${count>0 ? `<div class="build-bottom-actions">
       <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
-      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard Session</button>
+      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
     </div>` : ''}
 
   </div>
   <div class="build-cta">
-    <button class="btn btn-primary" onclick="nav('review')">Review session</button>
+    <button class="btn btn-primary" ${ctaDisabled?'disabled':''} onclick="nav('review')">${ctaLabel.toUpperCase()}</button>
   </div>
   `;
 }
@@ -8972,12 +9177,15 @@ function completeSession(){
     id, name,
     totalMin: total, exCount: count, createdAt: Date.now(), createdBy: CURRENT_USER,
     targetDuration: state.targetDuration, phases: phasesSnapshot,
+    practiceDate: state.practiceDate, location: state.practiceLocation, templateId: state.activeTemplateId,
     rating: 0, comment: '', favorited: false,
   });
   // reset builder
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
   state.sessionName = defaultSessionName();
+  state.practiceDate = todayISODate();
+  state.activeTemplateId = null;
   showToast('Session saved!');
   nav('home');
 }
@@ -8997,6 +9205,8 @@ function confirmDiscardSession(){
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
   state.sessionName = defaultSessionName();
+  state.practiceDate = todayISODate();
+  state.activeTemplateId = null;
   state.confirmDiscardOpen = false;
   showToast('Draft practice discarded');
   nav('home');
@@ -9007,7 +9217,7 @@ function confirmDiscardSession(){
 function requestBuildNewSession(){
   const {count} = currentTotalMinutes();
   if(count>0){ state.confirmNewSessionOpen = true; renderOverlay(); }
-  else { nav('build'); }
+  else { initSetupDraft(); nav('practiceSetup'); }
 }
 function cancelNewSessionModal(){ state.confirmNewSessionOpen = false; renderOverlay(); }
 function resumeInProgressSession(){ state.confirmNewSessionOpen = false; nav('build'); }
@@ -9015,8 +9225,11 @@ function startNewSessionDiscardingDraft(){
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
   state.sessionName = defaultSessionName();
+  state.practiceDate = todayISODate();
+  state.activeTemplateId = null;
   state.confirmNewSessionOpen = false;
-  nav('build');
+  initSetupDraft();
+  nav('practiceSetup');
 }
 function togglePhaseCollapsed(key){
   if(state.collapsedPhases.has(key)) state.collapsedPhases.delete(key); else state.collapsedPhases.add(key);
@@ -9047,6 +9260,7 @@ function renderReview(){
   if(count===0){
     return `
     <div class="section-pad">
+      <button class="back-pill-flat" onclick="nav('build')">${ICONS.back} Build Session</button>
       <div class="empty-state">
         ${ICONS.empty}
         <p>No exercises added yet.<br>Head to Build a Session to get started.</p>
@@ -9057,14 +9271,15 @@ function renderReview(){
 
   return `
   <div class="section-pad">
-    <div>
+    <button class="back-pill-flat" onclick="nav('build')">${ICONS.back} Build Session</button>
+    <div style="margin-top:14px;">
       <div class="eyebrow">Session Review (unsaved)</div>
       ${state.sessionName.trim() ? `<h2 style="font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;font-size:20px;margin:2px 0 0;">${escHtml(state.sessionName)}</h2>` : ''}
     </div>
     <div class="review-stats-row">
       <div class="review-total-mini">${total} total minutes &middot; ${count} exercises</div>
       <button class="review-session-toggle" onclick="toggleSplitExpanded()">
-        <span>Breakdown</span>
+        <span>Time Breakdown</span>
         <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
       </button>
     </div>
@@ -9119,8 +9334,173 @@ function renderReview(){
     <div class="build-bottom-actions trio" style="margin-top:10px;">
       <button class="bba-btn" onclick="nav('build')">${ICONS.pencil} Edit</button>
       <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
-      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard Session</button>
+      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
     </div>
+  </div>`;
+}
+
+/* ============ PRACTICE SETUP (batch 68) ============
+   Lightweight setup screen between Home's "Build New Session" and the existing Build page. Only
+   ever writes into the live/committed practice fields (sessionName, targetDuration,
+   practiceLocation, practiceDate, activeTemplateId, phaseData, extraSections) at the moment the
+   bottom CTA is tapped (startFromSetup) -- everything above that point lives in Setup's own draft
+   fields (state.setup*) so back-navigation can never leave behind a stray mutated or accidental
+   empty practice. */
+function setSetupName(v){ state.setupName = v; }
+function setSetupDate(v){ state.setupDate = v; render(); }
+function setSetupDuration(v){ state.setupDuration = v; state.setupEditingDuration = false; render(); }
+function toggleSetupCustomDurationEdit(){
+  state.setupEditingDuration = true;
+  render();
+  setTimeout(()=>{ const el=document.getElementById('setupCustomDurInput'); if(el){ el.focus(); el.select(); } }, 0);
+}
+function commitSetupCustomDuration(rawVal){
+  const n = parseInt(String(rawVal).replace(/[^0-9]/g,''), 10);
+  if(!isNaN(n) && n>0) state.setupDuration = Math.max(15, n);
+  state.setupEditingDuration = false;
+  setTimeout(render, 0);
+}
+function setSetupLocation(loc){ state.setupLocation = loc; render(); }
+// Tapping an already-selected template again deselects it (back to Start From Scratch) -- the
+// coach can freely change their mind before ever committing via the bottom CTA.
+function selectSetupTemplate(id){
+  state.setupSelectedTemplateId = (state.setupSelectedTemplateId === id) ? null : id;
+  render();
+}
+function selectSetupScratch(){ state.setupSelectedTemplateId = null; render(); }
+// Back from Setup never needs to guard against an accidental empty practice: nothing in the live
+// builder state has been touched yet (see startFromSetup below), so there's nothing to undo. If a
+// practice IS already in progress (reached via the "< Setup" button below, batch 70), "back" means
+// back to that practice, not out to Home.
+function backFromPracticeSetup(){ nav(currentTotalMinutes().count>0 ? 'build' : 'home'); }
+// Build Practice's "< Setup" button (batch 70): jump back to Practice Setup to tweak this
+// already-in-progress practice's name/date/duration/location/template. Unlike initSetupDraft()
+// (fresh-start defaults), this seeds Setup's draft fields from the CURRENT practice, and
+// startFromSetup() above detects the in-progress practice and skips its usual exercise wipe.
+function editPracticeSetup(){
+  state.setupName = state.sessionName;
+  state.setupDate = state.practiceDate;
+  state.setupDuration = state.targetDuration;
+  state.setupLocation = state.practiceLocation;
+  state.setupSelectedTemplateId = state.activeTemplateId;
+  state.setupEditingDuration = false;
+  nav('practiceSetup');
+}
+function startFromSetup(){
+  const templateId = state.setupSelectedTemplateId;
+  // Every pre-existing way to reach Practice Setup (Home's "Build New Session" when nothing's in
+  // progress, or "Start New Session" from the in-progress guard, which wipes first) only ever lands
+  // here with an empty practice. Batch 70 added a second way in -- editPracticeSetup(), the new
+  // "< Setup" button on an already-in-progress Build Practice page -- so this reset now only runs
+  // when there genuinely isn't a practice to lose yet, checked against real state (survives a
+  // reload) rather than a separate flag that could drift out of sync with it.
+  const hasExistingPractice = currentTotalMinutes().count > 0;
+
+  if(!hasExistingPractice){
+    // Clean slate of exercises -- same reset confirmDiscardSession()/startNewSessionDiscardingDraft()
+    // already use, which never touches enabledPhaseKeys/phaseOrder since those are the coach's own
+    // persistent Settings preference, not per-practice state (see PHASES's comment above).
+    PHASES.forEach(p => state.phaseData[p.key] = []);
+    state.extraSections = [];
+  }
+
+  if(templateId && getTemplate(templateId)){
+    applyTemplateToBuilder(templateId); // existing function -- exact same one the Build page's own "Load a template" uses
+    markTemplateUsed(templateId);
+  }
+
+  // The coach's own choices on this Setup page take priority over a template's stored defaults
+  // (a template's duration is just its typical/default length, not a hard requirement for today).
+  state.sessionName = (state.setupName || '').trim() || defaultSessionName();
+  state.practiceDate = state.setupDate || todayISODate();
+  state.targetDuration = state.setupDuration;
+  state.practiceLocation = state.setupLocation;
+  state.activeTemplateId = templateId || null;
+
+  state.setupSelectedTemplateId = null;
+  nav('build');
+}
+function setupScratchCardHtml(){
+  const isSelected = !state.setupSelectedTemplateId;
+  return `
+  <button class="setup-scratch-card ${isSelected?'selected':''}" onclick="selectSetupScratch()">
+    ${isSelected ? `<span class="setup-card-check">${ICONS.check}</span>` : ''}
+    <div class="setup-scratch-dots">${PHASES.map(p=>`<span style="background:${secStyle(p.section).color};"></span>`).join('')}</div>
+    <div class="setup-scratch-title">Start From Scratch</div>
+    <div class="setup-scratch-sub">Build your practice from the six FT2 phases.</div>
+  </button>`;
+}
+function setupTemplateCardHtml(t){
+  const isSelected = state.setupSelectedTemplateId === t.id;
+  const locLabel = t.location==='indoor' ? 'Indoor' : t.location==='outdoor' ? 'Outdoor' : 'Any';
+  const sectionCount = t.sections.filter(s=>s.enabled!==false).length;
+  return `
+  <button class="setup-tmpl-card ${isSelected?'selected':''}" onclick="selectSetupTemplate('${t.id}')">
+    ${isSelected ? `<span class="setup-card-check">${ICONS.check}</span>` : ''}
+    <div class="setup-tmpl-badge">${ICONS.doc}<span>Template</span></div>
+    <div class="setup-tmpl-name">${escHtml(t.name || 'Untitled template')}</div>
+    <div class="setup-tmpl-meta">${t.duration}m &middot; ${locLabel} &middot; ${sectionCount} section${sectionCount===1?'':'s'}</div>
+  </button>`;
+}
+function renderPracticeSetup(){
+  // Defensive lazy-init: covers a reload that lands directly back on this screen (state.screen is
+  // persisted; Setup's own draft fields deliberately are not -- see the persistence functions).
+  if(state.setupName===null) initSetupDraft();
+
+  const presets = [60,75,90];
+  const isCustomActive = !presets.includes(state.setupDuration);
+  const topTemplates = rankedSetupTemplates();
+  const ctaLabel = state.setupSelectedTemplateId ? 'START WITH TEMPLATE' : 'START BUILDING';
+
+  return `
+  <div class="section-pad">
+    <button class="back-pill-flat" onclick="backFromPracticeSetup()">${ICONS.back} Back</button>
+    <div class="eyebrow" style="margin-top:16px;">Practice Setup</div>
+    <h1 class="setup-page-title">New Practice</h1>
+
+    <div class="setup-block">
+      <div class="ps-label">Practice Name</div>
+      <div class="session-name-wrap">
+        <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)">
+        <span class="session-name-pencil">${ICONS.pencil}</span>
+      </div>
+    </div>
+
+    <div class="setup-block">
+      <div class="ps-label">Date</div>
+      <input type="date" class="setup-date-input" value="${state.setupDate}" onchange="setSetupDate(this.value)">
+    </div>
+
+    <div class="setup-block">
+      <div class="ps-label">Duration</div>
+      <div class="duration-target">
+        ${presets.map(v => `<button class="dtarget ${state.setupDuration===v?'active':''}" onclick="setSetupDuration(${v})">${v}</button>`).join('')}
+        ${state.setupEditingDuration
+          ? `<input id="setupCustomDurInput" class="dtarget-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${isCustomActive?state.setupDuration:''}" placeholder="#" onblur="commitSetupCustomDuration(this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
+          : `<button class="dtarget ${isCustomActive?'active':''}" onclick="toggleSetupCustomDurationEdit()">${isCustomActive?state.setupDuration:'Custom'}</button>`}
+      </div>
+    </div>
+
+    <div class="setup-block">
+      <div class="ps-label">Location</div>
+      <div class="location-toggle">
+        <button class="loc-btn ${state.setupLocation==='outdoor'?'active':''}" onclick="setSetupLocation('outdoor')">${ICONS.sun} Outdoor</button>
+        <button class="loc-btn ${state.setupLocation==='indoor'?'active':''}" onclick="setSetupLocation('indoor')">${ICONS.home} Indoor</button>
+      </div>
+    </div>
+
+    <div class="sh" style="margin-top:28px;"><h2>Starting Point</h2></div>
+    ${setupScratchCardHtml()}
+    ${topTemplates.length ? `
+      <div class="ps-label" style="margin-top:16px;">Use a Template</div>
+      <div class="setup-tmpl-scroll">
+        ${topTemplates.map(t=>setupTemplateCardHtml(t)).join('')}
+      </div>
+      <button class="setup-viewall-btn" onclick="openTemplatePickerForSetup()"><span>View All Templates</span>${ICONS.chevronRight}</button>
+    ` : ''}
+  </div>
+  <div class="build-cta">
+    <button class="btn btn-primary" onclick="startFromSetup()">${ctaLabel}</button>
   </div>`;
 }
 
@@ -9297,6 +9677,8 @@ function saveAppStateToStorage(){
       sessionName: state.sessionName,
       targetDuration: state.targetDuration,
       practiceLocation: state.practiceLocation,
+      practiceDate: state.practiceDate,
+      activeTemplateId: state.activeTemplateId,
       savedSessions: state.savedSessions,
       bookmarks: [...state.bookmarks],
       enabledPhaseKeys: [...state.enabledPhaseKeys],
@@ -9332,6 +9714,8 @@ function loadAppStateFromStorage(){
     if(typeof snap.sessionName === 'string' && snap.sessionName.trim()) state.sessionName = snap.sessionName;
     if(typeof snap.targetDuration === 'number' && snap.targetDuration > 0) state.targetDuration = snap.targetDuration;
     if(snap.practiceLocation === 'indoor' || snap.practiceLocation === 'outdoor') state.practiceLocation = snap.practiceLocation;
+    if(typeof snap.practiceDate === 'string' && snap.practiceDate) state.practiceDate = snap.practiceDate;
+    if(typeof snap.activeTemplateId === 'string' || snap.activeTemplateId === null) state.activeTemplateId = snap.activeTemplateId ?? null;
     if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
     if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
     if(Array.isArray(snap.enabledPhaseKeys) && snap.enabledPhaseKeys.length) state.enabledPhaseKeys = new Set(snap.enabledPhaseKeys);
@@ -9374,6 +9758,7 @@ const screens = {
   home: renderHome,
   exercises: renderExercises,
   detail: renderDetail,
+  practiceSetup: renderPracticeSetup,
   build: renderBuild,
   review: renderReview,
   sessions: renderSessions,
