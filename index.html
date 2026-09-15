@@ -941,6 +941,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1px solid var(--line);
   border-radius:10px;padding:9px 10px 9px 8px;
 }
+.phase-ex-remove{background:none;border:none;color:var(--ink-soft);opacity:0.5;padding:6px;display:flex;flex-shrink:0;}
+.phase-ex-remove:active{opacity:0.8;}
+.phase-ex-remove svg{width:15px;height:15px;}
 .pei-thumb{
   width:34px;height:34px;border-radius:8px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
@@ -1162,6 +1165,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .review-cta-row .btn svg{width:14px;height:14px;}
 .review-stats-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:4px;}
 .review-total-mini{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;}
+.sd-total-time{font-size:var(--fs-sm);color:var(--ink);font-weight:700;}
 .review-session-toggle{
   display:flex;align-items:center;gap:4px;flex-shrink:0;
   padding:6px 10px;border-radius:20px;border:1px solid var(--line);
@@ -7357,6 +7361,7 @@ function backFromDetail(){
     state.draftExercise = null;
   }
   if(state.fromReview){ nav('review'); return; }
+  if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
   // Always back to Explore Exercises -- when fromBuild is true, state.pickingPhase is still set
   // (they're set together, only ever in pickForPhase()), so this naturally lands the coach back
   // on the same Building Session picker screen they came from rather than the full phase grid.
@@ -7369,6 +7374,12 @@ const state = {
   detailId: null,
   fromBuild: false,           // came from build-a-session "add exercise" flow
   fromReview: false,          // came from the unsaved Session Review screen's exercise list
+  fromSavedSession: false,    // came from a SAVED practice's detail screen (viewing or adding)
+  fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
+  editingSavedSessionId: null,// set while browsing the library to add an exercise to a saved
+                               // session (as opposed to the live build-a-new-session draft)
+  reviewGroupOrder: {},       // {groupKey: [exerciseId,...]} -- coach's drag-reordered display
+                               // sequence per Review-page phase-group card, see reviewPhaseGroups()
   pickingPhase: null,         // phase key currently being populated
   search: '',
   quickFilterValue: null,     // single active Quick Filter value on the "+ Add Exercise" picking screen (null = "All"); section-scoped, reset whenever the picking phase changes
@@ -7510,7 +7521,7 @@ function renderBottomnav(){
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.home,"nav('home')")}
-    ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
+    ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
     <button class="navitem build-fab" onclick="nav('build')" title="Build a Session">${ICONS.soccerBallPhoto}<span>Build</span></button>
     ${item('sessions','Sessions',ICONS.doc,"nav('sessions')",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
@@ -8177,6 +8188,9 @@ function exCard(ex){
 }
 
 function isExerciseInAnyPhase(id){
+  // While browsing to add an exercise to an already-SAVED session, "the current session" means
+  // that saved session, not the live build-a-new-session draft -- redirect the check there.
+  if(state.editingSavedSessionId) return isExerciseInSavedSession(state.editingSavedSessionId, id);
   if(PHASES.some(p => state.phaseData[p.key].includes(id))) return true;
   return state.extraSections.some(s => s.exercises.includes(id));
 }
@@ -8219,7 +8233,7 @@ let searchDebounceTimer = null;
 function openSearch(){
   // Clear any active section filter / guided-picking context first so this genuinely searches
   // the entire exercise library, not whatever subset a leftover filter happened to be scoped to.
-  nav('exercises', {fromBuild:false, pickingPhase:null, sectionFilter:null, quickFilterValue:null});
+  nav('exercises', {fromBuild:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null});
   setTimeout(()=>{ const el = document.getElementById('searchInput'); if(el) el.focus(); }, 0);
 }
 function onSearch(v){
@@ -8247,6 +8261,11 @@ function toggleBookmark(e, id){
    nowhere to look up yet. */
 function quickAdd(e, id){
   e.stopPropagation();
+  if(state.editingSavedSessionId){
+    if(isExerciseInSavedSession(state.editingSavedSessionId, id)) removeExerciseFromSavedSession(state.editingSavedSessionId, id);
+    else addExerciseToSavedSession(state.editingSavedSessionId, id);
+    return;
+  }
   const ex = exById(id);
   const currentKey = findPhaseKeyContaining(id);
   if(currentKey){
@@ -8510,7 +8529,8 @@ function renderOverlay(){
 
 /* ============ EXERCISE DETAIL ============ */
 function openDetail(id){ nav('detail', {detailId:id}); }
-function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false}); }
+function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false, fromSavedSession:false}); }
+function openDetailFromSavedSession(id, sessionId){ nav('detail', {detailId:id, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false}); }
 
 function renderDetail(){
   const ex = exById(state.detailId);
@@ -8533,7 +8553,9 @@ function renderDetail(){
       ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
       : state.fromReview
         ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
-        : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
+        : state.fromSavedSession
+          ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Saved Session</button>`
+          : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
@@ -8629,6 +8651,11 @@ function renderDetail(){
 }
 
 function detailToggle(id){
+  if(state.editingSavedSessionId){
+    if(isExerciseInSavedSession(state.editingSavedSessionId, id)) removeExerciseFromSavedSession(state.editingSavedSessionId, id);
+    else addExerciseToSavedSession(state.editingSavedSessionId, id);
+    return;
+  }
   const ex = exById(id);
   const currentKey = findPhaseKeyContaining(id);
   if(currentKey){
@@ -8901,7 +8928,7 @@ function removeExtraSection(key){
 
 function pickForPhase(key){
   const p = PHASES.find(p=>p.key===key);
-  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
+  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
 }
 /* Switch which phase is being filled WITHOUT leaving the exercise list — lets a coach fill several
    phases back to back instead of bouncing to the Build screen between every add. */
@@ -9081,6 +9108,80 @@ function exGripCancel(){
 }
 function exGripUp(){
   exGripCancel();
+  render();
+}
+
+// Review-page reordering: same long-press-then-drag mechanism as exGripDown/Move/Up/Cancel above,
+// but scoped by a phase-GROUP key (e.g. "activate") instead of a single phase key, since a
+// group's list on this page can blend exercises from 2-3 real phases into one visual card and
+// the coach can drag freely across that whole blend. A drag never changes which real phase an
+// exercise belongs to (see reviewExGripMove) -- only its position in the Review-page display,
+// and the relative order of same-phase exercises, which is what actually carries into Save.
+let reviewExDrag = null;
+function reviewExGripDown(e, groupKey, id){
+  e.preventDefault();
+  const startY = e.clientY;
+  const timer = setTimeout(()=>{
+    if(!reviewExDrag) return;
+    reviewExDrag.longPressed = true;
+    const row = document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${id}"]`);
+    if(row) row.classList.add('dragging');
+    if(navigator.vibrate) navigator.vibrate(15);
+  }, 320);
+  reviewExDrag = {groupKey, id, timer, startY, longPressed:false};
+  document.addEventListener('pointermove', reviewExGripMove);
+  document.addEventListener('pointerup', reviewExGripUp);
+}
+function reviewExGripMove(e){
+  if(!reviewExDrag) return;
+  if(!reviewExDrag.longPressed){
+    if(Math.abs(e.clientY - reviewExDrag.startY) > 8){ reviewExGripCancel(); }
+    return;
+  }
+  e.preventDefault();
+  const y = e.clientY;
+  const groupKey = reviewExDrag.groupKey;
+  const flat = reviewGroupFlatOrder(groupKey);
+  let overId = null;
+  flat.forEach(it=>{
+    const el = document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${it.id}"]`);
+    if(!el) return;
+    const r = el.getBoundingClientRect();
+    if(y >= r.top && y <= r.bottom) overId = it.id;
+  });
+  if(!overId || overId===reviewExDrag.id) return;
+  const phaseKeyById = new Map(flat.map(it=>[it.id, it.phaseKey]));
+  const ids = flat.map(it=>it.id);
+  const fromIdx = ids.indexOf(reviewExDrag.id);
+  const toIdx = ids.indexOf(overId);
+  if(fromIdx<0 || toIdx<0) return;
+  const [moved] = ids.splice(fromIdx,1);
+  ids.splice(toIdx,0,moved);
+  state.reviewGroupOrder[groupKey] = ids;
+  // Re-sync each real phase's own array to the new relative order of just its own items, so a
+  // same-phase reorder persists normally into the saved session on completeSession(). A custom
+  // section is its own single "phase" here, so it just gets the reordered list directly.
+  const group = PHASE_GROUPS.find(g=>g.key===groupKey);
+  if(group){
+    group.phaseKeys.forEach(key=>{
+      state.phaseData[key] = ids.filter(id=>phaseKeyById.get(id)===key);
+    });
+  } else {
+    const extra = state.extraSections.find(s=>s.key===groupKey);
+    if(extra) extra.exercises = ids;
+  }
+  render();
+  const id = reviewExDrag.id;
+  setTimeout(()=>{ const row=document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${id}"]`); if(row) row.classList.add('dragging'); }, 0);
+}
+function reviewExGripCancel(){
+  if(reviewExDrag) clearTimeout(reviewExDrag.timer);
+  reviewExDrag = null;
+  document.removeEventListener('pointermove', reviewExGripMove);
+  document.removeEventListener('pointerup', reviewExGripUp);
+}
+function reviewExGripUp(){
+  reviewExGripCancel();
   render();
 }
 
@@ -9268,6 +9369,7 @@ function completeSession(){
   // reset builder
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
+  state.reviewGroupOrder = {};
   state.sessionName = defaultSessionName();
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
@@ -9289,6 +9391,7 @@ function cancelDiscardSession(){ state.confirmDiscardOpen = false; renderOverlay
 function confirmDiscardSession(){
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
+  state.reviewGroupOrder = {};
   state.sessionName = defaultSessionName();
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
@@ -9309,6 +9412,7 @@ function resumeInProgressSession(){ state.confirmNewSessionOpen = false; nav('bu
 function startNewSessionDiscardingDraft(){
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
+  state.reviewGroupOrder = {};
   state.sessionName = defaultSessionName();
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
@@ -9326,12 +9430,34 @@ function togglePhaseCollapsed(key){
    exercise list, in PHASES order, and skips any group with nothing in it yet (mirrors the old
    per-phase behavior of only showing a card once it has exercises). Each item keeps its original
    phaseKey so the remove control still targets the correct underlying phase. */
+// The natural, unreordered sequence for a group (or a custom/extra section, which behaves like a
+// single-phase "group" of one): its phaseKeys' own arrays back to back.
+function reviewGroupNaturalOrder(groupKey){
+  const group = PHASE_GROUPS.find(g=>g.key===groupKey);
+  if(group){
+    const items = [];
+    group.phaseKeys.forEach(key => { state.phaseData[key].forEach(id => items.push({id, phaseKey:key})); });
+    return items;
+  }
+  const extra = state.extraSections.find(s=>s.key===groupKey);
+  return extra ? extra.exercises.map(id => ({id, phaseKey:groupKey})) : [];
+}
+// A group's actual display sequence -- the coach's drag-reordered order from
+// state.reviewGroupOrder if one has been set (reviewExGripMove below), falling back to the
+// natural phase-by-phase order, and gracefully absorbing any exercise added/removed since the
+// custom order was last saved (dropped ids are skipped, new ids are appended at the end).
+function reviewGroupFlatOrder(groupKey){
+  const natural = reviewGroupNaturalOrder(groupKey);
+  const custom = state.reviewGroupOrder[groupKey];
+  if(!custom || !custom.length) return natural;
+  const byId = new Map(natural.map(it=>[it.id,it]));
+  const ordered = custom.map(id=>byId.get(id)).filter(Boolean);
+  natural.forEach(it => { if(!custom.includes(it.id)) ordered.push(it); });
+  return ordered;
+}
 function reviewPhaseGroups(){
   return PHASE_GROUPS.map(group => {
-    const items = [];
-    group.phaseKeys.forEach(key => {
-      state.phaseData[key].forEach(id => items.push({id, phaseKey:key}));
-    });
+    const items = reviewGroupFlatOrder(group.key);
     const mins = items.reduce((a,it)=>a+(exById(it.id)?.duration||10),0);
     return {...group, items, mins};
   }).filter(group => group.items.length);
@@ -9383,10 +9509,11 @@ function renderReview(){
               <div class="phase-time">${g.mins} min</div>
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
-            <div class="phase-exlist">
+            <div class="phase-exlist" data-list-key="${g.key}">
               ${g.items.map(it=>{
                 const ex=exById(it.id);
-                return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
+                const showGrip = g.items.length>1;
+                return `<div class="phase-ex-item" data-ex-id="${it.id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${it.id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
               }).join('')}
             </div>
           </div>
@@ -9396,8 +9523,8 @@ function renderReview(){
           <div class="phase-line"><div class="phase-num">${groups.length+i+1}</div></div>
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div></div>
-            <div class="phase-exlist">
-              ${s.exercises.map(id=>{const ex=exById(id);return `<div class="phase-ex-item" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
+            <div class="phase-exlist" data-list-key="${s.key}">
+              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
         </div>`).join('')}
@@ -9609,6 +9736,58 @@ function toggleSessionFavorite(id){
   render();
 }
 
+// Recompute a saved session's headline stats after its phases are edited -- mirrors the same
+// count/sum completeSession() does when a session is first saved.
+function recomputeSavedSessionStats(s){
+  let count = 0, total = 0;
+  s.phases.forEach(p => { count += p.exercises.length; p.exercises.forEach(e => { total += e.duration||10; }); });
+  s.exCount = count;
+  s.totalMin = total;
+}
+// Editing exercises on an already-saved session is fully separate from the live build-a-new-
+// session draft (state.phaseData/extraSections) -- a saved session's exercises are frozen
+// snapshot objects, not just ids, so these mutate s.phases directly instead of routing through
+// addToPhase/removeFromPhase.
+function removeExerciseFromSavedSession(sessionId, exerciseId){
+  const s = state.savedSessions.find(s=>s.id===sessionId);
+  if(!s) return;
+  let removedName = '';
+  s.phases.forEach(p => {
+    const idx = p.exercises.findIndex(e=>e.id===exerciseId);
+    if(idx!==-1){ removedName = p.exercises[idx].name; p.exercises.splice(idx,1); }
+  });
+  s.phases = s.phases.filter(p => p.exercises.length);
+  recomputeSavedSessionStats(s);
+  if(removedName) showToast(`Removed "${removedName}" from ${s.name}`);
+  render();
+}
+function addExerciseToSavedSession(sessionId, exerciseId){
+  const s = state.savedSessions.find(s=>s.id===sessionId);
+  const ex = exById(exerciseId);
+  if(!s || !ex) return;
+  if(s.phases.some(p => p.exercises.some(e=>e.id===exerciseId))){ showToast(`"${ex.name}" is already in this session`); return; }
+  const phaseObj = PHASES.find(p=>p.section===ex.section);
+  let target = s.phases.find(p => p.section === ex.section);
+  if(!target){
+    target = {label: phaseObj ? phaseObj.label : (ex.section||'Other'), section: ex.section||null, exercises: []};
+    s.phases.push(target);
+  }
+  target.exercises.push({id: ex.id, name: ex.name, duration: ex.duration||10, technicalScore: ex.technicalScore ?? null, tacticalScore: ex.tacticalScore ?? null, physicalScore: ex.physicalScore ?? null, cognitiveScore: ex.cognitiveScore ?? null, hasScoreSnapshot: true});
+  recomputeSavedSessionStats(s);
+  showToast(`Added "${ex.name}" to ${s.name}`);
+  render();
+}
+function isExerciseInSavedSession(sessionId, exerciseId){
+  const s = state.savedSessions.find(s=>s.id===sessionId);
+  return !!(s && s.phases.some(p => p.exercises.some(e=>e.id===exerciseId)));
+}
+// Enter "add an exercise to this saved session" mode -- browses the exercise library scoped to
+// nothing in particular (unlike the guided Build flow's pickForPhase, a saved session's phase
+// cards can span multiple real phases, so there's no single section to filter to up front).
+function addExerciseToSavedSessionFlow(sessionId){
+  nav('exercises', {editingSavedSessionId:sessionId, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null, search:'', quickFilterValue:null});
+}
+
 function renderSessions(){
   if(!state.savedSessions.length){
     return `
@@ -9707,7 +9886,7 @@ function renderSessionDetail(){
       <div class="sd-meta"><div class="smnum">${formatWhen(s.createdAt)}</div><div class="smlbl">Date &amp; time</div></div>
     </div>
 
-    <div style="margin-top:22px;">${renderTimeComparisonPanel(s.totalMin, s.targetDuration, computeGroupMinutesFromPhases(s.phases))}</div>
+    <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
 
     <div class="phase-strip sd-phases" style="margin-top:22px;">
       ${groups.map((g,i)=>`
@@ -9723,8 +9902,9 @@ function renderSessionDetail(){
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
             <div class="phase-exlist">
-              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetail('${e.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span></div>`).join('')}
+              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${e.id}','${s.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${s.id}','${e.id}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
+            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>`:''}
           </div>
         </div>`).join('')}
       ${extras.map((p,i)=>`
@@ -9733,10 +9913,17 @@ function renderSessionDetail(){
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${p.label}</div><div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div></div>
             <div class="phase-exlist">
-              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetail('${e.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span></div>`).join('')}
+              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${e.id}','${s.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${s.id}','${e.id}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
+            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>`:''}
           </div>
         </div>`).join('')}
+      ${editing && groups.length===0 && extras.length===0 ? `
+        <div class="phase-card">
+          <div class="phase-content">
+            <button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>
+          </div>
+        </div>` : ''}
     </div>
 
     <div class="pprof-block" style="margin-top:22px;">
@@ -9781,6 +9968,10 @@ function saveAppStateToStorage(){
       viewingSessionId: state.viewingSessionId,
       fromBuild: state.fromBuild,
       fromReview: state.fromReview,
+      fromSavedSession: state.fromSavedSession,
+      fromSavedSessionId: state.fromSavedSessionId,
+      editingSavedSessionId: state.editingSavedSessionId,
+      reviewGroupOrder: state.reviewGroupOrder,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
   }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
@@ -9831,6 +10022,10 @@ function loadAppStateFromStorage(){
       state.viewingSessionId = snap.viewingSessionId ?? null;
       state.fromBuild = !!snap.fromBuild;
       state.fromReview = !!snap.fromReview;
+      state.fromSavedSessionId = snap.fromSavedSessionId ?? null;
+      state.fromSavedSession = !!snap.fromSavedSession && state.savedSessions.some(s => s.id === state.fromSavedSessionId);
+      state.editingSavedSessionId = (snap.editingSavedSessionId && state.savedSessions.some(s => s.id === snap.editingSavedSessionId)) ? snap.editingSavedSessionId : null;
+      if(snap.reviewGroupOrder && typeof snap.reviewGroupOrder === 'object') state.reviewGroupOrder = snap.reviewGroupOrder;
       if(restoredScreen === 'detail' && !exById(state.detailId)) restoredScreen = 'home';
       if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
       state.screen = restoredScreen;
