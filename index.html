@@ -5971,6 +5971,8 @@ const ICONS = {
   home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
   search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
   bookmark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
+  lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   list: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
   bookmarkFilled: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
@@ -6290,6 +6292,85 @@ async function syncValidValuesFromSheet(){
     render();
   }
 }
+
+/* ============ SAVED SESSIONS: shared sync (added Sep 2026) ============
+   Mirrors syncExercisesFromSheet()'s shape: fetch, fall back quietly, never let a failed fetch
+   pretend to be current data. See claude_FT2_AppsScript_Code.gs for the server side. */
+function normalizeCloudSession(c){
+  return {
+    id: String(c.id), name: c.name || 'Untitled Practice', createdBy: c.createdBy || 'Unknown coach',
+    createdAt: Number(c.createdAt) || Date.now(),
+    totalMin: Number(c.totalMin) || 0, exCount: Number(c.exCount) || 0,
+    targetDuration: Number(c.targetDuration) || 60,
+    phases: Array.isArray(c.phases) ? c.phases : [],
+    practiceDate: c.practiceDate || '', location: c.location || 'outdoor',
+    templateId: c.templateId || null,
+    rating: Number(c.rating) || 0, comment: c.comment || '', favorited: !!c.favorited,
+    visibility: c.visibility === 'private' ? 'private' : 'shared',
+  };
+}
+async function syncSessionsFromSheet(){
+  if(!APPS_SCRIPT_URL) return;
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?sheet=sessions', {cache:'no-store'});
+    if(!res.ok) throw new Error('Apps Script fetch failed: ' + res.status);
+    const cloud = await res.json();
+    if(!Array.isArray(cloud)) throw new Error((cloud && cloud.error) || 'Unexpected sessions response');
+
+    // Merge rather than replace outright: a session this device saved/edited but hasn't
+    // successfully pushed yet (_syncPending) stays as our local copy until it confirms -- the
+    // Sheet is the source of truth for everything else, including sessions from other coaches.
+    const localById = new Map(state.savedSessions.map(s=>[s.id, s]));
+    const seenIds = new Set();
+    const merged = cloud.map(c => {
+      seenIds.add(String(c.id));
+      const local = localById.get(String(c.id));
+      return (local && local._syncPending) ? local : normalizeCloudSession(c);
+    });
+    state.savedSessions.forEach(s => { if(!seenIds.has(String(s.id))) merged.push(s); }); // local-only, never yet synced (e.g. saved while offline)
+    state.savedSessions = merged;
+    state.sessionsSyncSource = 'live';
+    render();
+    retryPendingSessionPushes();
+  } catch(err){
+    console.warn('Session sync skipped:', err.message);
+    state.sessionsSyncSource = 'offline';
+    render();
+  }
+}
+// The client always sends the WHOLE current session object; the server always replaces the whole
+// row (see upsertSession() server-side) -- this one function covers create, rename, rate,
+// favorite, visibility, and add/remove-exercise, since every one of those already ends with the
+// caller mutating the local session object and calling render().
+async function pushSessionToSheet(session){
+  session._syncPending = true;
+  if(!APPS_SCRIPT_URL) return;
+  try{
+    const {_syncPending, ...payload} = session;
+    // Deliberately no explicit Content-Type header: Apps Script Web Apps don't handle the
+    // CORS preflight (OPTIONS) request a declared "application/json" body would trigger from a
+    // browser, so this relies on fetch's default text/plain body type to stay a "simple request".
+    // The server reads the raw body regardless of declared type, so this doesn't affect parsing.
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'upsert', session:payload}) });
+    const data = await res.json();
+    if(!data || !data.ok) throw new Error((data && data.error) || 'Save did not confirm');
+    session._syncPending = false;
+  } catch(err){
+    console.warn('Session push failed, will retry next sync:', err.message);
+  }
+  render();
+}
+async function deleteSessionFromSheet(id){
+  if(!APPS_SCRIPT_URL) return;
+  try{
+    await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'delete', session:{id}}) });
+  } catch(err){
+    console.warn('Session delete-sync failed (it stays deleted locally either way):', err.message);
+  }
+}
+function retryPendingSessionPushes(){
+  state.savedSessions.filter(s=>s._syncPending).forEach(s => pushSessionToSheet(s));
+}
 function openValidValues(){
   state.viewingValidValues = true;
   render();
@@ -6421,7 +6502,51 @@ const FEED_ITEMS = [
   {tag:'Schedule', title:'U11 Schedule', sub:'GotSport \u2014 Fast Tigers U11 team schedule', icon: ICONS.doc, url: 'https://system.gotsport.com/org_event/events/55770/schedules?team=4255697'},
 ];
 
-const CURRENT_USER = 'Coach Tisan';
+// Coach identity -- lightweight, no password: a coach just picks/types their name once and it's
+// remembered on that device from then on (stored separately from the big app-state blob so it
+// survives independently of it). See renderWhoIsCoaching()/confirmCoachName()/switchCoach().
+const COACH_NAME_STORAGE_KEY = 'ft2_coach_name_v1';
+function loadCoachName(){
+  try { return localStorage.getItem(COACH_NAME_STORAGE_KEY) || ''; } catch(err){ return ''; }
+}
+function saveCoachNameToStorage(name){
+  try { localStorage.setItem(COACH_NAME_STORAGE_KEY, name || ''); } catch(err){ /* storage unavailable -- coach will just be asked again next launch */ }
+}
+// The gate screen shown instead of the whole app whenever state.coachName is empty (first launch
+// on a device, or after switchCoach()). Deliberately has no bottom nav / topbar icons -- there's
+// nothing else to do here yet.
+function renderWhoIsCoaching(){
+  const knownNames = [...new Set((state.savedSessions||[]).map(s=>s.createdBy).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  return `
+  <div class="section-pad" style="padding-top:36px;">
+    <div class="eyebrow">Welcome to FT2</div>
+    <h1 style="font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:400;font-size:var(--fs-display);margin:4px 0 10px;">Who's Coaching?</h1>
+    <p style="color:var(--ink-soft);font-size:var(--fs-md);line-height:1.5;margin:0 0 22px;">Enter your name so your saved practices follow you here, and your friends can see which ones are yours. No password needed.</p>
+    <input id="coachNameInput" class="setup-date-input" style="margin-top:0;" placeholder="Your name" autofocus onkeydown="if(event.key==='Enter'){confirmCoachName(this.value);}">
+    <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="confirmCoachName(document.getElementById('coachNameInput').value)">Continue</button>
+    ${knownNames.length ? `
+    <div style="margin-top:28px;">
+      <div class="eyebrow">Or pick a name you've used before</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+        ${knownNames.map(n=>`<button class="tagpill" style="cursor:pointer;border:none;" onclick="confirmCoachName('${escAttr(n)}')">${escHtml(n)}</button>`).join('')}
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+function confirmCoachName(name){
+  const v = (name||'').trim();
+  if(!v){ showToast('Enter a name to continue'); return; }
+  state.coachName = v;
+  saveCoachNameToStorage(v);
+  render();
+  syncSessionsFromSheet();
+}
+// Lets a shared/borrowed device switch which coach is currently using it -- wired from Settings.
+function switchCoach(){
+  state.coachName = '';
+  saveCoachNameToStorage('');
+  render();
+}
 
 /* Difficulty is a 1-5 scale (1 = Beginner, 5 = Advanced). Normalize any legacy text values from the source data. */
 const DIFF_MAP_LEGACY = {Beginner:1, Intermediate:3, Advanced:5};
@@ -7370,6 +7495,9 @@ function backFromDetail(){
 
 /* ============ STATE ============ */
 const state = {
+  coachName: '',             // who's using the app right now -- see loadCoachName()/renderWhoIsCoaching(); an empty value gates the whole app on that screen until set
+  sessionsSyncSource: null,  // null (not yet synced this load) | 'live' | 'offline' -- see syncSessionsFromSheet()
+  sessionsViewMode: 'mine',  // 'mine' | 'community' -- which list the Sessions tab is showing
   screen: 'home',            // home | exercises | detail | build | review | sessions | sessionDetail | practiceSetup
   detailId: null,
   fromBuild: false,           // came from build-a-session "add exercise" flow
@@ -7523,7 +7651,7 @@ function renderBottomnav(){
     ${item('home','Home',ICONS.home,"nav('home')")}
     ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
     <button class="navitem build-fab" onclick="nav('build')" title="Build a Session">${ICONS.soccerBallPhoto}<span>Build</span></button>
-    ${item('sessions','Sessions',ICONS.doc,"nav('sessions')",['sessions','sessionDetail'])}
+    ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
   `;
 }
@@ -7574,6 +7702,7 @@ function confirmDeleteSessionNow(){
   state.confirmDeleteSessionId = null;
   showToast('Session deleted');
   render();
+  deleteSessionFromSheet(id);
 }
 function confirmDeleteTemplateNow(){
   const id = state.confirmDeleteTemplateId;
@@ -7924,6 +8053,10 @@ function renderSettings(){
   <div class="section-pad">
     <div class="eyebrow">Settings</div>
     <div class="sh" style="margin-top:2px;"><h2>Settings</h2></div>
+    <div class="settings-toggle-row">
+      <span class="stl-label">${ICONS.bookmark}<span>Coaching as ${escHtml(state.coachName)}</span></span>
+      <button class="back-pill-flat" style="margin-bottom:0;padding:6px 12px;" onclick="switchCoach()">Switch</button>
+    </div>
     <button class="addsection-btn" onclick="openTrainingSettings()">${ICONS.gear} Training Session Default Settings</button>
     <button class="addsection-btn" onclick="openTemplatesList()">${ICONS.clipboard} Training Session Templates</button>
     <button class="addsection-btn" onclick="openValidValues()">${ICONS.list} View all Tags</button>
@@ -7957,7 +8090,7 @@ function renderHome(){
         <div class="mact-label"><span>Build</span><span>New Session</span></div>
         <div class="mact-stat">Create from Library</div>
       </button>
-      <button class="mac-tile" onclick="nav('sessions')">
+      <button class="mac-tile" onclick="nav('sessions');syncSessionsFromSheet()">
         <div class="mact-icon">${ICONS.folder}</div>
         <div class="mact-label"><span>View</span><span>Practice Sessions</span></div>
         <div class="mact-stat">${savedCount} Saved</div>
@@ -9357,15 +9490,19 @@ function completeSession(){
       });
     }
   });
-  const id = 'S' + Date.now();
+  // A random suffix (not just the timestamp) keeps two coaches' ids from ever colliding if they
+  // both happen to save in the same millisecond -- astronomically unlikely, but free to guard
+  // against now that ids are shared across everyone's devices instead of just one browser.
+  const id = 'S' + Date.now() + Math.random().toString(36).slice(2,7);
   const name = state.sessionName.trim() || `${dayName()} Session — ${state.savedSessions.length+1}`;
-  state.savedSessions.push({
+  const newSession = {
     id, name,
-    totalMin: total, exCount: count, createdAt: Date.now(), createdBy: CURRENT_USER,
+    totalMin: total, exCount: count, createdAt: Date.now(), createdBy: state.coachName,
     targetDuration: state.targetDuration, phases: phasesSnapshot,
     practiceDate: state.practiceDate, location: state.practiceLocation, templateId: state.activeTemplateId,
-    rating: 0, comment: '', favorited: false,
-  });
+    rating: 0, comment: '', favorited: false, visibility: 'shared',
+  };
+  state.savedSessions.push(newSession);
   // reset builder
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
@@ -9375,6 +9512,7 @@ function completeSession(){
   state.activeTemplateId = null;
   showToast('Session saved!');
   nav('home');
+  pushSessionToSheet(newSession);
 }
 function dayName(){
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
@@ -9721,18 +9859,25 @@ function openSessionDetail(id){ state.editingSessionDetail = false; nav('session
 function toggleEditSessionDetail(){ state.editingSessionDetail = !state.editingSessionDetail; render(); }
 function renameSavedSession(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
-  if(s){ const v = (val||'').trim(); if(v) s.name = v; }
+  if(s){ const v = (val||'').trim(); if(v){ s.name = v; pushSessionToSheet(s); } }
   render();
 }
 function setSavedSessionDuration(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
   const n = parseInt(val, 10);
-  if(s && !isNaN(n) && n>0) s.targetDuration = n;
+  if(s && !isNaN(n) && n>0){ s.targetDuration = n; pushSessionToSheet(s); }
   render();
 }
 function toggleSessionFavorite(id){
   const s = state.savedSessions.find(s=>s.id===id);
-  if(s) s.favorited = !s.favorited;
+  if(s){ s.favorited = !s.favorited; pushSessionToSheet(s); }
+  render();
+}
+// Flips a saved session between Shared (visible to the whole friend group in Community) and
+// Private (only the coach who made it ever sees it). Wired from the Session Detail edit-mode UI.
+function toggleSessionVisibility(id){
+  const s = state.savedSessions.find(s=>s.id===id);
+  if(s){ s.visibility = s.visibility==='private' ? 'shared' : 'private'; pushSessionToSheet(s); }
   render();
 }
 
@@ -9758,7 +9903,7 @@ function removeExerciseFromSavedSession(sessionId, exerciseId){
   });
   s.phases = s.phases.filter(p => p.exercises.length);
   recomputeSavedSessionStats(s);
-  if(removedName) showToast(`Removed "${removedName}" from ${s.name}`);
+  if(removedName){ showToast(`Removed "${removedName}" from ${s.name}`); pushSessionToSheet(s); }
   render();
 }
 function addExerciseToSavedSession(sessionId, exerciseId){
@@ -9776,6 +9921,7 @@ function addExerciseToSavedSession(sessionId, exerciseId){
   recomputeSavedSessionStats(s);
   showToast(`Added "${ex.name}" to ${s.name}`);
   render();
+  pushSessionToSheet(s);
 }
 function isExerciseInSavedSession(sessionId, exerciseId){
   const s = state.savedSessions.find(s=>s.id===sessionId);
@@ -9788,45 +9934,68 @@ function addExerciseToSavedSessionFlow(sessionId){
   nav('exercises', {editingSavedSessionId:sessionId, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null, search:'', quickFilterValue:null});
 }
 
-function renderSessions(){
-  if(!state.savedSessions.length){
-    return `
-    <div class="section-pad">
-      <div class="eyebrow">Sessions</div>
-      <div class="empty-state">
-        ${ICONS.empty}
-        <p>No sessions saved yet.<br>Build one and hit "Save Session" to see it here.</p>
-      </div>
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="nav('build')">Build a Session</button>
-    </div>`;
-  }
+// 'mine' = every session you created (Shared or Private); 'community' = every Shared session
+// from everyone in the group, your own included -- see the My Sessions / Community toggle below.
+function setSessionsViewMode(mode){ state.sessionsViewMode = mode; render(); }
+function sessionRowHtml(s){
+  const isOwner = s.createdBy === state.coachName;
   return `
-  <div class="section-pad">
-    <div class="eyebrow">All Sessions</div>
-    <div class="sh" style="margin-top:2px;"><h2>${state.savedSessions.length} saved</h2></div>
-    ${state.savedSessions.slice().reverse().sort((a,b) => (b.favorited?1:0) - (a.favorited?1:0)).map(s => `
       <div class="session-row" role="button" tabindex="0" onclick="openSessionDetail('${s.id}')">
         <div class="srthumb">${ICONS.ball}</div>
         <div style="flex:1;min-width:0;">
           <div class="srname">${escHtml(s.name)}</div>
-          <div class="srmeta">${ICONS.user} ${s.createdBy} &middot; ${formatWhen(s.createdAt)}</div>
-          <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises</div>
+          <div class="srmeta">${ICONS.user} ${isOwner?'You':escHtml(s.createdBy)} &middot; ${formatWhen(s.createdAt)}${s.visibility==='private'?` &middot; ${ICONS.lock} Private`:''}</div>
+          <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises${s._syncPending?' &middot; <span style="color:var(--warn);">Not synced yet</span>':''}</div>
         </div>
-        <button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>
-        <button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${s.id}')" title="Delete session">${ICONS.trash}</button>
+        ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+        ${isOwner ? `<button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${s.id}')" title="Delete session">${ICONS.trash}</button>` : ''}
         <div class="srchevron">${ICONS.chevronRight}</div>
-      </div>`).join('')}
+      </div>`;
+}
+function renderSessions(){
+  const mode = state.sessionsViewMode || 'mine';
+  const mine = state.savedSessions.filter(s => s.createdBy === state.coachName);
+  const community = state.savedSessions.filter(s => s.visibility !== 'private');
+  const list = (mode==='mine' ? mine : community).slice().reverse().sort((a,b) => (b.favorited?1:0) - (a.favorited?1:0));
+
+  const toggle = `
+    <div class="view-toggle" style="margin-top:10px;">
+      <button class="view-toggle-btn ${mode==='mine'?'active':''}" onclick="setSessionsViewMode('mine')">${ICONS.user} My Sessions</button>
+      <button class="view-toggle-btn ${mode==='community'?'active':''}" onclick="setSessionsViewMode('community')">${ICONS.globe} Community</button>
+    </div>
+    ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
+
+  if(!list.length){
+    return `
+    <div class="section-pad">
+      <div class="eyebrow">Sessions</div>
+      ${toggle}
+      <div class="empty-state">
+        ${ICONS.empty}
+        <p>${mode==='mine' ? 'No sessions saved yet.<br>Build one and hit "Save Session" to see it here.' : 'No shared sessions from the group yet.<br>Sessions you and your friends mark Shared will show up here.'}</p>
+      </div>
+      ${mode==='mine' ? `<button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="nav('build')">Build a Session</button>` : ''}
+    </div>`;
+  }
+  return `
+  <div class="section-pad">
+    <div class="eyebrow">${mode==='mine' ? 'My Sessions' : 'Community'}</div>
+    <div class="sh" style="margin-top:2px;"><h2>${list.length} ${mode==='mine'?'saved':'shared'}</h2></div>
+    ${toggle}
+    <div style="margin-top:14px;">
+      ${list.map(sessionRowHtml).join('')}
+    </div>
   </div>`;
 }
 
 function setSessionRating(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
-  if(s) s.rating = (s.rating===val) ? 0 : val; // tap the same star again to clear the rating
+  if(s){ s.rating = (s.rating===val) ? 0 : val; pushSessionToSheet(s); } // tap the same star again to clear the rating
   render();
 }
 function setSessionComment(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
-  if(s) s.comment = val;
+  if(s){ s.comment = val; pushSessionToSheet(s); }
 }
 /* Same grouping as reviewPhaseGroups(), but for a SAVED session's frozen `phases` snapshot
    (matched by `.section` name back to a PHASES entry, since a snapshot doesn't carry phase
@@ -9846,7 +10015,14 @@ function sessionDetailPhaseGroups(s){
 function renderSessionDetail(){
   const s = state.savedSessions.find(s=>s.id===state.viewingSessionId);
   if(!s) return `<div class="empty-state">${ICONS.empty}<p>Session not found.</p></div>`;
-  const editing = state.editingSessionDetail;
+  // A session browsed in from Community that belongs to a different coach is view-only: no edit,
+  // no add/discard, no favorite/rate/comment, no visibility toggle -- those all mutate a record
+  // that isn't yours (several of them, like favorited/rating, are single shared fields on the
+  // session itself, not per-viewer, so letting a non-owner touch them would silently overwrite
+  // the owner's own state).
+  const isOwner = s.createdBy === state.coachName;
+  const editing = isOwner && state.editingSessionDetail;
+  const isPrivate = s.visibility === 'private';
   const practiceProfile = practiceTrainingProfile(savedSessionTrainingItems(s));
   const groups = sessionDetailPhaseGroups(s);
   const extras = s.phases.filter(p => !PHASES.some(ph=>ph.section===p.section));
@@ -9855,9 +10031,11 @@ function renderSessionDetail(){
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')">${ICONS.back}</button>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>
-        <button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>
-        <div class="session-state-tag saved" style="position:static;">Saved</div>
+        ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+        ${isOwner ? `<button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>` : ''}
+        ${isOwner
+          ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${s.id}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
+          : `<div class="session-state-tag saved" style="position:static;">${ICONS.user} By ${escHtml(s.createdBy)}</div>`}
       </div>
     </div>
     <div class="dpill" style="margin-top:14px;">${ICONS.soccerBallPhoto} Saved Session</div>
@@ -9876,9 +10054,11 @@ function renderSessionDetail(){
     <div class="rate-session-box">
       <div class="rate-session-title">Rate this Session</div>
       <div class="star-row">
-        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" onclick="setSessionRating('${s.id}',${n})">${ICONS.star}</button>`).join('')}
+        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" ${isOwner?`onclick="setSessionRating('${s.id}',${n})"`:'style="cursor:default;"'}>${ICONS.star}</button>`).join('')}
       </div>
-      <textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${s.id}', this.value)">${escHtml(s.comment||'')}</textarea>
+      ${isOwner
+        ? `<textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${s.id}', this.value)">${escHtml(s.comment||'')}</textarea>`
+        : (s.comment ? `<div class="rate-comment" style="min-height:auto;color:var(--ink-soft);">${escHtml(s.comment)}</div>` : '')}
     </div>
 
     <div class="sd-meta-row">
@@ -10047,6 +10227,17 @@ const screens = {
 };
 
 function render(){
+  const bottomnavEl = document.getElementById('bottomnav');
+  if(!state.coachName){
+    // Gate the whole app behind "who's coaching" -- no nav makes sense before that's known.
+    document.getElementById('topbar').innerHTML = `<div class="brand"><div class="logo-badge">FT2</div><div class="brand-lockup"><div class="bl-line1">Fast Tigers</div><div class="bl-line2">Futbol Training</div></div></div>`;
+    bottomnavEl.innerHTML = '';
+    bottomnavEl.style.display = 'none';
+    document.getElementById('content').innerHTML = renderWhoIsCoaching();
+    renderOverlay();
+    return;
+  }
+  bottomnavEl.style.display = '';
   renderTopbar();
   document.getElementById('content').innerHTML = screens[state.screen]();
   renderBottomnav();
@@ -10056,8 +10247,10 @@ function render(){
 
 initTheme();
 loadAppStateFromStorage();
+state.coachName = loadCoachName();
 render();
 syncExercisesFromSheet();
+if(state.coachName) syncSessionsFromSheet();
 
 /* Select all existing text the moment an editable field gets focus, so typing immediately
    replaces it instead of requiring a manual select-all or delete first. Delegated on #content

@@ -46,9 +46,17 @@ minute. Built as a single self-contained `index.html` — vanilla JS, no build
 step, no framework.
 
 - **Hosting:** GitHub Pages, repo `strykerturbo/ft2-videos`
-- **Data:** live sync from a Google Sheet via an Apps Script Web App
-  (`claude_FT2_AppsScript_Code.gs`), one-way (Sheet → app), with a bundled
-  JSON fallback if sync fails
+- **Data:** the exercise library syncs one-way from a Google Sheet via an
+  Apps Script Web App (`claude_FT2_AppsScript_Code.gs`), with a bundled
+  JSON fallback if sync fails. Saved practice sessions sync **two-way**
+  through the same Apps Script to a second tab (`Sessions`) in the same
+  spreadsheet, added Sep 2026 so sessions follow a coach across devices
+  and can be shared with the friend group — see "Coach identity & shared
+  sessions" under Known gotchas.
+- **Identity:** lightweight, no passwords — a coach picks/types their name
+  once (`state.coachName`, `renderWhoIsCoaching()`) and it's remembered on
+  that device (`ft2_coach_name_v1` in `localStorage`). This is who saved
+  sessions are attributed to and how "My Sessions" is filtered.
 - **Assets:** exercise videos and Club Feed PDFs hosted in the same GitHub
   repo, linked directly
 
@@ -103,7 +111,8 @@ mediocre connection. Bake these in without being asked each time:
   video thumbnails should lazy-load.
 - **Local storage safety:** wrap all `localStorage` access in try/catch
   (private browsing can throw). Existing keys: `ft2_build_draft_v1`,
-  `ft2_drag_hint_seen_v1`.
+  `ft2_drag_hint_seen_v1`, `ft2_coach_name_v1` (the signed-in coach's name,
+  its own key so it survives independently of the big app-state blob).
 - **Test at real mobile widths** (360–430px) before calling UI work done,
   not just at desktop width with dev tools shrunk.
 
@@ -147,6 +156,45 @@ rather than letting it get rediscovered next session.
   component, add it to that denylist (or give it `--radius-pill` if it's
   actually a pill/chip) rather than assuming the site-wide `--radius-card`
   token alone will square it off.
+- **Coach identity & shared sessions (added Sep 2026):** saved sessions
+  are no longer per-browser-only. `state.coachName` gates the whole app
+  behind a "Who's Coaching?" screen (`renderWhoIsCoaching()`) until set;
+  every saved-session mutator (`completeSession`, `renameSavedSession`,
+  `toggleSessionFavorite`, `setSessionRating`/`setSessionComment`,
+  `add/removeExerciseFromSavedSession`, `toggleSessionVisibility`) both
+  updates local state immediately AND calls `pushSessionToSheet(session)`
+  in the background — check both when adding a new way to edit a saved
+  session, not just the local mutation. A session has a `visibility`
+  field (`'shared'` default, `'private'`) and the Sessions tab has a
+  My Sessions / Community toggle (`state.sessionsViewMode`) filtering on
+  it plus `createdBy`. A non-owner's session detail view is read-only —
+  gated by a single `isOwner` check in `renderSessionDetail()`, not
+  scattered per-control, so that's the one place to touch if the
+  read-only rules ever need to change.
+- **The `Sessions` tab lives in the same spreadsheet as `Exercises`**,
+  auto-created by the Apps Script on first save (no manual sheet setup) —
+  see `claude_FT2_AppsScript_Code.gs`'s `SESSIONS_HEADERS`. Each row's
+  nested `phases` (with their own nested exercises) is stored as one
+  JSON-stringified `phasesJson` column, not spread across columns.
+- **Apps Script POST requests must not set an explicit `Content-Type`
+  header** (e.g. `'application/json'`) from the client — that turns a
+  simple `fetch` into a CORS preflight (`OPTIONS`) request, which Apps
+  Script Web Apps don't handle, so the save silently fails. Let `fetch`
+  default the body to `text/plain`; the server reads the raw text
+  regardless (`JSON.parse(e.postData.contents)`) so this doesn't affect
+  parsing on that end.
+- **The live Apps Script endpoint occasionally 404s under a burst of
+  rapid requests** (several calls within a second or two) and recovers on
+  its own moments later — observed repeatedly while testing the session
+  sync during initial development, not a sign of a broken deployment.
+  This is exactly why every session mutator marks a `_syncPending` flag
+  and retries on the next sync rather than treating one failed push as a
+  fatal error — don't "fix" a single transient 404 by changing the
+  deployment; confirm it's not transient (retry after a few seconds)
+  before assuming something's actually broken.
+- When testing session sync by hand against the live Sheet, clean up any
+  test rows afterward (`{action:'delete', session:{id}}` per row) so
+  scratch data doesn't linger in the coach's real spreadsheet.
 
 ## Where things live
 
