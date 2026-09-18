@@ -901,6 +901,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .progress-track{height:9px;background:var(--chalk-dim);border-radius:6px;overflow:hidden;border:1px solid var(--line);}
 .progress-fill{height:100%;background:linear-gradient(90deg,#FF6B6B 0%,#FF8A3C 20%,#7C3AED 40%,#06B6D4 60%,#10B981 80%,#F59E0B 100%);background-size:400px 100%;border-radius:6px;transition:width .2s;}
 .progress-fill.over{background:var(--warn);}
+.phase-progress-row{margin-top:6px;}
+.phase-over-tag{color:var(--warn);font-weight:700;}
 .progress-caption{display:flex;justify-content:space-between;margin-top:7px;font-size:var(--fs-base);color:var(--ink-soft);}
 .progress-caption b{color:var(--ink);}
 
@@ -1076,6 +1078,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   padding:14px;
 }
 .phase-row:active{background:var(--chalk-dim);}
+.phase-row.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
+.phase-row.current .phase-row-title{color:var(--turf);}
 .phase-row-icon{
   width:80px;height:80px;border-radius:var(--radius-control);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -1110,6 +1114,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   padding:2px 0 3px;flex:1;min-width:0;outline:none;
 }
 .extra-box-title-input:focus{border-color:var(--turf);}
+.phase-box.current .extra-box-title-input{color:var(--turf);}
 
 /* each exercise: image on the left, bullets (from Description + Variations) on the right */
 .build-ex-list{margin-top:6px;}
@@ -1435,6 +1440,12 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .pps-navchip svg{width:16px;height:16px;flex-shrink:0;}
 .pps-navchip span{font-size:var(--fs-2xs);font-weight:800;text-transform:uppercase;letter-spacing:0.01em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.phase-structure-strip{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:8px;}
+.psc-chip{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);font-weight:700;white-space:nowrap;}
+.psc-icon{display:flex;width:13px;height:13px;}
+.psc-icon svg{width:13px;height:13px;}
+.psc-arrow{display:flex;width:12px;height:12px;color:var(--ink-soft);opacity:0.5;flex-shrink:0;}
+.psc-arrow svg{width:12px;height:12px;}
 
 /* "Adding to: X" is a context label, not a tappable control -- it has no onclick, so it should
    never look like a button. A colored icon + bold colored phase name on a transparent background,
@@ -1613,6 +1624,7 @@ input.section-title-input:focus{border-color:var(--turf);}
 .session-row .srthumb img.icon-ball-img{width:20px;height:20px;display:block;}
 .session-row .srname{font-size:var(--fs-md);font-weight:700;color:var(--text-primary);}
 .session-row .srmeta{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:3px;display:flex;align-items:center;gap:4px;}
+.session-row .srmeta.structure{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
 .session-row .srmeta svg{width:12px;height:12px;flex-shrink:0;}
 .session-row .srchevron{margin-left:auto;color:var(--ink-soft);flex-shrink:0;}
 .session-row .srchevron svg{width:16px;height:16px;}
@@ -6557,6 +6569,29 @@ function resetDefaultSectionPcts(){
 function orderedPhases(){
   return state.phaseOrder.map(k => PHASES.find(p => p.key===k)).filter(Boolean);
 }
+/* Real section names/icons/colors for the LIVE draft, in display order -- every currently non-
+   empty standard phase followed by every non-empty custom section. Used for a compact "session
+   identity" strip (see phaseStructureStripHtml()) on screens like Review that otherwise only show
+   the 3 blended PHASE_GROUPS, not the coach's actual 6-phase structure. */
+function liveSectionEntries(){
+  const standard = orderedPhases()
+    .filter(p => state.enabledPhaseKeys.has(p.key) && state.phaseData[p.key].length)
+    .map(p => ({label: p.label, icon: secStyle(p.section).icon, color: secStyle(p.section).color}));
+  const extras = state.extraSections
+    .filter(s => s.exercises.length)
+    .map(s => ({label: s.label, icon: ICONS.doc, color: 'var(--pitch)'}));
+  return [...standard, ...extras];
+}
+/* Compact read-only row of small icon+label pills -- "what's actually in this session," not
+   interactive (unlike the similarly-styled .pps-navchip row, which is a live picker-phase
+   switcher). Takes {label, icon, color} entries from either liveSectionEntries() (live draft) or
+   a saved session's own phases[] (already in the right shape/order, no reconstruction needed). */
+function phaseStructureStripHtml(entries){
+  if(!entries.length) return '';
+  return `<div class="phase-structure-strip">${entries.map(e =>
+    `<span class="psc-chip" style="color:${e.color};"><span class="psc-icon">${e.icon}</span>${escHtml(e.label)}</span>`
+  ).join(`<span class="psc-arrow">${ICONS.chevronRight}</span>`)}</div>`;
+}
 
 // Coaching guideline for how a session's time should roughly break down -- simplified from 6
 // equal-weight sections into 3 higher-level practice phases, easier for a coach to read at a
@@ -7284,6 +7319,24 @@ function sectionRemainingMinutes(phaseKey){
 function quickPickTargetMinutes(phaseKey){
   return sectionRemainingMinutes(phaseKey) || sectionPlannedMinutes(phaseKey);
 }
+/* Planned minutes for a CUSTOM/extra section -- only meaningful when it came from a template
+   that gave it a percentage (see applyTemplateToBuilder()); a manually-added extra section has
+   no allocation at all, so this returns null rather than inventing one. null means "show actual
+   minutes only, no progress bar" everywhere this is used -- never a fabricated target. */
+function extraSectionPlannedMinutes(s){
+  if(!s || !s.pct) return null;
+  return Math.max(5, Math.round(state.targetDuration * s.pct / 100));
+}
+/* Small reusable actual-vs-planned progress bar, same visual language as the existing session-
+   level bar (.progress-track/.progress-fill/.over, see renderBuild()'s header) just sized for an
+   inline phase row. Returns null (render plain minutes text instead) when there's no planned
+   value to compare against. */
+function phaseProgressBarHtml(actual, planned){
+  if(!planned) return null;
+  const pct = Math.min(100, Math.round((actual/planned)*100));
+  const over = actual > planned;
+  return `<div class="phase-progress-row"><div class="progress-track" style="height:5px;"><div class="progress-fill ${over?'over':''}" style="width:${pct}%;"></div></div></div>`;
+}
 // Distinct Format Tag values that actually appear on exercises in one section, in canonical Valid
 // Values order (same derivation as filterValueOptions(), just pre-scoped to a section) -- this is
 // how Duels naturally offers 1v1/2v1/2v2 and Rondos naturally offers 4v2/5v2/6v3 in Customize,
@@ -7384,38 +7437,72 @@ function quickPickScore(ex, ctx){
   }
   return score;
 }
-/* Short, data-traceable "why this fits" sentence -- every clause maps to a real field on the
-   exercise (its own Training Dimension score, an actual tag it carries, its actual duration),
-   same discipline as the existing balanceRecommendationReason(). Never invents a benefit the
-   exercise's own tags/scores don't support. */
+/* Short, data-traceable "why this fits" line -- every clause maps to a real field on the exercise
+   (its own Training Dimension score, an actual tag it carries, its actual duration), same
+   discipline as the existing balanceRecommendationReason(). Never invents a benefit the exercise's
+   own tags/scores don't support, never shows a raw ranking number (the 0-5 Training Dimension
+   scores themselves already appear plainly in .balance-card-scores just above -- this line names
+   the dimension, not the number). At most one clause per priority tier below, at most 2 total,
+   joined short rather than as a sentence:
+     1. Exact/close duration fit
+     2. An explicit Quick Pick customization match (dimension override, Focus tag, or Format tag)
+     3. The section's own default primary dimension(s) -- "Strong"/"Good", same thresholds as
+        balanceRecommendationReason() (score>=4 / >=3), combined as "Strong X + Y" when 2 both qualify
+     4. The practice-balance dimension this session is currently lightest on
+     5/6. Graceful fallback -- whether it's new to this session, and/or its single best dimension,
+        and/or (last resort) just its section -- always something true, never nothing. */
 function quickPickReason(ex, ctx){
   const dimLabel = k => (TRAINING_DIMENSIONS.find(d=>d.key===k)||{}).label || '';
   const clauses = [];
-  const primaryScored = ctx.primaryDims
-    .map(k => ({k, v: clampScore(ex[k])}))
-    .filter(d => d.v !== null)
-    .sort((a,b) => b.v-a.v);
-  if(primaryScored.length && primaryScored[0].v >= 4){
-    clauses.push(`${primaryScored[0].v>=5?'Very high':'High'} ${dimLabel(primaryScored[0].k)} Score (${primaryScored[0].v})`);
-  } else if(primaryScored.length && primaryScored[0].v >= 3){
-    clauses.push(`Good ${dimLabel(primaryScored[0].k)} Score (${primaryScored[0].v})`);
-  }
-  if(ctx.focusTag && allTagsFor(ex).includes(ctx.focusTag)) clauses.push(`matches ${ctx.focusTag}`);
-  if(ctx.formatTag && (ex.formatTags||[]).includes(ctx.formatTag) && ctx.formatTag !== ctx.focusTag) clauses.push(`matches ${ctx.formatTag}`);
-  if(ctx.balanceDim && !ctx.primaryDims.includes(ctx.balanceDim)){
-    const v = clampScore(ex[ctx.balanceDim]);
-    if(v !== null && v >= 3) clauses.push(`helps build up ${dimLabel(ctx.balanceDim)}, currently lightest in this practice`);
-  }
+
+  // 1. Duration fit
   const dur = ex.duration || 10;
-  if(ctx.targetMin > 0 && Math.abs(dur-ctx.targetMin) <= 2) clauses.push(`a ${dur}-minute fit for the time available`);
-  if(!clauses.length){
-    // Fallback stays grounded in something real rather than a generic platitude.
-    const best = TRAINING_DIMENSIONS.map(d=>({label:d.label, v:clampScore(ex[d.key])})).filter(d=>d.v!==null).sort((a,b)=>b.v-a.v)[0];
-    clauses.push(best ? `${best.label} Score of ${best.v}` : `a fit for ${ex.section}`);
+  if(ctx.targetMin > 0 && Math.abs(dur-ctx.targetMin) <= 2){
+    clauses.push(`Fits your ${ctx.targetMin}-min ${ctx.phaseLabel || ex.section} block`);
   }
-  // Cap at 2 clauses -- "Keep it concise," even when 3-4 signals all genuinely applied.
-  const sentence = clauses.slice(0,2).join(' and ');
-  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+
+  // 2. Explicit customization match -- at most one clause from this tier, whichever applies first
+  if(clauses.length < 2){
+    let customClause = null;
+    if(ctx.dimensionOverride && ctx.primaryDims.length){
+      const v = clampScore(ex[ctx.primaryDims[0]]);
+      if(v !== null && v >= 3) customClause = `Matches your ${dimLabel(ctx.primaryDims[0])} focus`;
+    }
+    if(!customClause && ctx.focusTag && allTagsFor(ex).includes(ctx.focusTag)) customClause = `Matches your ${ctx.focusTag} focus`;
+    if(!customClause && ctx.formatTag && ctx.formatTag !== ctx.focusTag && (ex.formatTags||[]).includes(ctx.formatTag)) customClause = `Matches your ${ctx.formatTag} focus`;
+    if(customClause) clauses.push(customClause);
+  }
+
+  // 3. Section's own default primary dimension(s) -- only when not already covered by an
+  // explicit override above (that's tier 2's job)
+  if(clauses.length < 2 && !ctx.dimensionOverride && ctx.primaryDims.length){
+    const scored = ctx.primaryDims.map(k=>({k, v:clampScore(ex[k])})).filter(d=>d.v!==null).sort((a,b)=>b.v-a.v);
+    const strong = scored.filter(d=>d.v>=4);
+    const good = scored.filter(d=>d.v>=3);
+    if(strong.length >= 2) clauses.push(`Strong ${strong.slice(0,2).map(d=>dimLabel(d.k)).join(' + ')}`);
+    else if(strong.length === 1) clauses.push(`Strong ${dimLabel(strong[0].k)}`);
+    else if(good.length) clauses.push(`Good ${dimLabel(good[0].k)}`);
+  }
+
+  // 4. Practice-balance complement
+  if(clauses.length < 2 && ctx.balanceDim && !ctx.primaryDims.includes(ctx.balanceDim)){
+    const v = clampScore(ex[ctx.balanceDim]);
+    if(v !== null && v >= 3) clauses.push(`Builds up ${dimLabel(ctx.balanceDim)} (currently lightest)`);
+  }
+
+  // 5/6. Fallback -- only reached when nothing above applied. Candidates are already excluded
+  // when already-in-session wherever possible (see computeQuickPicks()), so "new to this
+  // session" is checked directly rather than assumed, and is never claimed when it isn't true.
+  if(!clauses.length){
+    if(!isExerciseInAnyPhase(ex.id)) clauses.push('New to this session');
+    if(clauses.length < 2){
+      const best = TRAINING_DIMENSIONS.map(d=>({label:d.label, v:clampScore(ex[d.key])})).filter(d=>d.v!==null).sort((a,b)=>b.v-a.v)[0];
+      if(best && best.v >= 3) clauses.push(`Good ${best.label}`);
+      else if(!clauses.length) clauses.push(`Good fit for ${ex.section}`);
+    }
+  }
+
+  return clauses.slice(0,2).join(' · ');
 }
 /* Up to 3 recommendations for the section currently being picked for -- always section-scoped
    (rule 4: only ever the current section's own exercises), applies the coach's optional Customize
@@ -7459,7 +7546,7 @@ function computeQuickPicks(){
   let candidates = pool.filter(ex => !alreadyIn.has(ex.id));
   if(candidates.length < 3) candidates = pool; // prefer unused, but don't starve the list below 3
 
-  const ctx = {primaryDims, balanceDim, targetMin, focusTag: c.focus, formatTag: c.format};
+  const ctx = {primaryDims, balanceDim, targetMin, focusTag: c.focus, formatTag: c.format, phaseLabel: phase.label, dimensionOverride: !!c.dimension};
   const scored = candidates
     .map(ex => ({ex, score: quickPickScore(ex, ctx)}))
     .sort((a,b) => b.score-a.score || a.ex.name.localeCompare(b.ex.name));
@@ -7540,7 +7627,7 @@ function renderQuickPickSheetHtml(){
   const phase = PHASES.find(p=>p.key===phaseKey);
   const result = state.quickPickSnapshot || computeQuickPicks(); // frozen at open/Customize-apply (batch 58) -- see refreshQuickPickResults()
   const label = phase ? phase.label : '';
-  const ctx = {primaryDims: result.primaryDims, balanceDim: result.balanceDim, targetMin: result.targetMin, focusTag: state.quickPickCustom.focus, formatTag: state.quickPickCustom.format};
+  const ctx = {primaryDims: result.primaryDims, balanceDim: result.balanceDim, targetMin: result.targetMin, focusTag: state.quickPickCustom.focus, formatTag: state.quickPickCustom.format, phaseLabel: label, dimensionOverride: !!state.quickPickCustom.dimension};
   const n = result.items.length;
   return `
   <div class="sheet-backdrop" onclick="closeQuickPick()"></div>
@@ -7886,10 +7973,11 @@ function applyTemplateToBuilder(id){
   templateCustoms.forEach(tc=>{
     let es = state.extraSections.find(es=>es.key===tc.key);
     if(!es){
-      es = {key:tc.key, label:tc.label, exercises:[], templateManaged:true};
+      es = {key:tc.key, label:tc.label, exercises:[], templateManaged:true, pct:tc.pct};
       state.extraSections.push(es);
     } else {
       es.label = tc.label;
+      es.pct = tc.pct; // keep its planned-minutes share in sync with the template (see extraSectionPlannedMinutes())
     }
   });
   state.extraSections = state.extraSections.filter(es=>{
@@ -9626,20 +9714,15 @@ function renderBuild(){
     const isEmpty = ids.length === 0;
     const isFirstPhaseWhileEmpty = count===0 && idx===0;
     const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
+    const over = mins > suggested;
+    const isCurrent = state.pickingPhase === p.key; // last phase the coach was actively adding to -- see resetBuilderDraft()
     const iconColor = st.textOn==='dark' ? 'var(--pitch-dark)' : 'white';
 
-    let subHtml = `${ids.length} exercise${ids.length===1?'':'s'} &middot; ${mins} min`;
+    let subHtml = `${ids.length} exercise${ids.length===1?'':'s'}`;
     if(!isEmpty){
-      if(mins >= suggested){
-        // Meets or exceeds its guideline share -- a plain checkmark, no color implying "done
-        // right," just "on pace." Never a warning color either way (per PHASE TIME GUIDANCE:
-        // deviation is fine).
-        subHtml += ICONS.check;
-      } else {
-        subHtml += `<span class="pcard-sugg">&middot; ${suggested} min suggested</span>`;
-      }
+      subHtml += ` &middot; ${mins} / ${suggested} min${over ? ` <span class="phase-over-tag">Over</span>` : ''}`;
     } else if(isFirstPhaseWhileEmpty){
-      subHtml += `<span class="prs-starthere">&middot; Start here</span>`;
+      subHtml += ` &middot; <span class="prs-starthere">Start here</span>`;
     }
 
     // The whole card is one tap target (button, not a div) -- tapping anywhere on it, including
@@ -9648,11 +9731,12 @@ function renderBuild(){
     // that picker screen's own "N exercises in [Phase]" toggle (see toggleAddedInPractice()), not
     // via an inline expand here anymore.
     return `
-    <button class="phase-row" onclick="pickForPhase('${p.key}')">
+    <button class="phase-row ${isCurrent?'current':''}" onclick="pickForPhase('${p.key}')">
       <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
       <div class="phase-row-body">
         <div class="phase-row-title">${p.label}</div>
         <div class="phase-row-sub">${subHtml}</div>
+        ${phaseProgressBarHtml(mins, suggested) || ''}
       </div>
       <span class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};">+ Add Exercise</span>
       <span class="phase-row-chevron">${ICONS.chevronRight}</span>
@@ -9662,20 +9746,24 @@ function renderBuild(){
   const extraBoxHtml = (s) => {
     const mins = s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0);
     const isCollapsed = state.collapsedPhases.has(s.key);
+    const planned = extraSectionPlannedMinutes(s);
+    const over = planned ? mins > planned : false;
+    const isCurrent = state.pickingPhase === s.key;
     return `
-    <div class="phase-box ${s.exercises.length?'filled':''}">
+    <div class="phase-box ${s.exercises.length?'filled':''} ${isCurrent?'current':''}">
       <div class="phase-box-header">
         <div class="phase-box-toprow">
           <input class="extra-box-title-input" value="${escAttr(s.label)}" onblur="renameExtraSection('${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">
           <button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${s.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(s.label)}">${ICONS.chevronRight}</button>
         </div>
         <div class="phase-box-subrow">
-          <div class="phase-box-time">${mins}m</div>
+          <div class="phase-box-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins}m`}</div>
           <div class="phase-box-subrow-actions">
             <button class="phase-box-edit" onclick="pickForPhase('${s.key}')" title="Edit exercises">${ICONS.pencil}</button>
             <button class="phase-box-del" onclick="removeExtraSection('${s.key}')" title="Remove section">${ICONS.trash}</button>
           </div>
         </div>
+        ${planned ? (phaseProgressBarHtml(mins, planned) || '') : ''}
       </div>
       ${isCollapsed ? '' : (s.exercises.length ? `<div class="build-ex-list" data-list-key="${s.key}">${s.exercises.map(id=>buildExRowHtml(id, s.key, `removeFromPhase('${s.key}','${id}')`, s.exercises.length>1)).join('')}</div>` : `<div class="build-ex-empty">No exercises yet</div>`)}
     </div>`;
@@ -9702,7 +9790,7 @@ function renderBuild(){
       <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
     <div class="bp-meta-line">
-      <span>${dateLabel} &middot; ${state.targetDuration} MIN &middot; ${locLabel}</span>
+      <span>${dateLabel} &middot; ${state.targetDuration} MIN &middot; ${locLabel} &middot; ${count} EXERCISE${count===1?'':'S'}</span>
       <button class="bp-meta-edit-btn" onclick="toggleBuildDetails()" title="Edit duration or location" aria-label="Edit duration or location">${ICONS.pencil}</button>
     </div>
     ${state.buildDetailsExpanded ? `
@@ -9809,12 +9897,7 @@ function saveDraftAndExit(){
 function requestDiscardSession(){ state.confirmDiscardOpen = true; renderOverlay(); }
 function cancelDiscardSession(){ state.confirmDiscardOpen = false; renderOverlay(); }
 function confirmDiscardSession(){
-  PHASES.forEach(p => state.phaseData[p.key] = []);
-  state.extraSections = [];
-  state.reviewGroupOrder = {};
-  state.sessionName = defaultSessionName();
-  state.practiceDate = todayISODate();
-  state.activeTemplateId = null;
+  resetBuilderDraft();
   state.confirmDiscardOpen = false;
   showToast('Draft practice discarded');
   nav('home');
@@ -9839,6 +9922,7 @@ function resetBuilderDraft(){
   state.sessionName = defaultSessionName();
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
+  state.pickingPhase = null; // don't let an old session's "current phase" highlight bleed into a new one
 }
 function startNewSessionDiscardingDraft(){
   resetBuilderDraft();
@@ -9865,6 +9949,7 @@ function confirmDuplicateSession(){
 function duplicateSessionToBuilder(id){
   const src = state.savedSessions.find(s=>s.id===id);
   if(!src) return;
+  state.pickingPhase = null; // never carry over a "current phase" highlight from whatever the coach was doing before -- self-contained regardless of whether a guard-modal reset already ran
   const enabledKeys = new Set();
   (src.phases||[]).forEach((entry, i) => {
     const p = entry.section ? PHASES.find(p=>p.section===entry.section) : null;
@@ -9950,19 +10035,26 @@ function renderReview(){
     <button class="back-pill-flat" onclick="nav('build')">${ICONS.back} Build Session</button>
     <div style="margin-top:14px;">
       <div class="eyebrow">Session Review (unsaved)</div>
-      ${state.sessionName.trim() ? `<h2 style="font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:700;font-size:var(--fs-2xl);margin:2px 0 0;">${escHtml(state.sessionName)}</h2>` : ''}
+      <h2 style="font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:700;font-size:var(--fs-2xl);margin:2px 0 0;">${state.sessionName.trim() ? escHtml(state.sessionName) : 'New Training Session'}</h2>
     </div>
     <div class="review-stats-row">
-      <div class="review-total-mini">${total} total minutes &middot; ${count} exercises</div>
+      <div class="review-total-mini">${total} total minutes &middot; ${count} exercises &middot; ${state.practiceLocation==='indoor'?'Indoor':'Outdoor'}</div>
       <button class="review-session-toggle" onclick="toggleSplitExpanded()">
         <span>Time Breakdown</span>
         <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
       </button>
     </div>
+    ${phaseStructureStripHtml(liveSectionEntries())}
     ${state.splitExpanded ? `<div class="time-panel standalone" style="margin-top:8px;">${timeComparisonBodyHtml(total, state.targetDuration, computeGroupMinutes())}</div>` : ''}
 
     <div class="phase-strip">
-      ${groups.map((g,i)=>`
+      ${groups.map((g,i)=>{
+        // Same per-phase planned-minutes source as the Build screen (sectionPlannedMinutes()),
+        // just summed across this blended group's member phases -- one interpretation of
+        // "planned," two granularities.
+        const planned = g.phaseKeys.reduce((a,k)=>a+sectionPlannedMinutes(k),0);
+        const over = g.mins > planned;
+        return `
         <div class="phase-card">
           <div class="phase-line">
             <div class="phase-num" style="background:${g.bg};color:${g.textOn==='dark'?'var(--pitch-dark)':'white'};">${i+1}</div>
@@ -9971,9 +10063,10 @@ function renderReview(){
           <div class="phase-content">
             <div class="phase-title-row">
               <div class="phase-title">${g.label}</div>
-              <div class="phase-time">${g.mins} min</div>
+              <div class="phase-time">${g.mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}</div>
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
+            ${phaseProgressBarHtml(g.mins, planned) || ''}
             <div class="phase-exlist" data-list-key="${g.key}">
               ${g.items.map(it=>{
                 const ex=exById(it.id);
@@ -9982,17 +10075,24 @@ function renderReview(){
               }).join('')}
             </div>
           </div>
-        </div>`).join('')}
-      ${usedExtras.map((s,i)=>`
+        </div>`;
+      }).join('')}
+      ${usedExtras.map((s,i)=>{
+        const mins = s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0);
+        const planned = extraSectionPlannedMinutes(s);
+        const over = planned ? mins > planned : false;
+        return `
         <div class="phase-card">
           <div class="phase-line"><div class="phase-num">${groups.length+i+1}</div></div>
           <div class="phase-content">
-            <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div></div>
+            <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins} min`}</div></div>
+            ${planned ? (phaseProgressBarHtml(mins, planned) || '') : ''}
             <div class="phase-exlist" data-list-key="${s.key}">
               ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>
 
     <div class="pprof-block">
@@ -10272,6 +10372,7 @@ function sessionRowHtml(s){
           <div class="srname">${escHtml(s.name)}</div>
           <div class="srmeta">${ICONS.user} ${isOwner?'You':escHtml(s.createdBy)} &middot; ${formatWhen(s.createdAt)}${s.visibility==='private'?` &middot; ${ICONS.lock} Private`:''}</div>
           <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises${s._syncPending?' &middot; <span style="color:var(--warn);">Not synced yet</span>':''}</div>
+          ${s.phases && s.phases.length ? `<div class="srmeta structure">${escHtml(s.phases.map(p=>p.label).join(' → '))}</div>` : ''}
         </div>
         ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
         ${isOwner ? `<button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${s.id}')" title="Delete session">${ICONS.trash}</button>` : ''}
@@ -10389,8 +10490,12 @@ function renderSessionDetail(){
     </div>
 
     <div class="sd-meta-row">
+      <div class="sd-meta"><div class="smnum">${formatPracticeDateShort(s.practiceDate)}</div><div class="smlbl">Practice date</div></div>
+      <div class="sd-meta"><div class="smnum">${s.location==='indoor'?'Indoor':'Outdoor'}</div><div class="smlbl">Location</div></div>
+    </div>
+    <div class="sd-meta-row" style="margin-top:10px;">
       <div class="sd-meta"><div class="smnum">${s.createdBy}</div><div class="smlbl">Added by</div></div>
-      <div class="sd-meta"><div class="smnum">${formatWhen(s.createdAt)}</div><div class="smlbl">Date &amp; time</div></div>
+      <div class="sd-meta"><div class="smnum">${formatWhen(s.createdAt)}</div><div class="smlbl">Saved</div></div>
     </div>
 
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>

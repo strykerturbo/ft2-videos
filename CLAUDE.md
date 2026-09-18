@@ -218,6 +218,20 @@ This section is the project's running memory of what's broken before and
 how it got fixed — when you hit and resolve something new, add it here
 rather than letting it get rediscovered next session.
 
+- A function that seeds a *fresh* live draft (`duplicateSessionToBuilder()`,
+  `startNewSessionDiscardingDraft()`, etc.) should clear its own transient
+  UI state (e.g. `state.pickingPhase`, used to highlight the "current
+  phase" on Build) itself, not assume the caller already reset it —
+  `requestDuplicateSession()` has two call paths (straight through when no
+  draft is in progress, or via the guard modal's `confirmDuplicateSession()`
+  when one is), and only one of them ran `resetBuilderDraft()` before this
+  was fixed, so a stale phase highlight from a completely unrelated earlier
+  session could silently leak into a brand-new duplicate. Fixed by having
+  `duplicateSessionToBuilder()` clear `pickingPhase` itself, unconditionally,
+  regardless of which path led to it — the lesson: when a screen has more
+  than one way to reach the same "start fresh" outcome, put the reset
+  inside the function that actually does the fresh-start, not in just one
+  of its callers.
 - The `node` available in this environment is ancient (v0.10, no nvm/newer
   version installed) and can't parse the modern JS this file uses at all
   (template literals, arrow functions, `const`/`let`) — `node --check` /
