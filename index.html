@@ -6559,7 +6559,9 @@ function normalizeCloudSession(c){
 async function syncSessionsFromSheet(){
   if(!APPS_SCRIPT_URL) return;
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?sheet=sessions', {cache:'no-store'});
+    // &coach= tells the server who's asking, so it can leave out anyone else's Private sessions
+    // entirely instead of sending every private row to every device (see readSessions() server-side).
+    const res = await fetch(APPS_SCRIPT_URL + '?sheet=sessions&coach=' + encodeURIComponent(state.coachName), {cache:'no-store'});
     if(!res.ok) throw new Error('Apps Script fetch failed: ' + res.status);
     const cloud = await res.json();
     if(!Array.isArray(cloud)) throw new Error((cloud && cloud.error) || 'Unexpected sessions response');
@@ -6598,7 +6600,9 @@ async function pushSessionToSheet(session){
     // CORS preflight (OPTIONS) request a declared "application/json" body would trigger from a
     // browser, so this relies on fetch's default text/plain body type to stay a "simple request".
     // The server reads the raw body regardless of declared type, so this doesn't affect parsing.
-    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'upsert', session:payload}) });
+    // requestingCoach lets the server check this against who the session is actually stored as
+    // belonging to before allowing the edit -- see upsertSession() server-side.
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'upsert', session:payload, requestingCoach: state.coachName}) });
     const data = await res.json();
     if(!data || !data.ok) throw new Error((data && data.error) || 'Save did not confirm');
     session._syncPending = false;
@@ -6610,7 +6614,7 @@ async function pushSessionToSheet(session){
 async function deleteSessionFromSheet(id){
   if(!APPS_SCRIPT_URL) return;
   try{
-    await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'delete', session:{id}}) });
+    await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'delete', session:{id}, requestingCoach: state.coachName}) });
   } catch(err){
     console.warn('Session delete-sync failed (it stays deleted locally either way):', err.message);
   }

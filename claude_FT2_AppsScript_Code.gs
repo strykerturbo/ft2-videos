@@ -58,9 +58,12 @@ const SHEET_TAB_NAME = 'Exercises';
 
 function doGet(e) {
   // Saved-session reads are routed to a separate handler; everything else below this check is
-  // the ORIGINAL exercise-feed behavior, completely unchanged.
+  // the ORIGINAL exercise-feed behavior, completely unchanged. ?coach=<name> identifies who's
+  // asking (the same free-text name the app's "Who's Coaching?" screen collects) so a private
+  // session only ever gets sent back to the coach who owns it -- see readSessions() below.
   if (e && e.parameter && e.parameter.sheet === 'sessions') {
-    return jsonResponse(readSessions());
+    const requestingCoach = (e.parameter.coach || '').toString();
+    return jsonResponse(readSessions(requestingCoach));
   }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_TAB_NAME);
@@ -94,17 +97,26 @@ function doGet(e) {
 // The client always sends the *whole* current session object and this always replaces the whole
 // row -- one action ("upsert") covers every kind of edit, since there's no benefit to modeling
 // granular per-field updates for a dataset this small.
+//
+// requestingCoach is the acting coach's name (again, the same free-text name from "Who's
+// Coaching?") -- separate from session.createdBy in the payload, which is just whatever the
+// session object already says and proves nothing on its own. upsertSession()/deleteSessionRow()
+// check this against who the row is ACTUALLY stored as belonging to before allowing an edit or
+// delete of an existing row. This is still name-based, not a real login -- see "A NOTE ON
+// SECURITY" near the bottom -- but it closes the "anyone can rename/delete anyone's session with
+// zero information" gap the old version had.
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000); // up to 10s -- avoids two friends' saves corrupting each other if they land at the same moment
   try {
     const body = JSON.parse(e.postData.contents);
+    const requestingCoach = (body.requestingCoach || '').toString();
     if (body.action === 'upsert') {
-      upsertSession(body.session);
+      upsertSession(body.session, requestingCoach);
       return jsonResponse({ ok: true });
     }
     if (body.action === 'delete') {
-      deleteSessionRow(body.session && body.session.id);
+      deleteSessionRow(body.session && body.session.id, requestingCoach);
       return jsonResponse({ ok: true });
     }
     return jsonResponse({ ok: false, error: 'Unknown action: ' + body.action });
@@ -169,14 +181,23 @@ function getSessionsSheet_() {
   return sheet;
 }
 
-function readSessions() {
+function readSessions(requestingCoach) {
   const sheet = getSessionsSheet_();
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) return []; // header row only, nothing saved yet
   const headers = values[0];
   const idCol = headers.indexOf('id');
+  const createdByCol = headers.indexOf('createdBy');
+  const visibilityCol = headers.indexOf('visibility');
   return values.slice(1)
     .filter(row => String(row[idCol] || '').trim() !== '') // skip any blank/ghost rows, same principle as the Exercises tab above
+    .filter(row => {
+      // A private session only ever goes back to the coach who saved it -- everyone else's sync
+      // simply never receives it, instead of downloading every private row and hiding it only in
+      // that device's own UI (which is what the client used to have to do on its own).
+      if (row[visibilityCol] !== 'private') return true;
+      return String(row[createdByCol]) === String(requestingCoach);
+    })
     .map(row => {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = row[i]; });
@@ -191,13 +212,31 @@ function readSessions() {
     });
 }
 
-function upsertSession(session) {
+function upsertSession(session, requestingCoach) {
   if (!session || !session.id) throw new Error('Missing session.id');
   const sheet = getSessionsSheet_();
   const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const createdByCol = headers.indexOf('createdBy');
   let rowIndex = -1; // 1-based sheet row of an existing match, if any
+  let existingCreatedBy = null;
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(session.id)) { rowIndex = i + 1; break; }
+    if (String(values[i][0]) === String(session.id)) {
+      rowIndex = i + 1;
+      existingCreatedBy = values[i][createdByCol];
+      break;
+    }
+  }
+  if (rowIndex === -1) {
+    // Creating a brand-new row -- only allowed to create it as yourself, so a coach can't push a
+    // new session that immediately claims to belong to someone else.
+    if (String(session.createdBy) !== String(requestingCoach)) {
+      throw new Error('Cannot save a session as another coach');
+    }
+  } else if (String(existingCreatedBy) !== String(requestingCoach)) {
+    // Editing a row that already belongs to someone else (rename, rate, add/remove exercise,
+    // flip visibility, etc.) -- the previous version allowed this unconditionally.
+    throw new Error('Not authorized to edit this session');
   }
   const row = SESSIONS_HEADERS.map(h => {
     if (h === 'phasesJson') return JSON.stringify(session.phases || []);
@@ -211,12 +250,17 @@ function upsertSession(session) {
   }
 }
 
-function deleteSessionRow(id) {
+function deleteSessionRow(id, requestingCoach) {
   if (!id) return;
   const sheet = getSessionsSheet_();
   const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const createdByCol = headers.indexOf('createdBy');
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(id)) {
+      if (String(values[i][createdByCol]) !== String(requestingCoach)) {
+        throw new Error('Not authorized to delete this session');
+      }
       sheet.deleteRow(i + 1);
       return;
     }
@@ -225,9 +269,18 @@ function deleteSessionRow(id) {
 
 /**
  * A NOTE ON SECURITY: this deployment (Execute as Me / Who has access: Anyone) means anyone who
- * has your /exec URL can call doPost and write or delete session rows -- there's no login check.
- * That's an acceptable trade-off for a handful of trusted friends who have the app link, the same
- * "obscurity, not real security" model the exercise-feed URL already relied on. It is NOT
- * something to grow past a small trusted group without adding real per-user authentication and
- * server-side access rules.
+ * has your /exec URL can call doGet/doPost -- there's no login check. Sep 2026 update: reads and
+ * writes are now checked against the plain-text coach name the app already collects ("Who's
+ * Coaching?") -- a private session is only ever sent back to the coach who owns it, and an
+ * edit/delete of an existing session is only allowed when the requesting name matches who it's
+ * actually stored as belonging to. That closes "any request can silently rename/delete/read
+ * anyone's session with zero information," which the previous version allowed outright.
+ *
+ * It is still NOT real authentication: nothing here cryptographically proves who's making a
+ * request, so a request that deliberately types someone else's exact coach name is still able to
+ * act as them (the same way it could type that name into the app's own "Who's Coaching?" screen).
+ * That remains an acceptable trade-off for a handful of trusted friends who have the app link, not
+ * something to grow past a small trusted group without adding real per-user authentication
+ * (e.g. a per-coach secret/token, or real Google-account-based login) and server-side access
+ * rules built on top of it.
  */
