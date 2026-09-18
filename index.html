@@ -1072,14 +1072,18 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    (same destination "+ Add Exercise" always went to). Scoped to its own classes (not a restyle
    of .phase-box/.pcard-add-btn) since those are still used as-is by custom/extra sections on
    this screen and by the saved-session editing view. */
-.phase-row{
-  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+/* .phase-row-wrap is the actual bordered card (matches .phase-box's own header+inline-list
+   pattern below) -- .phase-row is just the always-visible summary line inside it, so an expanded
+   exercise list (.build-ex-list) reads as part of the same card, not a second floating block. */
+.phase-row-wrap{
   background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);
   padding:14px;
 }
-.phase-row:active{background:var(--chalk-dim);}
-.phase-row.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
-.phase-row.current .phase-row-title{color:var(--turf);}
+.phase-row-wrap.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
+.phase-row-wrap.current .phase-row-title{color:var(--turf);}
+.phase-row{display:flex;align-items:center;gap:14px;width:100%;}
+.phase-row-main{display:flex;align-items:center;gap:14px;flex:1;min-width:0;cursor:pointer;}
+.phase-row-main:active{opacity:0.8;}
 .phase-row-icon{
   width:80px;height:80px;border-radius:var(--radius-control);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -1095,8 +1099,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   border:none;border-radius:var(--radius-pill);padding:9px 13px;font-size:var(--fs-sm);font-weight:700;
   flex-shrink:0;white-space:nowrap;display:flex;align-items:center;
 }
-.phase-row-chevron{display:flex;flex-shrink:0;color:var(--ink-soft);}
-.phase-row-chevron svg{width:16px;height:16px;}
+.phase-row .phase-collapse-btn{margin:0 -5px 0 -3px;}
 .bp-meta-line{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .bp-meta-edit-btn{background:none;border:none;color:var(--ink-soft);opacity:0.55;padding:3px;display:flex;flex-shrink:0;}
 .bp-meta-edit-btn svg{width:12px;height:12px;}
@@ -9713,6 +9716,10 @@ function renderBuild(){
     const mins = ids.reduce((a,id)=>a+(exById(id)?.duration||10),0);
     const isEmpty = ids.length === 0;
     const isFirstPhaseWhileEmpty = count===0 && idx===0;
+    // Empty phases start (and stay) collapsed -- there's nothing to expand yet, so no chevron is
+    // shown at all. Once the first exercise is added, a chevron appears and the card defaults to
+    // expanded so the coach immediately sees what they just added.
+    const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
     const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
     const over = mins > suggested;
     const isCurrent = state.pickingPhase === p.key; // last phase the coach was actively adding to -- see resetBuilderDraft()
@@ -9725,22 +9732,28 @@ function renderBuild(){
       subHtml += ` &middot; <span class="prs-starthere">Start here</span>`;
     }
 
-    // The whole card is one tap target (button, not a div) -- tapping anywhere on it, including
-    // the "+ Add Exercise" pill, goes straight to the same exercise picker "+ Add Exercise" always
-    // did (pickForPhase). Reviewing/reordering/removing exercises already in the phase happens on
-    // that picker screen's own "N exercises in [Phase]" toggle (see toggleAddedInPractice()), not
-    // via an inline expand here anymore.
+    // Tapping the icon/title area expands or collapses this phase's already-added exercises
+    // inline (image + name + bullets per exercise, via the same buildExRowHtml() row custom
+    // sections already use below) -- restored per the coach's own request, after a prior redesign
+    // routed every tap straight to the picker instead. "+ Add Exercise" still always goes to the
+    // picker. An empty phase has nothing to expand, so it shows no chevron -- only the pill does
+    // anything until the first exercise lands.
     return `
-    <button class="phase-row ${isCurrent?'current':''}" onclick="pickForPhase('${p.key}')">
-      <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
-      <div class="phase-row-body">
-        <div class="phase-row-title">${p.label}</div>
-        <div class="phase-row-sub">${subHtml}</div>
-        ${phaseProgressBarHtml(mins, suggested) || ''}
+    <div class="phase-row-wrap ${isCurrent?'current':''}">
+      <div class="phase-row">
+        <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
+          <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
+          <div class="phase-row-body">
+            <div class="phase-row-title">${p.label}</div>
+            <div class="phase-row-sub">${subHtml}</div>
+            ${phaseProgressBarHtml(mins, suggested) || ''}
+          </div>
+        </div>
+        <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
+        ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
       </div>
-      <span class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};">+ Add Exercise</span>
-      <span class="phase-row-chevron">${ICONS.chevronRight}</span>
-    </button>`;
+      ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
+    </div>`;
   };
 
   const extraBoxHtml = (s) => {
