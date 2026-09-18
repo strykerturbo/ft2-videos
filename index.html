@@ -851,9 +851,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 /* New Session setup screen: Duration stacks its 60/75/90 row above a full-width Custom pill,
    since the two-column Date+Duration layout only leaves ~half the screen width per card -- not
    enough for four pills on one line. */
-.duration-target.col{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.duration-target.col{display:flex;flex-direction:column;gap:6px;margin-top:9px;}
 .duration-target-row{display:flex;gap:6px;}
-.duration-target.col .dtarget{padding:10px 0;font-size:var(--fs-base);min-height:40px;}
+.duration-target.col .dtarget{padding:10px 0;font-size:var(--fs-base);min-height:47.5px;box-sizing:border-box;}
 .dtarget.full,.dtarget-input.full{width:100%;flex:none;}
 
 /* compact, de-emphasized practice-settings row */
@@ -8257,7 +8257,7 @@ function renderHome(){
         <div class="mact-stat">${totalEx} Exercises</div>
       </button>
       <button class="mac-tile" onclick="nav('sessions');syncSessionsFromSheet()">
-        <div class="mact-icon">${ICONS.folder}</div>
+        <div class="mact-icon">${ICONS.doc}</div>
         <div class="mact-label"><span>My</span><span>Sessions</span></div>
         <div class="mact-stat">${savedCount} Saved</div>
       </button>
