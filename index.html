@@ -1101,14 +1101,12 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    of .phase-box/.pcard-add-btn) since those are still used as-is by custom/extra sections on
    this screen and by the saved-session editing view. */
 /* .phase-row-wrap is the actual bordered card (matches .phase-box's own header+inline-list
-   pattern below) -- .phase-row is just the always-visible summary line inside it, so an expanded
-   exercise list (.build-ex-list) reads as part of the same card, not a second floating block.
-   No padding of its own -- the icon square sits flush against the left/top/bottom edges (its
-   height matching the row's height exactly, via align-items:stretch below), with overflow:hidden
-   letting the wrap's own rounded corners clip the icon's outer corners to match rather than
-   needing a second, separately-tuned radius on the icon itself. */
+   pattern below) -- .phase-row is just the always-visible summary line inside it (now the one
+   that carries the section tint, via inline style, so the wrap itself can stay a neutral surface
+   and let an expanded .build-ex-list read as a distinct light-gray body beneath it), so an
+   expanded exercise list still reads as part of the same card, not a second floating block. */
 .phase-row-wrap{
-  background:var(--bg-surface);border:1px solid var(--line);border-radius:20px;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:10px;
   overflow:hidden;
 }
 .phase-row-wrap.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
@@ -1118,7 +1116,11 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-row-main{display:flex;align-items:center;gap:14px;flex:1;min-width:0;cursor:pointer;}
 .phase-row-main:active{opacity:0.8;}
 .phase-row-icon{
-  width:80px;flex-shrink:0;border-radius:0;
+  /* No padding/margin of its own -- flush against the row's left/top/bottom edges, its height
+     matching the row's height exactly via the row's own align-items:stretch. Its own radius (not
+     just a clip from the wrap) so all four corners read as rounded, not just the two the wrap's
+     overflow:hidden happens to clip. */
+  width:80px;flex-shrink:0;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
 }
 .phase-row-icon svg{width:36px;height:36px;}
@@ -1157,31 +1159,37 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 /* .phase-row-wrap has no padding of its own (see above, for the flush-icon layout), so its
    inline exercise list needs its own inset -- .phase-box (custom/extra sections) already has
    that padding on itself, so this stays scoped to just the standard-phase case. */
-.phase-row-wrap > .build-ex-list{margin-top:0;padding:6px 14px 14px;}
-.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 48px 11px 0;border-top:1px solid var(--line);}
+.phase-row-wrap > .build-ex-list{margin-top:0;padding:6px 14px 14px;background:var(--chalk-dim);}
+.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 4px 11px 0;border-top:1px solid var(--line);}
 .build-ex-list .build-ex-row:first-child{border-top:none;}
-.build-ex-image{width:84px;height:66px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--chalk-dim);}
+/* Diagram and title/text each take half the row -- equal flex-grow off a 0 basis, with the image
+   stretching (flex default cross-axis behavior) to match however tall the text side naturally is. */
+.build-ex-image{flex:1;min-width:0;min-height:80px;border-radius:10px;overflow:hidden;background:var(--chalk-dim);}
 .build-ex-image img,.build-ex-image video{width:100%;height:100%;object-fit:cover;display:block;}
 .build-ex-image-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
 .build-ex-image-fallback svg{width:24px;height:24px;}
 .build-ex-info{flex:1;min-width:0;}
-.build-ex-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.build-ex-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
 .build-ex-name{font-size:var(--fs-md);font-weight:700;line-height:1.3;}
-.build-ex-dur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;}
+/* Duration + Replace + Remove all sit in one top-aligned row, evenly spaced -- previously the two
+   icon buttons were absolutely positioned in a fixed top-right corner, which could drift out of
+   line with the title/duration text and left them crowded together with no breathing room. */
+.build-ex-actions{display:flex;align-items:flex-start;gap:10px;flex-shrink:0;}
+.build-ex-dur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;padding-top:2px;}
 .build-ex-bullets{margin:0;padding-left:15px;}
 .build-ex-bullets li{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.45;margin-bottom:2px;}
 .build-ex-grip{width:20px;align-self:stretch;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;margin-left:-4px;}
 .build-ex-grip svg{width:14px;height:14px;}
 .build-ex-row.dragging{opacity:0.6;box-shadow:0 4px 14px rgba(0,0,0,0.25);position:relative;z-index:5;background:var(--bg-surface);}
 .build-ex-remove{
-  position:absolute;top:9px;right:-4px;background:none;border:none;color:var(--ink-soft);
-  opacity:0.38;padding:8px;display:flex;
+  background:none;border:none;color:var(--ink-soft);flex-shrink:0;
+  opacity:0.38;padding:8px;margin:-8px -6px 0 0;display:flex;
 }
 .build-ex-remove svg{width:13px;height:13px;}
 .build-ex-remove:active{opacity:0.75;}
 .build-ex-row .build-ex-replace{
-  position:absolute;top:9px;right:27px;background:none;border:none;color:var(--turf);
-  opacity:0.6;padding:8px;display:flex;
+  background:none;border:none;color:var(--turf);flex-shrink:0;
+  opacity:0.6;padding:8px;margin:-8px 0 0;display:flex;
 }
 .build-ex-row .build-ex-replace svg{width:13px;height:13px;}
 .build-ex-row .build-ex-replace:active{opacity:0.9;}
@@ -9633,11 +9641,16 @@ function buildExRowHtml(id, key, removeCall, showGrip){
   return `
   <div class="build-ex-row" data-ex-id="${id}">
     ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
-    ${replaceButtonHtml(key, id, 'build')}
-    <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
-      <div class="build-ex-name-row"><div class="build-ex-name">${escHtml(ex.name)}</div><span class="build-ex-dur">${ex.duration||10}m</span></div>
+      <div class="build-ex-name-row">
+        <div class="build-ex-name">${escHtml(ex.name)}</div>
+        <div class="build-ex-actions">
+          <span class="build-ex-dur">${ex.duration||10}m</span>
+          ${replaceButtonHtml(key, id, 'build')}
+          <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
+        </div>
+      </div>
       ${bullets.length ? `<ul class="build-ex-bullets">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>` : ''}
     </div>
   </div>`;
@@ -9808,9 +9821,16 @@ function renderBuild(){
     const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
     const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
     const over = mins > suggested;
-    const isCurrent = state.pickingPhase === p.key; // last phase the coach was actively adding to -- see resetBuilderDraft()
+    // "Current" also covers the very first empty phase on a brand-new session (isFirstPhaseWhileEmpty)
+    // -- the same emphasis ring that appears once a coach has actually picked into a phase now shows
+    // proactively on Warmup's "Start here" cue too, instead of waiting for that first tap.
+    const isCurrent = state.pickingPhase === p.key || isFirstPhaseWhileEmpty;
     const iconColor = st.textOn==='dark' ? 'var(--pitch-dark)' : 'white';
-    const barBg = `color-mix(in srgb, ${st.color} 10%, var(--bg-surface))`; // soft section tint for the whole bar -- distinct from the icon's full-strength color
+    const barBg = `color-mix(in srgb, ${st.color} 10%, var(--bg-surface))`; // soft section tint for the summary row -- distinct from the icon's full-strength color
+    // Once a phase has exercises, its outer card gets a faint section-colored ring (instead of the
+    // plain neutral border) -- a quiet "you've picked something for this section" confirmation,
+    // independent of (and layered under) the stronger turf "current phase" ring above.
+    const filledBorder = !isEmpty ? `border-color:color-mix(in srgb, ${st.color} 45%, var(--line));` : '';
 
     let subHtml = `${ids.length} exercise${ids.length===1?'':'s'}`;
     if(!isEmpty){
@@ -9826,8 +9846,8 @@ function renderBuild(){
     // picker. An empty phase has nothing to expand, so it shows no chevron -- only the pill does
     // anything until the first exercise lands.
     return `
-    <div class="phase-row-wrap ${isCurrent?'current':''}" style="background:${barBg};">
-      <div class="phase-row">
+    <div class="phase-row-wrap ${isCurrent?'current':''}" style="${filledBorder}">
+      <div class="phase-row" style="background:${barBg};">
         <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
         <div class="phase-row-content">
           <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
