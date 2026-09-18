@@ -6505,10 +6505,14 @@ async function syncExercisesFromSheet(){
     if(!e.mediaUrl && localMediaByName[e.name]) e.mediaUrl = localMediaByName[e.name];
     return normalizeExerciseRecord(e);
   });
-  state.hasIdCollision = dedupeExerciseIds(fresh);
 
   EXERCISES.length = 0;
-  EXERCISES.push(...fresh);
+  // Coach-created exercises (saveDraftExercise()) never come from the sheet -- keep them on top
+  // of a fresh sync instead of a resync silently deleting them. Re-run dedupe against the whole
+  // merged set, not just the sheet rows, since a local exercise's auto-assigned id could now
+  // collide with something newly added to the sheet.
+  EXERCISES.push(...state.localExercises, ...fresh);
+  state.hasIdCollision = dedupeExerciseIds(EXERCISES);
   render();
   showToast(`Synced with your live exercise sheet (${usedSource})`);
 }
@@ -7848,6 +7852,10 @@ function createNewExercise(){
 function saveDraftExercise(silent){
   if(!state.draftExercise) return;
   EXERCISES.unshift(state.draftExercise);
+  // Also keep a durable copy separate from EXERCISES itself, since a live sheet sync replaces
+  // EXERCISES wholesale -- this is the only thing that lets a coach-created exercise survive a
+  // reload or a resync instead of silently vanishing while still showing "added to your library".
+  state.localExercises.unshift(state.draftExercise);
   state.draftExercise = null;
   if(!silent) showToast('Exercise added to your library');
   render();
@@ -7935,6 +7943,7 @@ const state = {
   toast: null,
   tagPickerId: null,          // exercise id currently showing the "add tags" picker sheet
   draftExercise: null,        // a newly-created exercise pending explicit save into the shared library
+  localExercises: [],         // coach-created exercises saved via saveDraftExercise() -- these never come from the spreadsheet/Apps Script, so a live sync would otherwise wipe them; persisted locally and re-merged into EXERCISES on load and after every sync (see syncExercisesFromSheet())
   collapsedPhases: new Set(), // phase/section keys currently collapsed on the Build page
   viewMode: 'tile',           // 'tile' | 'list' -- how Explore Exercises lays out results
   confirmDiscardOpen: false,  // whether the "discard this draft practice?" confirm sheet is showing
@@ -10832,6 +10841,20 @@ function renderSessionDetail(){
    and every bookmark, since none of it lived anywhere but memory. Every render() call now snapshots
    the meaningful state to localStorage, and it's restored once on load before the first render. */
 const APP_STATE_STORAGE_KEY = 'ft2-app-state-v1';
+// render() calls this on every single re-render (every tap, every toast, every keystroke-driven
+// soft-render), and the snapshot includes the full savedSessions/localExercises/etc. arrays --
+// at a large saved-session count that's a real, avoidable synchronous cost on every interaction
+// anywhere in the app. Debounced the same way search input already is (see onSearch), with a
+// flush on tab-hide/close below so backgrounding or closing the app never loses the latest state
+// to an unfired timer -- mobile Safari doesn't reliably fire beforeunload/unload, so this flushes
+// on visibilitychange -> hidden and pagehide instead, both of which it does fire reliably.
+let saveStateDebounceTimer = null;
+function scheduleSaveAppStateToStorage(){
+  clearTimeout(saveStateDebounceTimer);
+  saveStateDebounceTimer = setTimeout(saveAppStateToStorage, 400);
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden'){ clearTimeout(saveStateDebounceTimer); saveAppStateToStorage(); } });
+window.addEventListener('pagehide', () => { clearTimeout(saveStateDebounceTimer); saveAppStateToStorage(); });
 function saveAppStateToStorage(){
   try{
     const snapshot = {
@@ -10848,6 +10871,7 @@ function saveAppStateToStorage(){
       phaseOrder: state.phaseOrder,
       practiceTemplates: state.practiceTemplates,
       sectionDefaultPcts: {...sectionDefaultPcts},
+      localExercises: state.localExercises,
       // Navigation context -- so a reload lands the coach back on the screen they were actually
       // on (mid-build, picking exercises, reviewing) instead of bouncing to Home even though the
       // underlying data survived. Validated against live data below before being trusted.
@@ -10908,6 +10932,14 @@ function loadAppStateFromStorage(){
     }
     if(snap.sectionDefaultPcts && typeof snap.sectionDefaultPcts === 'object'){
       PHASES.forEach(p => { if(typeof snap.sectionDefaultPcts[p.key] === 'number') sectionDefaultPcts[p.key] = snap.sectionDefaultPcts[p.key]; });
+    }
+    if(Array.isArray(snap.localExercises) && snap.localExercises.length){
+      // Merge coach-created exercises (never in the bundled/synced sheet data) back into
+      // EXERCISES before the detailId check below runs, so reopening the app on a Detail page
+      // for one of them doesn't wrongly bounce to Home for "not found".
+      state.localExercises = snap.localExercises;
+      EXERCISES.unshift(...state.localExercises);
+      state.hasIdCollision = dedupeExerciseIds(EXERCISES);
     }
 
     // Restore navigation context last, once savedSessions/etc. above are already in place, so the
@@ -10973,7 +11005,7 @@ function render(){
   document.getElementById('content').innerHTML = screens[state.screen]();
   renderBottomnav();
   renderOverlay();
-  saveAppStateToStorage();
+  scheduleSaveAppStateToStorage();
 }
 
 initTheme();
