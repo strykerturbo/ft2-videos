@@ -345,12 +345,12 @@ a{color:inherit;text-decoration:none;}
 }
 .qf-advanced-btn svg{width:14px;height:14px;}
 .balance-btn{
-  position:relative;display:flex;align-items:center;gap:6px;
-  padding:8px 14px;border-radius:20px;border:1px solid var(--turf);
-  background:var(--turf-dim);font-size:var(--fs-base);font-weight:700;color:var(--turf);
+  position:relative;display:flex;align-items:center;gap:7px;
+  padding:8px 14px;border-radius:20px;border:1px solid transparent;
+  background:color-mix(in srgb, var(--turf) 12%, var(--bg-surface));font-size:var(--fs-base);font-weight:700;color:var(--turf);
   white-space:nowrap;
 }
-.balance-btn svg{width:14px;height:14px;}
+.balance-btn svg{width:20px;height:20px;flex-shrink:0;}
 .balance-btn-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
 /* ---------- Quick Pick (+ Add Exercise flow) ---------- */
 .qp-pill{
@@ -394,8 +394,11 @@ a{color:inherit;text-decoration:none;}
 .qp-close-btn svg{width:15px;height:15px;}
 .qp-close-btn:active{background:var(--line);}
 .qp-info-panel{
+  /* background is a fixed light teal in both themes (not a dark-mode-aware token), so the text
+     must stay a fixed dark color too -- var(--ink) flips to near-white in dark mode, which made
+     this unreadable against the still-light background. */
   background:var(--turf-dim);border:1px solid var(--turf);border-radius:10px;
-  padding:10px 12px;font-size:var(--fs-base);line-height:1.5;color:var(--ink);margin:2px 0 10px;
+  padding:10px 12px;font-size:var(--fs-base);line-height:1.5;color:#0F172A;margin:2px 0 10px;
 }
 .qp-fewer-note{font-size:var(--fs-sm);color:var(--ink-soft);font-style:italic;margin:-2px 0 12px;line-height:1.4;}
 .balance-sheet-title{display:flex;align-items:center;gap:7px;}
@@ -423,7 +426,7 @@ a{color:inherit;text-decoration:none;}
   border-radius:9px;padding:8px 12px;font-size:var(--fs-sm);font-weight:700;
   display:flex;align-items:center;gap:5px;
 }
-.balance-add-btn.added{background:var(--cone);border:1.5px solid #9B9B9B;color:var(--pitch-dark);}
+.balance-add-btn.added{background:var(--cone-dim);border:1.5px solid var(--cone);color:#7a4a10;}
 .balance-add-btn svg{width:12px;height:12px;}
 .ex-count-line{font-size:var(--fs-base);font-weight:600;color:var(--ink-soft);margin-bottom:8px;}
 .ex-count-eyebrow{font-size:var(--fs-sm);font-weight:800;letter-spacing:0.04em;color:var(--ink);margin-bottom:2px;}
@@ -1074,21 +1077,26 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    this screen and by the saved-session editing view. */
 /* .phase-row-wrap is the actual bordered card (matches .phase-box's own header+inline-list
    pattern below) -- .phase-row is just the always-visible summary line inside it, so an expanded
-   exercise list (.build-ex-list) reads as part of the same card, not a second floating block. */
+   exercise list (.build-ex-list) reads as part of the same card, not a second floating block.
+   No padding of its own -- the icon square sits flush against the left/top/bottom edges (its
+   height matching the row's height exactly, via align-items:stretch below), with overflow:hidden
+   letting the wrap's own rounded corners clip the icon's outer corners to match rather than
+   needing a second, separately-tuned radius on the icon itself. */
 .phase-row-wrap{
-  background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);
-  padding:14px;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:20px;
+  overflow:hidden;
 }
 .phase-row-wrap.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
 .phase-row-wrap.current .phase-row-title{color:var(--turf);}
-.phase-row{display:flex;align-items:center;gap:14px;width:100%;}
+.phase-row{display:flex;align-items:stretch;width:100%;}
+.phase-row-content{display:flex;align-items:center;gap:14px;flex:1;min-width:0;padding:16px 14px;}
 .phase-row-main{display:flex;align-items:center;gap:14px;flex:1;min-width:0;cursor:pointer;}
 .phase-row-main:active{opacity:0.8;}
 .phase-row-icon{
-  width:80px;height:80px;border-radius:var(--radius-control);flex-shrink:0;
+  width:80px;flex-shrink:0;border-radius:0;
   display:flex;align-items:center;justify-content:center;
 }
-.phase-row-icon svg{width:38px;height:38px;}
+.phase-row-icon svg{width:36px;height:36px;}
 .phase-row-body{flex:1;min-width:0;}
 .phase-row-title{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-md);color:var(--ink);}
 .phase-row-sub{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin-top:1px;}
@@ -1121,6 +1129,10 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 /* each exercise: image on the left, bullets (from Description + Variations) on the right */
 .build-ex-list{margin-top:6px;}
+/* .phase-row-wrap has no padding of its own (see above, for the flush-icon layout), so its
+   inline exercise list needs its own inset -- .phase-box (custom/extra sections) already has
+   that padding on itself, so this stays scoped to just the standard-phase case. */
+.phase-row-wrap > .build-ex-list{margin-top:0;padding:6px 14px 14px;}
 .build-ex-row{position:relative;display:flex;gap:11px;padding:11px 48px 11px 0;border-top:1px solid var(--line);}
 .build-ex-list .build-ex-row:first-child{border-top:none;}
 .build-ex-image{width:84px;height:66px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--chalk-dim);}
@@ -7132,15 +7144,20 @@ function bestSectionKeyForDimension(dim){
    fresh on every render (including right after tapping [+ Add]) could change which exercises are
    shown, or even silently retarget which section/dimension is being balanced, mid-interaction. */
 function refreshBalanceResults(){
+  state.balanceOffset = 0; // any fresh (non-"next") recompute restarts the Refresh Exercises cycle at the top
   state.balanceSnapshot = computeBalanceRecommendations();
 }
-function computeBalanceRecommendations(){
+/* Shared ranking pass -- same dimension/duration-fit scoring Balance My Session has always used,
+   just returning the FULL ordered candidate list instead of only the top 3, so "Refresh
+   Exercises" can step to the next window of the same ranking instead of recomputing an identical
+   top 3 every time. */
+function rankedBalanceCandidates(){
   const dim = leastEmphasizedDimension();
-  if(!dim) return {dim:null, section:null, phaseKey:null, items:[]};
+  if(!dim) return {dim:null, section:null, phaseKey:null, ranked:[]};
   const phaseKey = bestSectionKeyForDimension(dim);
   const phase = PHASES.find(p=>p.key===phaseKey);
   const section = phase ? phase.section : state.sectionFilter;
-  if(!section) return {dim, section:null, phaseKey:null, items:[]};
+  if(!section) return {dim, section:null, phaseKey:null, ranked:[]};
 
   const alreadyIn = new Set();
   PHASES.forEach(p => state.phaseData[p.key].forEach(id=>alreadyIn.add(id)));
@@ -7149,14 +7166,14 @@ function computeBalanceRecommendations(){
   const {total} = currentTotalMinutes();
   const remaining = Math.max(0, state.targetDuration - total);
 
-  // Balance My Practice is Review-only (batch 55) -- there's no active Quick Filter concept
+  // Balance My Session is Review-only (batch 55) -- there's no active Quick Filter concept
   // on that page, so the pool is always the full section (no leftover-filter scoping).
   let pool = EXERCISES.filter(ex => ex.section === section);
 
   let candidates = pool.filter(ex => !alreadyIn.has(ex.id));
   if(candidates.length < 3) candidates = pool; // "exclude already-included when possible"
 
-  const scored = candidates
+  const ranked = candidates
     .map(ex => ({ex, dimScore: clampScore(ex[dim]) ?? 0}))
     .sort((a,b) => {
       if(b.dimScore !== a.dimScore) return b.dimScore - a.dimScore;
@@ -7166,9 +7183,26 @@ function computeBalanceRecommendations(){
         if(da !== db) return da-db;
       }
       return a.ex.name.localeCompare(b.ex.name);
-    });
+    })
+    .map(s=>s.ex);
 
-  return {dim, section, phaseKey, items: scored.slice(0,3).map(s=>s.ex)};
+  return {dim, section, phaseKey, ranked};
+}
+function computeBalanceRecommendations(){
+  const {dim, section, phaseKey, ranked} = rankedBalanceCandidates();
+  if(!section) return {dim, section:null, phaseKey:null, items:[]};
+  return {dim, section, phaseKey, items: ranked.slice(0,3)};
+}
+/* "Refresh Exercises": steps forward through the same ranked list, 3 at a time, wrapping back to
+   the top once it runs past the end -- never a different ranking, just the next window of it. */
+function refreshBalanceNext(){
+  const {dim, section, phaseKey, ranked} = rankedBalanceCandidates();
+  if(!section || !ranked.length){ refreshBalanceResults(); renderOverlay(); return; }
+  state.balanceOffset = (state.balanceOffset + 3) % ranked.length;
+  const items = [];
+  for(let i=0;i<3 && i<ranked.length;i++) items.push(ranked[(state.balanceOffset+i) % ranked.length]);
+  state.balanceSnapshot = {dim, section, phaseKey, items};
+  renderOverlay();
 }
 /* Short, data-traceable "why this fits" sentence -- every clause maps directly to a real field
    on the exercise (its score for the dimension being balanced, and, when a Quick Filter is
@@ -7246,7 +7280,7 @@ function renderBalanceSheetHtml(){
   <div class="sheet balance-sheet">
     <div class="sheet-handle"></div>
     <div class="qp-sheet-header">
-      <h3 class="balance-sheet-title">${ICONS.target}<span>Balance My Practice</span></h3>
+      <h3 class="balance-sheet-title">${ICONS.target}<span>Balance My Session</span></h3>
       <button class="qp-close-btn" onclick="closeBalanceSheet()" title="Close" aria-label="Close">${ICONS.x}</button>
     </div>
     ${dim
@@ -7255,7 +7289,8 @@ function renderBalanceSheetHtml(){
     ${(section && items.length) ? `<div class="balance-target-heading">${balanceTargetHeadingText(section, items.length)}</div>` : ''}
     ${items.length ? items.map((ex,i) => balanceCardHtml(ex, i, dim)).join('') : (dim ? `<div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>No matching ${section?escHtml(section)+' ':''}exercises found right now.</p></div>` : '')}
     <div class="sheet-footer">
-      <button class="btn btn-primary" style="width:100%;" onclick="closeBalanceSheet()">Done</button>
+      ${items.length ? `<button class="btn btn-ghost" style="flex:1;" onclick="refreshBalanceNext()">${ICONS.swap}<span>Refresh Exercises</span></button>` : ''}
+      <button class="btn btn-primary" style="flex:1;" onclick="closeBalanceSheet()">Done</button>
     </div>
   </div>`;
 }
@@ -7518,12 +7553,17 @@ function quickPickReason(ex, ctx){
    own "exclude already-in-practice when possible" rule to immediately kick the just-added
    exercise out of its own card and swap in a 4th suggestion. */
 function refreshQuickPickResults(){
+  state.quickPickOffset = 0; // any fresh (non-"next") recompute restarts the Refresh Exercises cycle at the top
   state.quickPickSnapshot = computeQuickPicks();
 }
-function computeQuickPicks(){
+/* Shared ranking pass -- same pool/filter/score logic Quick Pick has always used, just returning
+   the FULL ordered candidate list (and the ctx it was scored with) instead of only the top 3, so
+   "Refresh Exercises" can step to the next window of the same ranking instead of recomputing an
+   identical top 3 every time. */
+function rankedQuickPickCandidates(){
   const phaseKey = state.pickingPhase;
   const phase = PHASES.find(p=>p.key===phaseKey);
-  if(!phase) return {section:null, targetMin:0, primaryDims:[], balanceDim:null, items:[], poolSize:0};
+  if(!phase) return {section:null, ctx:null, ranked:[], poolSize:0};
   const section = phase.section;
   const c = state.quickPickCustom;
   const primaryDims = c.dimension ? [c.dimension] : (SECTION_PRIMARY_DIMENSIONS[phaseKey] || []);
@@ -7550,11 +7590,28 @@ function computeQuickPicks(){
   if(candidates.length < 3) candidates = pool; // prefer unused, but don't starve the list below 3
 
   const ctx = {primaryDims, balanceDim, targetMin, focusTag: c.focus, formatTag: c.format, phaseLabel: phase.label, dimensionOverride: !!c.dimension};
-  const scored = candidates
+  const ranked = candidates
     .map(ex => ({ex, score: quickPickScore(ex, ctx)}))
-    .sort((a,b) => b.score-a.score || a.ex.name.localeCompare(b.ex.name));
+    .sort((a,b) => b.score-a.score || a.ex.name.localeCompare(b.ex.name))
+    .map(s=>s.ex);
 
-  return {section, targetMin, primaryDims, balanceDim, items: scored.slice(0,3).map(s=>s.ex), poolSize: pool.length};
+  return {section, ctx, ranked, poolSize: pool.length};
+}
+function computeQuickPicks(){
+  const {section, ctx, ranked, poolSize} = rankedQuickPickCandidates();
+  if(!section) return {section:null, targetMin:0, primaryDims:[], balanceDim:null, items:[], poolSize:0};
+  return {section, targetMin:ctx.targetMin, primaryDims:ctx.primaryDims, balanceDim:ctx.balanceDim, items: ranked.slice(0,3), poolSize};
+}
+/* "Refresh Exercises": steps forward through the same ranked list, 3 at a time, wrapping back to
+   the top once it runs past the end -- never a different ranking, just the next window of it. */
+function refreshQuickPickNext(){
+  const {section, ctx, ranked, poolSize} = rankedQuickPickCandidates();
+  if(!section || !ranked.length){ refreshQuickPickResults(); renderOverlay(); return; }
+  state.quickPickOffset = (state.quickPickOffset + 3) % ranked.length;
+  const items = [];
+  for(let i=0;i<3 && i<ranked.length;i++) items.push(ranked[(state.quickPickOffset+i) % ranked.length]);
+  state.quickPickSnapshot = {section, targetMin:ctx.targetMin, primaryDims:ctx.primaryDims, balanceDim:ctx.balanceDim, items, poolSize};
+  renderOverlay();
 }
 function quickPickCardHtml(ex, i, ctx){
   const inPhase = isExerciseInAnyPhase(ex.id);
@@ -7649,6 +7706,7 @@ function renderQuickPickSheetHtml(){
     <div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>Couldn't find a strong match.</p></div>`}
     ${(n>0 && n<3) ? `<div class="qp-fewer-note">Only ${n} strong match${n===1?'':'es'} right now${(state.quickPickCustom.focus||state.quickPickCustom.format||state.quickPickCustom.time||state.quickPickCustom.dimension)?' for your Customize choices':''} -- showing what's available.</div>` : ''}
     <div class="sheet-footer" style="flex-direction:column;gap:8px;">
+      ${n ? `<button class="btn btn-ghost" style="width:100%;" onclick="refreshQuickPickNext()">${ICONS.swap}<span>Refresh Exercises</span></button>` : ''}
       ${n ? `<button class="btn btn-ghost qp-customize-btn" style="width:100%;" onclick="openQuickPickCustomize()">${ICONS.filter}<span>Customize</span></button>` : ''}
       <button class="btn ${n?'btn-ghost qp-viewall-btn':'btn-primary'}" style="width:100%;" onclick="viewAllFromQuickPick()">View all ${escHtml(label)} exercises</button>
       <button class="btn btn-primary" style="width:100%;" onclick="closeQuickPick()">Done</button>
@@ -7729,10 +7787,12 @@ const state = {
   quickPickCustomizeOpen: false,  // whether Quick Pick's Customize refinement panel is showing, instead of results
   quickPickCustom: {focus:null, dimension:null, time:null, format:null}, // coach's optional Quick Pick refinements -- reset fresh every time Quick Pick opens; intentionally separate from state.filters, since Quick Pick is not Filters (see QUICK PICK section below)
   quickPickSnapshot: null,        // the 3 (or fewer) recommendations frozen at open/Customize-apply time -- NOT recomputed on every render, so tapping [+ Add] on a card can't cause it to vanish and get replaced (batch 58)
+  quickPickOffset: 0,             // how far "Refresh Exercises" has stepped through the ranked list -- see refreshQuickPickNext()
   quickPickInfoOpen: false,       // whether the "i" info explanation under the Quick Picks title is expanded
   showAddedInPractice: false,     // whether the "N in [Section]" already-added toggle (batch 60) is expanded -- always reset false on entering/switching a picking phase so every section starts collapsed
-  balanceSnapshot: null,          // Balance My Practice's frozen recommendation set (batch 63) -- see refreshBalanceResults(), mirrors state.quickPickSnapshot
-  balanceInfoOpen: false,         // whether the "i" explanation next to the Balance My Practice button is expanded
+  balanceSnapshot: null,          // Balance My Session's frozen recommendation set (batch 63) -- see refreshBalanceResults(), mirrors state.quickPickSnapshot
+  balanceOffset: 0,               // how far "Refresh Exercises" has stepped through the ranked list -- see refreshBalanceNext()
+  balanceInfoOpen: false,         // whether the "i" explanation next to the Balance My Session button is expanded
   trainingProfileInfoOpen: false, // whether the "i" explanation next to the "Training profile" heading is expanded
   filters: { durations: new Set(), tags: new Set(), bookmarkedOnly: false, difficulty: new Set(), focusCategories: new Set(), location: new Set() },
   bookmarks: new Set(),
@@ -9724,6 +9784,7 @@ function renderBuild(){
     const over = mins > suggested;
     const isCurrent = state.pickingPhase === p.key; // last phase the coach was actively adding to -- see resetBuilderDraft()
     const iconColor = st.textOn==='dark' ? 'var(--pitch-dark)' : 'white';
+    const barBg = `color-mix(in srgb, ${st.color} 10%, var(--bg-surface))`; // soft section tint for the whole bar -- distinct from the icon's full-strength color
 
     let subHtml = `${ids.length} exercise${ids.length===1?'':'s'}`;
     if(!isEmpty){
@@ -9739,18 +9800,20 @@ function renderBuild(){
     // picker. An empty phase has nothing to expand, so it shows no chevron -- only the pill does
     // anything until the first exercise lands.
     return `
-    <div class="phase-row-wrap ${isCurrent?'current':''}">
+    <div class="phase-row-wrap ${isCurrent?'current':''}" style="background:${barBg};">
       <div class="phase-row">
-        <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
-          <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
-          <div class="phase-row-body">
-            <div class="phase-row-title">${p.label}</div>
-            <div class="phase-row-sub">${subHtml}</div>
-            ${phaseProgressBarHtml(mins, suggested) || ''}
+        <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
+        <div class="phase-row-content">
+          <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
+            <div class="phase-row-body">
+              <div class="phase-row-title">${p.label}</div>
+              <div class="phase-row-sub">${subHtml}</div>
+              ${phaseProgressBarHtml(mins, suggested) || ''}
+            </div>
           </div>
+          <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 24%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
+          ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
         </div>
-        <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
-        ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
       </div>
       ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
     </div>`;
@@ -9793,8 +9856,7 @@ function renderBuild(){
 
   return `
   <div class="section-pad">
-    <button class="back-pill-flat" onclick="editPracticeSetup()">${ICONS.back} Setup</button>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="eyebrow">Build Session</div>
       <div class="session-state-tag ${count>0?'inprogress':'new'}">${count>0?'In Progress':'New'}</div>
     </div>
@@ -10114,10 +10176,10 @@ function renderReview(){
       <div class="pprof-rows">${practiceProfile.map(practiceProfileRowHtml).join('')}</div>
       <div class="pprof-interpretation">${practiceProfileInterpretation(practiceProfile)}</div>
       <div class="balance-btn-row">
-        <button class="balance-btn" style="flex:1;justify-content:center;" onclick="openBalanceSheet()">${ICONS.target}<span>Balance My Practice</span></button>
-        <button class="qp-info-btn" onclick="toggleBalanceInfo()" title="What is Balance My Practice?" aria-label="What is Balance My Practice?">i</button>
+        <button class="balance-btn" style="flex:1;justify-content:center;" onclick="openBalanceSheet()">${ICONS.target}<span>Balance My Session</span></button>
+        <button class="qp-info-btn" onclick="toggleBalanceInfo()" title="What is Balance My Session?" aria-label="What is Balance My Session?">i</button>
       </div>
-      ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Practice looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
+      ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Session looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
     </div>
 
     <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="completeSession()">Save Session</button>
