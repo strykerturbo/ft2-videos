@@ -1,0 +1,1 @@
+FT2 ICON SYSTEM v2. Use standalone SVGs for UI chrome. Use *_light.svg and *_dark.svg for 1:1 circular section/feature icons. v2 updates: chevronLeft; coach reference direction; globe Global; funnel Filter; line-free Warmup flame; Rondos Xs+O; triangular trophy base; Quick Pick star/sparkles; Balance My Session; supplied logo references.

@@ -71,11 +71,11 @@ writing CSS or markup. Specifically:
   dashboard. Avoid template defaults (generic card-grid-with-shadows, tracked
   ALL-CAPS eyebrows, the AI-cliché palettes) unless they're a deliberate fit.
 - Keep the existing design language consistent unless a redesign is
-  explicitly requested: Nike-inspired monochrome, amber accent, pill
-  buttons, bold/condensed type, dark exercise cards with colored section
-  tags, gold (`#D9A54A`) reserved for the scrimmage section (corrected from
-  an earlier, never-implemented blue spec -- gold is what's actually live
-  and is the confirmed-correct color going forward).
+  explicitly requested: rounded cards/buttons, pill chips, bold condensed
+  display type (Barlow Condensed) over Inter body text, dark exercise
+  cards with gradient-tinted section tags. As of 2026-09 this follows the
+  **FT2 UI/UX Brand Guidelines v2.0** exactly — see "Brand system" below
+  for the confirmed-correct logo/icon/color/type values going forward.
 - Work in two passes per that skill's process: a short token/plan pass
   (color, type, layout, principles), reviewed against the brief, before
   writing code.
@@ -128,6 +128,90 @@ mediocre connection. Bake these in without being asked each time:
 - When a change is visual, confirm nothing else shifted — screenshot
   comparisons against the prior state where practical.
 
+## Brand system (logo, icons, color, type)
+
+As of 2026-09 the app runs the **FT2 UI/UX Brand Guidelines v2.0** — a
+complete design system (source docx + logo + icon SVGs kept in `brand/`
+at the repo root, not referenced at runtime, just there for reference).
+This replaced two prior ad-hoc passes in the same month (an original
+claret/navy/gold system, then a short-lived "Palette 1 Midnight/Electric
+Purple" pass) — if you see either of those hex families mentioned in old
+context, they're stale.
+
+**Logo**: the tiger-head mark (`LOGO_MARK` constant, defined right before
+`ICONS` in the main `<script>` block) replaced the old plain-text "FT2"
+in `.logo-badge`. Two render sites use it — `renderTopbar()` and the
+"Who's Coaching?" gated pre-login path inline in `render()` — both need
+updating together if the logo ever changes again. The favicon (`<link
+rel="icon">` in `<head>`) is the same mark inlined as an SVG data URI.
+
+**Icons**: `ICONS` (the big object of inline SVG strings, `<script>`
+block) was rebuilt from `brand/icons/` — every plain UI-chrome icon
+(nav, actions, content markers) was swapped 1:1 by key name. The six
+practice-phase icons (`flame`/`bolt`/`swords`/`circleArrows`/`pitch`/
+`trophy`) were deliberately **kept as the original plain line icons**,
+not swapped for the new pack's self-colored gradient-circle versions —
+those ship as bonus `ICONS.*Circle` entries (`warmupCircle`,
+`duelsCircle`, etc.) for a future circular-badge treatment, unused today.
+A real bug got fixed in the same pass: `ICONS.home` used to be defined
+twice (a dead first definition, silently overwritten by a second) — only
+one now exists.
+
+**Color**: the accent and section colors live entirely as CSS custom
+properties in `index.html`'s `:root` block (lines ~14-60) — every
+section thumbnail, badge, button, focus ring, and star rating references
+one of these variables, never a hardcoded hex, so a palette change is a
+token edit in one place, not a find/replace across the file. Current
+values:
+
+- Neutrals follow the guide's core token table: `--bg-main`/
+  `--bg-surface`/`--text-primary`/`--text-secondary`/`--border-color`
+  are `#FFFFFF`/`#F8FAFC`/`#0F172A`/`#64748B`/`#E5E7EB` in light, `#0B0F1A`/
+  `#111827`/`#FFFFFF`/`#94A3B8`/`#1F2937` in dark.
+- `--accent-volt`/`--cone` (primary CTA) → `#F7FF00`, same hex as the
+  logo's yellow field. `--warn` (destructive) → `#EF4444`.
+- **Six phase colors are two-stop gradients**, not flat hexes: `--sec-
+  warmup`/`--sec-athletic`/`--sec-duels`/`--sec-rondos`/`--sec-ssg`/
+  `--sec-scrimmage` hold the gradient's flat first-stop hex (for text
+  color / border-color, which can't gradient-fill the simple way);
+  matching `--sec-*-bg` tokens hold the actual `linear-gradient(90deg,
+  ...)` (for surface fills). `SECTION_STYLE` and `PHASE_GROUPS` both
+  carry a `color` field (flat) and a `bg` field (gradient) per entry —
+  use `.bg` for any new background fill, `.color` for text/borders. The
+  90° angle matches the icon SVGs' own left-to-right gradient direction
+  on purpose, so flat surfaces and icon art read as one system.
+- `--turf` → `#14B8A6` (Teal) — the general interactive accent (focus
+  rings, buttons, progress-bar-under-target fill, "added"/selected
+  states, the coach avatar, star ratings, "See all" links, draft/
+  continue banners). Deliberately **not** one of the six phase hues, so
+  it never misreads as a specific phase. This absorbed everything the
+  old `--claret` token used to cover once Warmup and Athletic stopped
+  sharing one color (see below) — `--claret` no longer exists as a
+  general-accent token.
+- The progress bar (`.progress-fill`) uses the guide's literal 6-stop
+  rainbow gradient across the whole session, not `--turf` — see the CSS
+  rule for the exact stops.
+- `.mac-tile` (Home's 3 action tiles) is flat neutral dark (`#111827`,
+  the guide's "Secondary" button treatment) with a translucent-white
+  icon circle — deliberately not a phase color or the CTA yellow, since
+  none of the three tiles represent a specific phase or are "the one"
+  dominant CTA on that screen.
+- None of the phase/accent colors vary by light/dark theme — same hex
+  either way, matching how the original claret/navy/gold system behaved.
+
+**Typography**: Barlow Condensed (display/headings — exercise detail
+title, phase numerals, page titles, "Who's Coaching?") + Inter (body,
+unchanged). Anton was fully removed. Barlow Condensed needs an explicit
+`font-weight:700` at each use site — unlike Anton, it doesn't ship a
+single heavy default weight.
+
+**Corners**: cards/buttons/inputs are rounded (12-16px cards, 10-12px
+controls) per the brand guide's radius table. A prior "Nike sharp
+corners" pass used to force everything to `border-radius:0` via a big
+`!important` selector list — that block was removed; the pill/circle
+exceptions (icon buttons, avatar, the bottom-nav soccer-ball button,
+filter chips) are the only radius override left.
+
 ## Known gotchas (update this as you learn more)
 
 This section is the project's running memory of what's broken before and
@@ -149,13 +233,13 @@ rather than letting it get rediscovered next session.
   added during the 2026-09 visual-system modernization pass — use these
   tokens for any new component instead of inventing a new literal value.
 - The old "Nike sharp corners" trick (a second `<style>` block that force-
-  zeroed `border-radius` on a hand-picked list of class names) is still in
-  place, but that list is now deliberately exhaustive for every card/chip
-  in the app — it used to silently miss several cards (they rendered
-  rounded by accident), which is fixed. If you add a new card-like
-  component, add it to that denylist (or give it `--radius-pill` if it's
-  actually a pill/chip) rather than assuming the site-wide `--radius-card`
-  token alone will square it off.
+  zeroed `border-radius` on a hand-picked list of class names) was
+  **removed** in the 2026-09 brand-v2 pass — cards/buttons now round per
+  their own CSS (`--radius-card`, `.btn`'s 12px, etc.), matching the
+  brand guide's radius table. Only pills/circles (icon buttons, avatar,
+  the bottom-nav ball button, filter chips) still get a radius override.
+  If a new card-like component looks unexpectedly square, check it isn't
+  missing its own radius rule — nothing force-zeroes it anymore.
 - **Coach identity & shared sessions (added Sep 2026):** saved sessions
   are no longer per-browser-only. `state.coachName` gates the whole app
   behind a "Who's Coaching?" screen (`renderWhoIsCoaching()`) until set;
