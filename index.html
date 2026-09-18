@@ -7976,9 +7976,13 @@ const state = {
 function setState(patch){ Object.assign(state, patch); render(); }
 function nav(screen, extra={}){
   // Leaving the exercise picker any other way than completing/cancelling a replace (bottom nav,
-  // the "Full Session" pill, backing out of a detail page, etc.) should never leave a stale
-  // replaceContext around to silently hijack a later, unrelated "+ Add Exercise" tap.
-  if(state.replaceContext && screen !== 'exercises') state.replaceContext = null;
+  // the "Full Session" pill, etc.) should never leave a stale replaceContext around to silently
+  // hijack a later, unrelated "+ Add Exercise" tap. Detail is exempted: opening an exercise's
+  // Detail page to preview it before replacing is still part of the same replace (resumed via
+  // backFromDetail(), or completed via detailToggle() there) -- it used to silently cancel the
+  // replace the instant you tapped into Detail, with no indication anything changed, so tapping
+  // "Add" there just added a duplicate instead of completing the replace.
+  if(state.replaceContext && screen !== 'exercises' && screen !== 'detail') state.replaceContext = null;
   setState({screen, ...extra}); const c=document.getElementById('content'); if(c) c.scrollTop=0;
 }
 
@@ -9341,6 +9345,10 @@ function renderDetail(){
 }
 
 function detailToggle(id){
+  if(state.replaceContext){
+    performReplace(id);
+    return;
+  }
   if(state.editingSavedSessionId){
     if(isExerciseInSavedSession(state.editingSavedSessionId, id)) removeExerciseFromSavedSession(state.editingSavedSessionId, id);
     else addExerciseToSavedSession(state.editingSavedSessionId, id);
@@ -10855,6 +10863,7 @@ function saveAppStateToStorage(){
       fromSavedSessionId: state.fromSavedSessionId,
       editingSavedSessionId: state.editingSavedSessionId,
       reviewGroupOrder: state.reviewGroupOrder,
+      replaceContext: state.replaceContext,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
   }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
@@ -10919,6 +10928,17 @@ function loadAppStateFromStorage(){
       if(snap.reviewGroupOrder && typeof snap.reviewGroupOrder === 'object') state.reviewGroupOrder = snap.reviewGroupOrder;
       if(restoredScreen === 'detail' && !exById(state.detailId)) restoredScreen = 'home';
       if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
+      // A reload mid-"replace an exercise" used to silently drop the replace context while still
+      // landing back on what looked like the same picker screen -- tapping an exercise there then
+      // just added a duplicate instead of replacing anything, with no banner to show anything was
+      // wrong. Only trust it back if it's still reachable (exercises/detail) and the old exercise
+      // it's replacing is still actually sitting in that exact phase/section.
+      const rc = snap.replaceContext;
+      if(rc && typeof rc === 'object' && rc.oldId && (rc.returnTo === 'build' || rc.returnTo === 'review')
+          && (restoredScreen === 'exercises' || restoredScreen === 'detail')){
+        const arr = exerciseListFor(rc.key);
+        if(arr && arr.includes(rc.oldId)) state.replaceContext = {key: rc.key, oldId: rc.oldId, returnTo: rc.returnTo};
+      }
       state.screen = restoredScreen;
     }
   }catch(e){ /* corrupted/incompatible saved data (e.g. from an older version of this app) -- fall back to defaults rather than crash */ }
