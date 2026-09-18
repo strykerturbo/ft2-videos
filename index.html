@@ -39,6 +39,11 @@
   --cone-dim:#FAFAD8;
   --warn:#EF4444;          /* Destructive */
   --warn-dim:#F8DCD7;
+  --set-blue:#3B82F6;      /* Settings icon-tile accents only -- generic UI colors, deliberately
+                               distinct from the six phase colors (not sec-rondos/sec-duels). */
+  --set-blue-dim:#DBEAFE;
+  --set-purple:#6366F1;
+  --set-purple-dim:#E0E7FF;
   --ink:var(--text-primary);
   --ink-soft:var(--text-secondary);
   --line:var(--border-color);
@@ -1067,10 +1072,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .settings-row + .settings-row{border-top:1px solid var(--line);}
 .settings-row-icon{
-  width:32px;height:32px;border-radius:8px;background:var(--turf-dim);color:var(--turf);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .settings-row-icon svg{width:16px;height:16px;}
+.settings-row-icon.teal{background:var(--turf-dim);color:var(--turf);}
+.settings-row-icon.blue{background:var(--set-blue-dim);color:var(--set-blue);}
+.settings-row-icon.purple{background:var(--set-purple-dim);color:var(--set-purple);}
+.settings-row-icon.gold{background:var(--cone-dim);color:#8a611a;}
 .settings-row-text{flex:1;min-width:0;display:flex;flex-direction:column;}
 .settings-row-title{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
 .settings-row-desc{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;}
@@ -8451,7 +8459,7 @@ function renderSettings(){
     <div class="settings-section-label">Practice Setup</div>
     <div class="settings-group">
       <button class="settings-row" onclick="openTrainingSettings()">
-        <span class="settings-row-icon">${ICONS.gear}</span>
+        <span class="settings-row-icon blue">${ICONS.gear}</span>
         <span class="settings-row-text">
           <span class="settings-row-title">Training Session Default Settings</span>
           <span class="settings-row-desc">Starting phase split for new templates</span>
@@ -8459,7 +8467,7 @@ function renderSettings(){
         <span class="settings-row-chevron">${ICONS.chevronRight}</span>
       </button>
       <button class="settings-row" onclick="openTemplatesList()">
-        <span class="settings-row-icon">${ICONS.clipboard}</span>
+        <span class="settings-row-icon purple">${ICONS.clipboard}</span>
         <span class="settings-row-text">
           <span class="settings-row-title">Training Session Templates</span>
           <span class="settings-row-desc">Save and reuse your own practice templates</span>
@@ -8471,7 +8479,7 @@ function renderSettings(){
     <div class="settings-section-label">Exercises &amp; Tags</div>
     <div class="settings-group">
       <button class="settings-row" onclick="openValidValues()">
-        <span class="settings-row-icon">${ICONS.list}</span>
+        <span class="settings-row-icon teal">${ICONS.list}</span>
         <span class="settings-row-text">
           <span class="settings-row-title">View all Tags</span>
           <span class="settings-row-desc">Reference list of valid exercise tags</span>
@@ -8483,7 +8491,7 @@ function renderSettings(){
     <div class="settings-section-label">App Preferences</div>
     <div class="settings-group">
       <div class="settings-row">
-        <span class="settings-row-icon">${ICONS.moon}</span>
+        <span class="settings-row-icon gold">${ICONS.moon}</span>
         <span class="settings-row-text">
           <span class="settings-row-title">Dark Mode</span>
         </span>
