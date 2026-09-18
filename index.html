@@ -1038,6 +1038,44 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .settings-toggle-row .stl-label{display:flex;align-items:center;gap:8px;font-size:var(--fs-md);font-weight:700;color:var(--ink);}
 .settings-toggle-row .stl-label svg{width:16px;height:16px;color:var(--ink-soft);flex-shrink:0;}
+
+/* ---------- settings screen (landing page) ---------- */
+.settings-page-heading{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-xl);color:var(--ink);margin:4px 0 3px;}
+.settings-page-sub{font-size:var(--fs-base);color:var(--ink-soft);margin:0 0 16px;}
+.settings-section-label{font-size:var(--fs-sm);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);margin:20px 2px 8px;}
+.settings-section-label:first-of-type{margin-top:4px;}
+.settings-account-card{
+  display:flex;align-items:center;gap:12px;width:100%;
+  border:1px solid var(--line);background:var(--bg-surface);border-radius:var(--radius-card);
+  padding:14px;
+}
+.settings-avatar{
+  width:44px;height:44px;border-radius:50%;background:var(--turf);color:white;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-md);
+}
+.settings-account-text{flex:1;min-width:0;display:flex;flex-direction:column;}
+.settings-account-name{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.settings-account-desc{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;}
+.settings-group{
+  border:1px solid var(--line);background:var(--bg-surface);border-radius:var(--radius-card);
+  overflow:hidden;
+}
+.settings-row{
+  width:100%;display:flex;align-items:center;gap:12px;padding:13px 14px;
+  border:none;background:none;text-align:left;
+}
+.settings-row + .settings-row{border-top:1px solid var(--line);}
+.settings-row-icon{
+  width:32px;height:32px;border-radius:8px;background:var(--turf-dim);color:var(--turf);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.settings-row-icon svg{width:16px;height:16px;}
+.settings-row-text{flex:1;min-width:0;display:flex;flex-direction:column;}
+.settings-row-title{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.settings-row-desc{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;}
+.settings-row-chevron{color:var(--ink-soft);flex-shrink:0;display:flex;}
+.settings-row-chevron svg{width:16px;height:16px;}
 .btn:disabled{opacity:var(--opacity-disabled);cursor:not-allowed;}
 
 /* ---------- build screen: one full-width section per row ---------- */
@@ -1349,6 +1387,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .info-banner.gold .ptxt{color:#8a611a;}
 .info-banner.replace-banner{background:var(--turf-dim);border-color:var(--turf);}
 .info-banner.replace-banner .ptxt{color:var(--turf);}
+.info-banner.tip{background:var(--turf-dim);border-color:var(--turf);}
+.info-banner.tip .ptxt{color:var(--turf);}
 .info-banner .ptxt{font-size:var(--fs-md);font-weight:600;display:flex;align-items:center;gap:6px;}
 .info-banner .ptxt svg{width:15px;height:15px;flex-shrink:0;}
 .info-banner button{
@@ -8395,19 +8435,65 @@ function renderSettings(){
   return `
   <div class="section-pad">
     <div class="eyebrow">Settings</div>
-    <div class="sh" style="margin-top:2px;"><h2>Settings</h2></div>
-    <div class="settings-toggle-row">
-      <span class="stl-label">${ICONS.bookmark}<span>Coaching as ${escHtml(state.coachName)}</span></span>
-      <button class="back-pill-flat" style="margin-bottom:0;padding:6px 12px;" onclick="switchCoach()">Switch</button>
+    <div class="settings-page-heading">Settings</div>
+    <div class="settings-page-sub">Manage your account, preferences, and app settings.</div>
+
+    <div class="settings-section-label">Account</div>
+    <div class="settings-account-card">
+      <div class="settings-avatar">TA</div>
+      <div class="settings-account-text">
+        <div class="settings-account-name">Coaching as ${escHtml(state.coachName)}</div>
+        <div class="settings-account-desc">Switch to a different coach on this device</div>
+      </div>
+      <button class="back-pill-flat" style="margin-bottom:0;padding:6px 12px;flex-shrink:0;" onclick="switchCoach()">Switch</button>
     </div>
-    <button class="addsection-btn" onclick="openTrainingSettings()">${ICONS.gear} Training Session Default Settings</button>
-    <button class="addsection-btn" onclick="openTemplatesList()">${ICONS.clipboard} Training Session Templates</button>
-    <button class="addsection-btn" onclick="openValidValues()">${ICONS.list} View all Tags</button>
-    <div class="settings-toggle-row">
-      <span class="stl-label">${ICONS.moon}<span>Dark Mode</span></span>
-      <button class="switch ${document.documentElement.getAttribute('data-theme')==='dark'?'on':''}" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode"><span class="dot"></span></button>
+
+    <div class="settings-section-label">Practice Setup</div>
+    <div class="settings-group">
+      <button class="settings-row" onclick="openTrainingSettings()">
+        <span class="settings-row-icon">${ICONS.gear}</span>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Training Session Default Settings</span>
+          <span class="settings-row-desc">Starting phase split for new templates</span>
+        </span>
+        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+      </button>
+      <button class="settings-row" onclick="openTemplatesList()">
+        <span class="settings-row-icon">${ICONS.clipboard}</span>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Training Session Templates</span>
+          <span class="settings-row-desc">Save and reuse your own practice templates</span>
+        </span>
+        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+      </button>
     </div>
-    <div style="font-size:var(--fs-base);color:var(--ink-soft);margin-top:10px;">More configuration options are coming soon.</div>
+
+    <div class="settings-section-label">Exercises &amp; Tags</div>
+    <div class="settings-group">
+      <button class="settings-row" onclick="openValidValues()">
+        <span class="settings-row-icon">${ICONS.list}</span>
+        <span class="settings-row-text">
+          <span class="settings-row-title">View all Tags</span>
+          <span class="settings-row-desc">Reference list of valid exercise tags</span>
+        </span>
+        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+      </button>
+    </div>
+
+    <div class="settings-section-label">App Preferences</div>
+    <div class="settings-group">
+      <div class="settings-row">
+        <span class="settings-row-icon">${ICONS.moon}</span>
+        <span class="settings-row-text">
+          <span class="settings-row-title">Dark Mode</span>
+        </span>
+        <button class="switch ${document.documentElement.getAttribute('data-theme')==='dark'?'on':''}" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode"><span class="dot"></span></button>
+      </div>
+    </div>
+
+    <div class="info-banner tip" style="margin-top:16px;">
+      <span class="ptxt">${ICONS.sparkles}<span>More configuration options are coming soon.</span></span>
+    </div>
   </div>`;
 }
 
