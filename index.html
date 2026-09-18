@@ -23,6 +23,11 @@
 
   --pitch:#0F172A;        /* structural chrome (nav/header/tiles) -- lightens in dark mode below */
   --pitch-dark:#0B0F1A;
+  --chrome:#0F172A;        /* topbar/bottomnav background specifically -- same as --pitch in light
+                               mode (already reads clearly against the light page), but kept as
+                               its own token so dark mode (below) can lift it a step above
+                               --bg-surface without touching every other --pitch consumer
+                               (tiles, numbered badges, etc.) */
   --chalk:var(--bg-main);
   --chalk-dim:var(--bg-surface);
   --turf:#14B8A6;          /* Teal -- general interactive accent (focus rings, buttons, progress,
@@ -121,6 +126,8 @@
   --accent-volt:#F7FF00;
   --pitch:#111827;       /* lighter than --bg-main so tiles/chrome stay visible, not black-on-black */
   --pitch-dark:#1F2937;
+  --chrome:#151E2E;       /* one step lighter than --bg-surface (#111827) so nav/header chrome
+                              reads as its own layer instead of blending into cards/content */
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -132,6 +139,7 @@
     --accent-volt:#F7FF00;
     --pitch:#111827;
     --pitch-dark:#1F2937;
+    --chrome:#151E2E;
   }
 }
 *{box-sizing:border-box;overflow-wrap:break-word;}
@@ -181,7 +189,7 @@ a{color:inherit;text-decoration:none;}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:calc(16px + env(safe-area-inset-top)) 18px 10px;
-  background:var(--pitch);
+  background:var(--chrome);
   background-image:repeating-linear-gradient(115deg, rgba(242,169,59,0.06) 0 3px, transparent 3px 22px);
   color:var(--white);
   position:relative;
@@ -198,8 +206,9 @@ a{color:inherit;text-decoration:none;}
 .brand-name{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-xl);letter-spacing:0.02em;}
 .topbar-icons{display:flex;gap:14px;align-items:center;}
 .icon-btn{
-  background:rgba(255,255,255,0.12);
-  border:none;color:white;
+  background:rgba(255,255,255,0.16);
+  border:1px solid rgba(255,255,255,0.08);
+  color:white;
   width:40px;height:40px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   position:relative;
@@ -215,7 +224,7 @@ a{color:inherit;text-decoration:none;}
 .badge-dot{
   position:absolute;top:-2px;right:-2px;
   width:10px;height:10px;border-radius:50%;
-  background:var(--cone);border:1.5px solid var(--pitch);
+  background:var(--cone);border:1.5px solid var(--chrome);
 }
 
 /* ---------- content area ---------- */
@@ -232,21 +241,37 @@ a{color:inherit;text-decoration:none;}
 /* ---------- bottom nav ---------- */
 .bottomnav{
   position:absolute;bottom:0;left:0;right:0;z-index:50;
-  background:var(--pitch);
-  display:flex;justify-content:space-around;align-items:center;
-  padding:10px 6px calc(12px + env(safe-area-inset-bottom));
+  background:var(--chrome);
+  display:flex;justify-content:space-around;align-items:stretch;
+  padding:10px 6px calc(10px + env(safe-area-inset-bottom));
   box-shadow:var(--shadow-chrome);
+  border-top:1px solid transparent; /* dark mode gives this a real color below -- light mode
+                                        already separates via --shadow-chrome alone */
+}
+:root[data-theme="dark"] .bottomnav{border-top-color:var(--border-color);}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .bottomnav{border-top-color:var(--border-color);}
 }
 .navitem{
-  background:none;border:none;color:rgba(255,255,255,0.55);
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-family:'Inter',sans-serif;font-size:var(--fs-sm);font-weight:600;
-  text-transform:uppercase;letter-spacing:0.04em;
-  padding:7px 8px;border-radius:10px;
+  flex:1;min-width:0;background:none;border:none;color:rgba(255,255,255,0.6);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  font-family:'Inter',sans-serif;
+  padding:6px 2px;border-radius:12px;
+  transition:background-color var(--transition-fast),color var(--transition-fast);
 }
-.navitem.active{color:white;}
-.navitem svg{width:22px;height:22px;}
-.navitem img.icon-ball-img{width:22px;height:22px;display:block;opacity:0.55;}
+.navitem-label{
+  font-size:var(--fs-xs);font-weight:600;letter-spacing:0.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1;
+}
+/* Active = the one universal nav accent (--turf), never a phase color -- color alone never
+   carries the state alone, a soft teal pill + bolder label weight go with it. */
+.navitem.active{color:var(--turf);background:color-mix(in srgb, var(--turf) 18%, transparent);}
+.navitem.active .navitem-label{font-weight:700;}
+.navitem svg{width:26px;height:26px;flex-shrink:0;}
+/* The Exercises tab's icon is a raster PNG silhouette (not an SVG using currentColor), so its
+   active state is signaled the same way it always has been -- full opacity vs. dimmed -- rather
+   than a color it can't take; the teal pill + label still carry the "you are here" signal. */
+.navitem img.icon-ball-img{width:26px;height:26px;display:block;opacity:0.6;flex-shrink:0;}
 .navitem.active img.icon-ball-img{opacity:1;}
 
 /* ---------- home ---------- */
@@ -7926,6 +7951,7 @@ function renderBottomnav(){
   const item = (key,label,icon,onclick,activeKeys) => `
     <button class="navitem ${ (activeKeys||[key]).includes(state.screen) ?'active':''}" onclick="${onclick}" aria-label="${label}" title="${label}">
       ${icon}
+      <span class="navitem-label">${label}</span>
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.home,"nav('home')")}
