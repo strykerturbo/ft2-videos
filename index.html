@@ -353,13 +353,16 @@ a{color:inherit;text-decoration:none;}
 .balance-btn svg{width:14px;height:14px;}
 .balance-btn-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
 /* ---------- Quick Pick (+ Add Exercise flow) ---------- */
-.qp-iconbtn{
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  width:var(--icon-btn-md);height:var(--icon-btn-md);border-radius:12px;border:1.5px solid var(--turf);
-  background:var(--turf-dim);color:var(--turf);
+.qp-pill{
+  display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;
+  padding:12px 14px;border-radius:12px;border:1.5px solid var(--turf);
+  background:var(--turf-dim);color:var(--turf);font-weight:700;font-size:var(--fs-base);
+  min-height:44px;
 }
-.qp-iconbtn svg{width:20px;height:20px;color:var(--turf);}
-.qp-iconbtn:active{opacity:0.7;}
+.qp-pill svg:first-child{width:19px;height:19px;flex-shrink:0;}
+.qp-pill span{flex:1;text-align:left;}
+.qp-pill svg:last-child{width:16px;height:16px;flex-shrink:0;opacity:0.7;}
+.qp-pill:active{opacity:0.75;}
 .qp-filter-btn{
   position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;
   width:var(--icon-btn-md);height:var(--icon-btn-md);border-radius:12px;border:1px solid var(--line);
@@ -534,13 +537,13 @@ a{color:inherit;text-decoration:none;}
 .new-ex-icon svg{width:13px;height:13px;}
 .new-ex-label{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-sm);text-align:center;line-height:1.2;color:var(--ink-soft);}
 .ex-thumb{
-  height:84px;position:relative;
+  height:68px;position:relative;
   display:flex;align-items:center;justify-content:center;
   background:var(--pitch);
 }
-.ex-thumb svg{width:36px;height:36px;opacity:0.85;}
+.ex-thumb svg{width:30px;height:30px;opacity:0.85;}
 .thumb-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;height:100%;}
-.thumb-placeholder svg{width:22px;height:22px;opacity:0.85;}
+.thumb-placeholder svg{width:19px;height:19px;opacity:0.85;}
 .thumb-placeholder-label{font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;opacity:0.9;text-align:center;padding:0 6px;line-height:1.3;}
 .ex-thumb .dur{
   position:absolute;top:6px;left:6px;
@@ -561,9 +564,9 @@ a{color:inherit;text-decoration:none;}
    (.ex-grid.list-mode .ex-bookmark.on svg) -- it sits over the light card body there, where
    the dark green stays legible. */
 .ex-bookmark.on svg{color:#fff;}
-.ex-body{padding:11px 12px 12px;display:flex;flex-direction:column;flex:1;}
+.ex-body{padding:9px 10px 10px;display:flex;flex-direction:column;flex:1;}
 .ex-sect{font-size:var(--fs-xs);font-weight:700;color:var(--turf);text-transform:uppercase;letter-spacing:0.05em;}
-.ex-name{font-size:var(--fs-md);font-weight:700;line-height:1.25;margin:4px 0 8px;min-height:36px;}
+.ex-name{font-size:var(--fs-md);font-weight:700;line-height:1.25;margin:3px 0 7px;min-height:34px;}
 .ex-addbtn{
   width:100%;border:1px solid var(--pitch);background:white;color:var(--pitch);
   border-radius:9px;padding:10px 0;font-size:var(--fs-base);font-weight:700;
@@ -984,8 +987,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .addsection-row{margin-top:6px;}
 .addsection-btn{
   width:100%;border:1px solid var(--line);background:var(--chalk-dim);border-radius:10px;
-  padding:13px 0;font-size:var(--fs-md);font-weight:700;color:var(--ink-soft);
-  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:13px 16px;font-size:var(--fs-md);font-weight:700;color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:flex-start;gap:6px;text-align:left;
 }
 .addsection-btn svg{width:14px;height:14px;flex-shrink:0;}
 .settings-toggle-row{
@@ -1110,7 +1113,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 /* each exercise: image on the left, bullets (from Description + Variations) on the right */
 .build-ex-list{margin-top:6px;}
-.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 22px 11px 0;border-top:1px solid var(--line);}
+.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 48px 11px 0;border-top:1px solid var(--line);}
 .build-ex-list .build-ex-row:first-child{border-top:none;}
 .build-ex-image{width:84px;height:66px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--chalk-dim);}
 .build-ex-image img,.build-ex-image video{width:100%;height:100%;object-fit:cover;display:block;}
@@ -1131,6 +1134,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .build-ex-remove svg{width:13px;height:13px;}
 .build-ex-remove:active{opacity:0.75;}
+.build-ex-row .build-ex-replace{
+  position:absolute;top:9px;right:27px;background:none;border:none;color:var(--turf);
+  opacity:0.6;padding:8px;display:flex;
+}
+.build-ex-row .build-ex-replace svg{width:13px;height:13px;}
+.build-ex-row .build-ex-replace:active{opacity:0.9;}
+.phase-ex-item .build-ex-replace{color:var(--turf);}
 .build-ex-empty{font-size:var(--fs-sm);color:var(--ink-soft);text-align:center;padding:14px 0 10px;font-style:italic;}
 .build-add-btn{
   width:100%;margin-top:8px;border:1.5px dashed var(--line);background:var(--chalk-dim);
@@ -1267,6 +1277,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .info-banner.gold{background:var(--cone-dim);border-color:var(--cone);}
 .info-banner.gold .ptxt{color:#8a611a;}
+.info-banner.replace-banner{background:var(--turf-dim);border-color:var(--turf);}
+.info-banner.replace-banner .ptxt{color:var(--turf);}
 .info-banner .ptxt{font-size:var(--fs-md);font-weight:600;display:flex;align-items:center;gap:6px;}
 .info-banner .ptxt svg{width:15px;height:15px;flex-shrink:0;}
 .info-banner button{
@@ -6091,6 +6103,8 @@ const ICONS = {
   image: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 5-5 3 3 2-2 4 4"/></g></svg>`,
   play: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 5 11 7-11 7V5Z"/></g></svg>`,
   pencil: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z"/></g></svg>`,
+  swap: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3M20 17H7M7 17l3-3M7 17l3 3"/></g></svg>`,
+  copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></g></svg>`,
   user: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.3-6 8-6s7.3 2 8 6"/></g></svg>`,
   clock: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></g></svg>`,
   calendar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h2M13 13h2M8 17h2"/></g></svg>`,
@@ -7330,6 +7344,7 @@ function viewAllFromQuickPick(){
 function quickPickAddExercise(id){
   const ex = exById(id);
   if(!ex) return;
+  if(state.replaceContext){ performReplace(id); return; }
   // Toggle: tapping an already-added card's button removes it again, mirroring quickAdd()'s
   // own add-or-remove behavior everywhere else in the app -- removal always targets wherever
   // the exercise is actually sitting, not just state.pickingPhase (it may have been added to a
@@ -7610,6 +7625,8 @@ const state = {
   fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
   editingSavedSessionId: null,// set while browsing the library to add an exercise to a saved
                                // session (as opposed to the live build-a-new-session draft)
+  replaceContext: null,       // {key, oldId, returnTo} while picking a replacement for an
+                               // already-added exercise -- see pickReplacementFor()/performReplace()
   reviewGroupOrder: {},       // {groupKey: [exerciseId,...]} -- coach's drag-reordered display
                                // sequence per Review-page phase-group card, see reviewPhaseGroups()
   pickingPhase: null,         // phase key currently being populated
@@ -7656,12 +7673,15 @@ const state = {
   confirmNewSessionOpen: false, // whether the "you have a session in progress" guard modal is showing
   practiceTemplates: [        // coach's own named library of section/percentage splits -- as many as they want, saved locally on their own device
     {id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:75, sections: defaultTemplateSections()},
-    {id:'tmpl-indoor-default',  name:'Indoor Practice',  location:'indoor',  duration:75, sections: defaultTemplateSections()},
+    {id:'tmpl-outdoor-90',      name:'Outdoor Practice (90 min)', location:'outdoor', duration:90, sections: defaultTemplateSections()},
+    {id:'tmpl-indoor-default',  name:'Indoor Practice',  location:'indoor',  duration:60, sections: defaultTemplateSections()},
   ],
   editingTemplateId: null,        // which template Settings is currently editing -- null shows the library list
   editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
   confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
   confirmDeleteSessionId: null,  // id of the saved session pending delete confirmation (sheet)
+  confirmDuplicateSessionId: null, // id of the saved session pending the "discard current draft &
+                                    // duplicate" guard modal -- see requestDuplicateSession()
   templatePickerOpen: false,      // Build page: "Load a template" sheet open/closed
   editingSessionDetail: false,    // whether the saved Session Detail page's name/duration are editable right now
   enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the applied template
@@ -7685,7 +7705,13 @@ const state = {
 };
 
 function setState(patch){ Object.assign(state, patch); render(); }
-function nav(screen, extra={}){ setState({screen, ...extra}); const c=document.getElementById('content'); if(c) c.scrollTop=0; }
+function nav(screen, extra={}){
+  // Leaving the exercise picker any other way than completing/cancelling a replace (bottom nav,
+  // the "Full Session" pill, backing out of a detail page, etc.) should never leave a stale
+  // replaceContext around to silently hijack a later, unrelated "+ Add Exercise" tap.
+  if(state.replaceContext && screen !== 'exercises') state.replaceContext = null;
+  setState({screen, ...extra}); const c=document.getElementById('content'); if(c) c.scrollTop=0;
+}
 
 function showToast(msg){
   state.toast = msg;
@@ -8289,6 +8315,7 @@ function formatWhen(ts){
 
 /* ============ EXERCISES (grid + filters) ============ */
 function matchesFilters(ex){
+  if(state.replaceContext && ex.id === state.replaceContext.oldId) return false; // can't "replace" with itself
   if(state.filters.bookmarkedOnly && !state.bookmarks.has(ex.id)) return false;
   if(state.sectionFilter && ex.section !== state.sectionFilter) return false;
   if(state.filters.durations.size){
@@ -8356,9 +8383,15 @@ function renderExercises(){
   const pickingPhaseObj = state.pickingPhase ? PHASES.find(p=>p.key===state.pickingPhase) : null;
   const sectionTotalCount = pickingPhaseObj ? EXERCISES.filter(e=>e.section===pickingPhaseObj.section).length : 0;
 
+  const replacingEx = state.replaceContext ? exById(state.replaceContext.oldId) : null;
   return `
   <div class="section-pad" style="padding-bottom:4px;">
     ${renderSessionBuilderBox(pickingLabel)}
+    ${replacingEx ? `
+      <div class="info-banner replace-banner">
+        <div class="ptxt">${ICONS.swap} Replacing "${escHtml(replacingEx.name)}"</div>
+        <button onclick="cancelReplace()">Cancel</button>
+      </div>` : ''}
     ${(!pickingLabel && state.filters.bookmarkedOnly) ? `
       <div class="info-banner gold">
         <div class="ptxt">${ICONS.bookmarkFilled} Showing bookmarked exercises only</div>
@@ -8374,9 +8407,9 @@ function renderExercises(){
         <input id="searchInput" placeholder="Search exercises, tags, setup..." value="${escAttr(state.search)}" oninput="onSearch(this.value)">
         ${state.search ? `<button class="search-clear-btn" onclick="clearSearch()" title="Clear search">${ICONS.x}</button>` : ''}
       </div>
-      <button class="qp-iconbtn" onclick="openQuickPick()" title="Quick Pick" aria-label="Quick Pick">${ICONS.sparkles}</button>
       <button class="qp-filter-btn" onclick="toggleFilters(true)" title="Filters" aria-label="Filters">${ICONS.filter}${activeFilterCount()?`<span class="chip-count-dot">${activeFilterCount()}</span>`:''}</button>
     </div>
+    <button class="qp-pill" onclick="openQuickPick()" title="Quick Pick: 3 exercises picked for you" aria-label="Quick Pick">${ICONS.sparkles}<span>Quick Pick — let us suggest 3 exercises</span>${ICONS.chevronRight}</button>
     <div class="quickfilter-row">
       <button class="qf-chip ${!state.quickFilterValue?'active':''}" onclick="setQuickFilter(null)">All</button>
       ${quickFilterValues.map(v => `<button class="qf-chip ${state.quickFilterValue===v?'active':''}" onclick="setQuickFilter('${v}')">${escHtml(v)}</button>`).join('')}
@@ -8555,6 +8588,10 @@ function toggleBookmark(e, id){
    nowhere to look up yet. */
 function quickAdd(e, id){
   e.stopPropagation();
+  if(state.replaceContext){
+    performReplace(id);
+    return;
+  }
   if(state.editingSavedSessionId){
     if(isExerciseInSavedSession(state.editingSavedSessionId, id)) removeExerciseFromSavedSession(state.editingSavedSessionId, id);
     else addExerciseToSavedSession(state.editingSavedSessionId, id);
@@ -8707,6 +8744,19 @@ function renderOverlay(){
           <button class="ios-alert-btn primary" onclick="resumeInProgressSession()">Resume session in progress</button>
           <button class="ios-alert-btn danger" onclick="startNewSessionDiscardingDraft()">Start new session</button>
           <button class="ios-alert-btn" onclick="cancelNewSessionModal()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(state.confirmDuplicateSessionId){
+    html += `
+    <div class="ios-alert-backdrop" onclick="cancelDuplicateSessionModal()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>You have a session in progress</h3>
+        <p>Duplicating this session will discard your current draft.</p>
+        <div class="ios-alert-btns">
+          <button class="ios-alert-btn danger" onclick="confirmDuplicateSession()">Discard draft &amp; duplicate</button>
+          <button class="ios-alert-btn" onclick="cancelDuplicateSessionModal()">Cancel</button>
         </div>
       </div>
     </div>`;
@@ -9255,6 +9305,39 @@ function pickForPhase(key){
   const p = PHASES.find(p=>p.key===key);
   nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
 }
+
+/* "Replace Exercise": opens the same picker, scoped to the replaced exercise's own section, and
+   remembers which exercise/slot to swap into once a new one is picked (see performReplace()) --
+   modeled directly on pickForPhase() above, just carrying a bit more context through state instead
+   of landing on a normal add. returnTo is 'build' or 'review' so cancelling or completing sends the
+   coach back to whichever screen they started the replace from. */
+function pickReplacementFor(key, oldId, returnTo){
+  const p = PHASES.find(p=>p.key===key);
+  state.replaceContext = {key, oldId, returnTo};
+  nav('exercises', {pickingPhase:key, fromBuild:returnTo==='build', fromReview:returnTo==='review', fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
+}
+function cancelReplace(){
+  const returnTo = state.replaceContext ? state.replaceContext.returnTo : 'build';
+  state.replaceContext = null;
+  nav(returnTo);
+}
+/* Finishes a replace: swaps the new exercise id into the exact array slot the old one occupied
+   (exerciseListFor() already resolves to the right array whether that slot is a standard phase or
+   a custom section), so position, duration totals, and Training Profile all update for free on the
+   next render -- only a currently-OPEN Balance sheet needs an explicit nudge, since its
+   recommendation set is deliberately frozen (see refreshBalanceResults()). */
+function performReplace(newId){
+  const ctx = state.replaceContext;
+  if(!ctx) return;
+  const arr = exerciseListFor(ctx.key);
+  const idx = arr ? arr.indexOf(ctx.oldId) : -1;
+  if(idx > -1) arr[idx] = newId;
+  if(state.balanceSheetOpen) refreshBalanceResults();
+  state.replaceContext = null;
+  const ex = exById(newId);
+  showToast(ex ? `Replaced with "${ex.name}"` : 'Exercise replaced');
+  nav(ctx.returnTo);
+}
 /* Switch which phase is being filled WITHOUT leaving the exercise list — lets a coach fill several
    phases back to back instead of bouncing to the Build screen between every add. */
 function switchPickingPhase(key){
@@ -9352,6 +9435,15 @@ function extractBullets(ex, maxBullets){
   return sentences.slice(0, maxBullets);
 }
 
+/* Shared "Replace" button markup for every place an already-added exercise's row is rendered
+   (buildExRowHtml below, plus both inline row templates in renderReview) -- one place to change
+   the control instead of hand-copying an onclick in three spots. Always needs
+   event.stopPropagation() since these rows are otherwise clickable to open the exercise detail. */
+function replaceButtonHtml(key, id, returnTo){
+  const ex = exById(id);
+  return `<button class="build-ex-replace" onclick="event.stopPropagation(); pickReplacementFor('${key}','${id}','${returnTo}')" title="Replace ${escAttr(ex?ex.name:'')}">${ICONS.swap}</button>`;
+}
+
 function buildExRowHtml(id, key, removeCall, showGrip){
   const ex = exById(id);
   if(!ex) return '';
@@ -9364,6 +9456,7 @@ function buildExRowHtml(id, key, removeCall, showGrip){
   return `
   <div class="build-ex-row" data-ex-id="${id}">
     ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
+    ${replaceButtonHtml(key, id, 'build')}
     <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
@@ -9736,16 +9829,61 @@ function requestBuildNewSession(){
 }
 function cancelNewSessionModal(){ state.confirmNewSessionOpen = false; renderOverlay(); }
 function resumeInProgressSession(){ state.confirmNewSessionOpen = false; nav('build'); }
-function startNewSessionDiscardingDraft(){
+/* Wipes the live in-progress draft back to empty -- shared by startNewSessionDiscardingDraft()
+   (which then heads to a blank Practice Setup) and confirmDuplicateSession() (which then seeds
+   the now-empty draft from a saved session instead, see duplicateSessionToBuilder()). */
+function resetBuilderDraft(){
   PHASES.forEach(p => state.phaseData[p.key] = []);
   state.extraSections = [];
   state.reviewGroupOrder = {};
   state.sessionName = defaultSessionName();
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
+}
+function startNewSessionDiscardingDraft(){
+  resetBuilderDraft();
   state.confirmNewSessionOpen = false;
   initSetupDraft();
   nav('practiceSetup');
+}
+/* "Duplicate Session": guarded the same way as Build New Session above (a draft in progress must
+   be explicitly discarded first, via its own 2-button modal -- see renderOverlay()), then seeds a
+   brand-new, unsaved draft from a saved session's snapshot. The original saved session is only
+   ever read here, never mutated -- and since the eventual completeSession() save always mints its
+   own fresh id/timestamp regardless of what seeded the draft, nothing special is needed for that. */
+function requestDuplicateSession(id){
+  if(currentTotalMinutes().count > 0){ state.confirmDuplicateSessionId = id; renderOverlay(); }
+  else duplicateSessionToBuilder(id);
+}
+function cancelDuplicateSessionModal(){ state.confirmDuplicateSessionId = null; renderOverlay(); }
+function confirmDuplicateSession(){
+  const id = state.confirmDuplicateSessionId;
+  state.confirmDuplicateSessionId = null;
+  resetBuilderDraft();
+  duplicateSessionToBuilder(id);
+}
+function duplicateSessionToBuilder(id){
+  const src = state.savedSessions.find(s=>s.id===id);
+  if(!src) return;
+  const enabledKeys = new Set();
+  (src.phases||[]).forEach((entry, i) => {
+    const p = entry.section ? PHASES.find(p=>p.section===entry.section) : null;
+    if(p){
+      state.phaseData[p.key] = entry.exercises.map(e=>e.id);
+      enabledKeys.add(p.key);
+    } else {
+      state.extraSections.push({key: 'extra'+Date.now()+i, label: entry.label, exercises: entry.exercises.map(e=>e.id)});
+    }
+  });
+  // Standard phases the source session didn't use at all stay enabled but empty, same as any
+  // other fresh draft -- only phases it DID use are guaranteed turned on, matching
+  // applyTemplateToBuilder()'s own "at least show what's actually in this" behavior.
+  PHASES.forEach(p => { if(enabledKeys.has(p.key)) state.enabledPhaseKeys.add(p.key); });
+  state.targetDuration = src.targetDuration || state.targetDuration;
+  state.practiceLocation = src.location || state.practiceLocation;
+  state.sessionName = `${src.name} — Copy`;
+  nav('build');
+  showToast(`Duplicated "${src.name}" — edit and save when ready`);
 }
 function togglePhaseCollapsed(key){
   if(state.collapsedPhases.has(key)) state.collapsedPhases.delete(key); else state.collapsedPhases.add(key);
@@ -9840,7 +9978,7 @@ function renderReview(){
               ${g.items.map(it=>{
                 const ex=exById(it.id);
                 const showGrip = g.items.length>1;
-                return `<div class="phase-ex-item" data-ex-id="${it.id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${it.id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
+                return `<div class="phase-ex-item" data-ex-id="${it.id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${it.id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
               }).join('')}
             </div>
           </div>
@@ -9851,7 +9989,7 @@ function renderReview(){
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0)} min</div></div>
             <div class="phase-exlist" data-list-key="${s.key}">
-              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span><button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
+              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
         </div>`).join('')}
@@ -10220,6 +10358,7 @@ function renderSessionDetail(){
       <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')">${ICONS.back}</button>
       <div style="display:flex;align-items:center;gap:8px;">
         ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+        <button class="dh-icon-btn" onclick="requestDuplicateSession('${s.id}')" title="Duplicate this session into a new editable draft">${ICONS.copy}</button>
         ${isOwner ? `<button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>` : ''}
         ${isOwner
           ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${s.id}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
@@ -10365,7 +10504,15 @@ function loadAppStateFromStorage(){
     if(Array.isArray(snap.enabledPhaseKeys) && snap.enabledPhaseKeys.length) state.enabledPhaseKeys = new Set(snap.enabledPhaseKeys);
     if(Array.isArray(snap.phaseOrder) && snap.phaseOrder.length) state.phaseOrder = snap.phaseOrder;
     if(Array.isArray(snap.practiceTemplates)){
-      state.practiceTemplates = snap.practiceTemplates;
+      // One-time upgrade (2026-09): the stock template set gained a 90-min Outdoor option and
+      // Indoor's stock default moved from 75 to 60 min. Only apply it when the saved library is
+      // still exactly the untouched old stock pair (by id+duration) -- a coach who's already
+      // renamed, retimed, or added their own templates keeps exactly what they have.
+      const t = snap.practiceTemplates;
+      const isUntouchedStockPair = t.length===2
+        && t[0]?.id==='tmpl-outdoor-default' && t[0]?.duration===75
+        && t[1]?.id==='tmpl-indoor-default' && t[1]?.duration===75;
+      state.practiceTemplates = isUntouchedStockPair ? state.practiceTemplates : t;
     } else if(snap.practiceTemplates && typeof snap.practiceTemplates === 'object'){
       // Migrate from the old fixed outdoor/indoor-slot shape (before templates became a named
       // library) so nobody's already-saved template configuration silently vanishes.

@@ -218,6 +218,25 @@ This section is the project's running memory of what's broken before and
 how it got fixed — when you hit and resolve something new, add it here
 rather than letting it get rediscovered next session.
 
+- The `node` available in this environment is ancient (v0.10, no nvm/newer
+  version installed) and can't parse the modern JS this file uses at all
+  (template literals, arrow functions, `const`/`let`) — `node --check` /
+  `new Function(...)` on the `<script>` block fails on syntax it's never
+  seen, not on real bugs, so it's not a usable validation step here despite
+  being listed under Delivery expectations above. Validate instead by
+  loading the file (or the scratch-preview copy, see below) in the
+  browser pane and checking `read_console_messages` for a real
+  `SyntaxError` — a clean console load is the real signal a script block
+  parses.
+- `index.html` regularly exceeds the Claude Browser tool's `file://`
+  preview ceiling (roughly 500-600KB) once embedded base64 images are
+  included, which makes it fail to render at all when previewed directly.
+  Workaround: copy it to `ft2-videos/_scratch-preview.html` with every
+  `data:image/png;base64,[A-Za-z0-9+/=]+` blob regex-replaced by a short
+  placeholder string, preview that instead, and drive it via `state`/
+  `render()`/direct function calls in the browser console rather than
+  simulated clicks (unreliable against a `file://` page). Delete the
+  scratch file and reset the viewport to `desktop` when done.
 - Apps Script sync warnings in local/preview environments are expected —
   they don't indicate a broken backend. Confirm sync health by hitting the
   deployed `/exec` URL directly in a browser and checking for raw JSON.
