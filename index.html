@@ -1070,18 +1070,22 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .phase-box.filled .pcard-add-btn{border-style:solid;}
 
-/* ---------- Build Session phase rows (brand v2) -- compact single-line rows with a colored
-   icon tile per phase, replacing the old bordered/numbered phase-box cards. Scoped to its own
-   classes (not a restyle of .phase-box/.pcard-add-btn) since those are still used as-is by
-   custom/extra sections on this screen and by the saved-session editing view. */
-.phase-row-wrap{min-width:0;}
-.phase-row{display:flex;align-items:center;gap:10px;}
+/* ---------- Build Session phase rows (brand v2) -- a bordered card per phase, colored icon
+   tile on the left, the whole card one tap target straight to that phase's exercise picker
+   (same destination "+ Add Exercise" always went to). Scoped to its own classes (not a restyle
+   of .phase-box/.pcard-add-btn) since those are still used as-is by custom/extra sections on
+   this screen and by the saved-session editing view. */
+.phase-row{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:14px;
+}
+.phase-row:active{background:var(--chalk-dim);}
 .phase-row-icon{
-  width:40px;height:40px;border-radius:var(--radius-control);flex-shrink:0;
+  width:80px;height:80px;border-radius:var(--radius-control);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
 }
-.phase-row-icon svg{width:19px;height:19px;}
-.phase-row-main{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;}
+.phase-row-icon svg{width:38px;height:38px;}
 .phase-row-body{flex:1;min-width:0;}
 .phase-row-title{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-md);color:var(--ink);}
 .phase-row-sub{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin-top:1px;}
@@ -1092,12 +1096,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   border:none;border-radius:var(--radius-pill);padding:9px 13px;font-size:var(--fs-sm);font-weight:700;
   flex-shrink:0;white-space:nowrap;display:flex;align-items:center;
 }
-.phase-row .phase-collapse-btn{margin:-7px 0 -7px -3px;}
-.bp-name-row{display:flex;align-items:center;gap:6px;margin-top:14px;}
-.bp-name-input{flex:1;min-width:0;border:none;background:transparent;padding:2px 0;font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-md);color:var(--ink);}
-.bp-name-input::placeholder{color:var(--ink-soft);opacity:0.6;font-weight:700;}
-.bp-name-pencil{display:flex;flex-shrink:0;color:var(--ink-soft);opacity:0.45;}
-.bp-name-pencil svg{width:12px;height:12px;display:block;}
+.phase-row-chevron{display:flex;flex-shrink:0;color:var(--ink-soft);}
+.phase-row-chevron svg{width:16px;height:16px;}
 .bp-meta-line{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .bp-meta-edit-btn{background:none;border:none;color:var(--ink-soft);opacity:0.55;padding:3px;display:flex;flex-shrink:0;}
 .bp-meta-edit-btn svg{width:12px;height:12px;}
@@ -1166,7 +1166,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   font-size:var(--fs-display);margin:8px 0 4px;color:var(--ink);
 }
 .setup-block{margin-top:18px;}
-.setup-block.tight{margin-top:0;}
+.setup-block.tight{margin-top:0;min-width:0;}
 .setup-block .session-name-wrap{margin-top:4px;}
 /* New Session setup screen: the session-name input doubles as the page's dominant heading here
    (replacing the old separate static h1 + "Practice Name" field) -- scoped size bump only, the
@@ -1176,7 +1176,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .setup-title-name .session-name-pencil{top:10px;}
 .setup-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;}
 .setup-date-input{
-  width:100%;margin-top:4px;padding:12px;border:1px solid var(--line);border-radius:10px;
+  /* fs-input (not a smaller size) is protected -- iOS Safari auto-zooms on focus for any real
+     text input under 16px, so the width fix here is padding/box-sizing, not font-size. */
+  width:100%;max-width:100%;min-width:0;box-sizing:border-box;margin-top:4px;padding:12px 6px;border:1px solid var(--line);border-radius:10px;
   background:var(--bg-surface);font-family:inherit;font-size:var(--fs-input);font-weight:600;color:var(--ink);
 }
 .setup-date-input:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
@@ -6071,7 +6073,7 @@ const ICONS = {
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></g></svg>`,
   target: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2"/></g></svg>`,
-  trophy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 5H5a3 3 0 003 3M16 5h3a3 3 0 01-3 3"/><path d="M12 13v3M9 20h6M9.5 20c0-1.5.8-2.3 1.2-2.7.4-.4.3-1 .3-1.3"/></svg>`,
+  trophy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4"/><path d="M12 15v3"/><path d="M9 21h6l-2-3h-2l-2 3Z"/></g></svg>`,
   // Self-colored 1024x1024 circular gradient icons from the FT2 Icon Set v2 pack -- not wired
   // into any UI yet (today's section thumbnails/headers stay rectangular with a CSS gradient
   // background + the plain line icons above), kept here as ready-to-use assets for a future
@@ -9419,10 +9421,6 @@ function renderBuild(){
     const mins = ids.reduce((a,id)=>a+(exById(id)?.duration||10),0);
     const isEmpty = ids.length === 0;
     const isFirstPhaseWhileEmpty = count===0 && idx===0;
-    // Empty sections start (and stay) collapsed -- there's nothing to expand yet, so no chevron
-    // is shown at all. Once the first exercise is added, a chevron appears and the box defaults
-    // to expanded so the coach immediately sees what they just added.
-    const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
     const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
     const iconColor = st.textOn==='dark' ? 'var(--pitch-dark)' : 'white';
 
@@ -9440,21 +9438,21 @@ function renderBuild(){
       subHtml += `<span class="prs-starthere">&middot; Start here</span>`;
     }
 
+    // The whole card is one tap target (button, not a div) -- tapping anywhere on it, including
+    // the "+ Add Exercise" pill, goes straight to the same exercise picker "+ Add Exercise" always
+    // did (pickForPhase). Reviewing/reordering/removing exercises already in the phase happens on
+    // that picker screen's own "N exercises in [Phase]" toggle (see toggleAddedInPractice()), not
+    // via an inline expand here anymore.
     return `
-    <div class="phase-row-wrap">
-      <div class="phase-row">
-        <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
-          <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
-          <div class="phase-row-body">
-            <div class="phase-row-title">${p.label}</div>
-            <div class="phase-row-sub">${subHtml}</div>
-          </div>
-        </div>
-        <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
-        ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
+    <button class="phase-row" onclick="pickForPhase('${p.key}')">
+      <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
+      <div class="phase-row-body">
+        <div class="phase-row-title">${p.label}</div>
+        <div class="phase-row-sub">${subHtml}</div>
       </div>
-      ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
-    </div>`;
+      <span class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 16%, transparent);color:${st.color};">+ Add Exercise</span>
+      <span class="phase-row-chevron">${ICONS.chevronRight}</span>
+    </button>`;
   };
 
   const extraBoxHtml = (s) => {
@@ -9491,14 +9489,13 @@ function renderBuild(){
   return `
   <div class="section-pad">
     <button class="back-pill-flat" onclick="editPracticeSetup()">${ICONS.back} Setup</button>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
-      <h1 class="setup-page-title" style="margin:0;">Build Session</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;">
+      <div class="eyebrow">Build Session</div>
       <div class="session-state-tag ${count>0?'inprogress':'new'}">${count>0?'In Progress':'New'}</div>
     </div>
-
-    <div class="bp-name-row">
-      <input class="bp-name-input" placeholder="Name this practice" value="${escAttr(state.sessionName)}" oninput="setSessionName(this.value)">
-      <span class="bp-name-pencil">${ICONS.pencil}</span>
+    <div class="session-name-wrap setup-title-name">
+      <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.sessionName)}" oninput="setSessionName(this.value)">
+      <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
     <div class="bp-meta-line">
       <span>${dateLabel} &middot; ${state.targetDuration} MIN &middot; ${locLabel}</span>
