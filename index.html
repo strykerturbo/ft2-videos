@@ -246,18 +246,6 @@ a{color:inherit;text-decoration:none;}
 }
 .navitem.active{color:white;}
 .navitem svg{width:22px;height:22px;}
-.navitem.build-fab{
-  background:#ffffff;color:#14181f;
-  width:58px;height:58px;border-radius:50%;
-  margin-top:-30px;
-  border:1.5px solid rgba(0,0,0,0.10);
-  box-shadow:0 2px 8px rgba(0,0,0,0.22);
-  justify-content:center;
-  padding:0;/* .navitem's own 7px/8px padding was shrinking the ball image well below its set size */
-}
-.navitem.build-fab svg{width:38px;height:38px;}
-.navitem.build-fab img{width:52px;height:52px;object-fit:cover;object-position:center;border-radius:50%;box-shadow:0 0 0 2px #fff;display:block;flex-shrink:0;}
-.navitem.build-fab span{display:none;}
 
 /* ---------- home ---------- */
 .main-actions-row{display:flex;gap:4px;margin-top:6px;}
@@ -1488,23 +1476,36 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    promoted to a full card since it's now the dominant element on the page when a draft exists. */
 .home-greeting{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-xl);color:var(--ink);margin:4px 0 14px;}
 .home-continue-card{
-  background:var(--bg-surface);border:1.5px solid var(--turf);border-radius:var(--radius-card);
-  padding:16px;margin-bottom:12px;
+  position:relative;display:block;width:100%;text-align:left;
+  background:#111827;border:none;border-radius:var(--radius-card);
+  padding:16px 60px 16px 16px;margin-bottom:12px;
 }
-.hcc-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl);color:var(--ink);margin-top:2px;}
-.hcc-meta{font-size:var(--fs-base);color:var(--ink-soft);margin-top:2px;}
-.hcc-cta{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.hcc-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.14);color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+.hcc-icon svg{width:18px;height:18px;}
+.hcc-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl);color:#fff;margin-top:2px;}
+.hcc-meta{font-size:var(--fs-base);color:rgba(255,255,255,0.7);margin-top:2px;}
+.hcc-progress-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.hcc-progress-row .progress-track{flex:1;background:rgba(255,255,255,0.15);border:none;}
+.hcc-pct{font-size:var(--fs-xs);color:rgba(255,255,255,0.7);white-space:nowrap;font-weight:600;}
+.hcc-chevron-btn{
+  position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:50%;
+  background:#fff;color:#0B0F1A;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.hcc-chevron-btn svg{width:18px;height:18px;}
 .home-new-session-cta{
-  display:flex;align-items:center;gap:12px;width:100%;
+  display:block;width:100%;
   background:#F7FF00;color:#0B0F1A;border:none;border-radius:var(--radius-card);
-  padding:14px 16px;margin-bottom:12px;text-align:left;
+  padding:16px;margin-bottom:12px;text-align:left;
 }
-.hnsc-icon{width:42px;height:42px;border-radius:50%;background:rgba(11,15,26,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hnsc-toprow{display:flex;align-items:center;gap:12px;}
+.hnsc-icon{width:42px;height:42px;border-radius:50%;background:#0B0F1A;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .hnsc-icon svg{width:20px;height:20px;}
 .hnsc-body{flex:1;min-width:0;}
-.hnsc-title{font-weight:800;font-size:var(--fs-md);text-transform:uppercase;letter-spacing:0.02em;}
-.hnsc-sub{font-size:var(--fs-sm);font-weight:600;opacity:0.75;margin-top:2px;}
+.hnsc-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-2xl);text-transform:uppercase;letter-spacing:0.01em;line-height:1;}
+.hnsc-sub{font-size:var(--fs-sm);font-weight:600;opacity:0.75;margin-top:4px;}
 .hnsc-chevron{margin-left:auto;flex-shrink:0;display:flex;}
+.hnsc-dots{display:flex;gap:8px;margin-top:14px;padding-left:54px;}
+.hnsc-dots span{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .home-featured-card{
   display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;
   background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:14px;
@@ -1626,8 +1627,8 @@ input.section-title-input:focus{border-color:var(--turf);}
    to apply -- so removing the force-zero rule was the whole fix, no per-selector rewrite needed. */
 body{background:var(--bg-main);}
 /* Pills/circles that must stay fully round regardless of any element-level radius: topbar icon
-   buttons, the coach-initials avatar, the bottom-nav soccer-ball button, and filter/tag chips. */
-.icon-btn,.avatar,.navitem.build-fab,.qp-info-btn,.qp-close-btn{
+   buttons, the coach-initials avatar, and filter/tag chips. */
+.icon-btn,.avatar,.qp-info-btn,.qp-close-btn{
   border-radius:50% !important;
 }
 .qf-chip{
@@ -7748,8 +7749,7 @@ function renderBottomnav(){
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.home,"nav('home')")}
-    ${item('exercises','Exercises',ICONS.search,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
-    <button class="navitem build-fab" onclick="nav('build')" title="Build a Session">${ICONS.soccerBallPhoto}<span>Build</span></button>
+    ${item('exercises','Exercises',ICONS.ball,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
     ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
   `;
@@ -8179,14 +8179,16 @@ function renderHome(){
 
   const continueSessionHtml = () => {
     const pct = state.targetDuration ? Math.min(100, Math.round((draftMin/state.targetDuration)*100)) : 0;
+    const locLabel = state.practiceLocation==='indoor' ? 'Indoor' : state.practiceLocation==='outdoor' ? 'Outdoor' : '';
     return `
-    <div class="home-continue-card">
+    <button class="home-continue-card" onclick="nav('build')">
+      <div class="hcc-icon">${ICONS.doc}</div>
+      <span class="hcc-chevron-btn">${ICONS.chevronRight}</span>
       <div class="eyebrow">Continue Session</div>
       <div class="hcc-title">${escHtml(state.sessionName.trim() || 'Untitled session')}</div>
-      <div class="hcc-meta">${draftCount} exercise${draftCount===1?'':'s'} &middot; ${draftMin} min${state.targetDuration?` of ${state.targetDuration}`:''}</div>
-      ${state.targetDuration ? `<div class="progress-track" style="height:6px;margin-top:10px;"><div class="progress-fill" style="width:${pct}%;"></div></div>` : ''}
-      <button class="btn btn-primary hcc-cta" onclick="nav('build')"><span>Continue Session</span>${ICONS.chevronRight}</button>
-    </div>`;
+      <div class="hcc-meta">${draftCount} exercise${draftCount===1?'':'s'} &middot; ${draftMin} min${state.targetDuration?` of ${state.targetDuration}`:''}${locLabel?` &middot; ${locLabel}`:''}</div>
+      ${state.targetDuration ? `<div class="hcc-progress-row"><div class="progress-track" style="height:6px;"><div class="progress-fill" style="width:${pct}%;"></div></div><span class="hcc-pct">${pct}% complete</span></div>` : ''}
+    </button>`;
   };
 
   const featuredExerciseHtml = (ex) => {
@@ -8233,17 +8235,20 @@ function renderHome(){
     ${hasDraft ? continueSessionHtml() : ''}
 
     <button class="home-new-session-cta" onclick="requestBuildNewSession()">
-      <div class="hnsc-icon">${ICONS.plus}</div>
-      <div class="hnsc-body">
-        <div class="hnsc-title">New Session</div>
-        <div class="hnsc-sub">Build a training session from your exercise library</div>
+      <div class="hnsc-toprow">
+        <div class="hnsc-icon">${ICONS.plus}</div>
+        <div class="hnsc-body">
+          <div class="hnsc-title">New Session</div>
+          <div class="hnsc-sub">Build a session from your six FT2 phases.</div>
+        </div>
+        <div class="hnsc-chevron">${ICONS.chevronRight}</div>
       </div>
-      <div class="hnsc-chevron">${ICONS.chevronRight}</div>
+      <div class="hnsc-dots">${PHASES.map(p=>`<span style="background:${secStyle(p.section).bg};"></span>`).join('')}</div>
     </button>
 
     <div class="main-actions-row">
       <button class="mac-tile" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
-        <div class="mact-icon">${ICONS.search}</div>
+        <div class="mact-icon">${ICONS.ball}</div>
         <div class="mact-label"><span>Exercise</span><span>Library</span></div>
         <div class="mact-stat">${totalEx} Exercises</div>
       </button>
