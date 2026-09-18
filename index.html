@@ -7359,10 +7359,10 @@ function balanceCardHtml(ex, i, dim){
     <div class="balance-card-head">
       <div class="balance-card-num">${i+1}</div>
       <div style="flex:1;min-width:0;">
-        <div class="balance-card-name" onclick="openDetail('${ex.id}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
+        <div class="balance-card-name" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
         <div class="balance-card-meta">${ex.duration||10} min</div>
       </div>
-      <button class="balance-add-btn ${inPhase?'added':''}" onclick="balanceAddExercise('${ex.id}')">${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}</button>
+      <button class="balance-add-btn ${inPhase?'added':''}" onclick="balanceAddExercise('${escJsAttr(ex.id)}')">${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}</button>
     </div>
     ${topScores.length ? `<div class="balance-card-scores">${topScores.map(d=>`<span>${d.label} <b>${d.score}</b></span>`).join('')}</div>` : ''}
     ${tags.length ? `<div class="tag-wrap" style="margin-top:6px;">${tags.map(t=>`<span class="tagpill">${escHtml(t)}</span>`).join('')}</div>` : ''}
@@ -7746,10 +7746,10 @@ function quickPickCardHtml(ex, i, ctx){
     <div class="balance-card-head">
       <div class="balance-card-num">${i+1}</div>
       <div style="flex:1;min-width:0;">
-        <div class="balance-card-name" onclick="openDetail('${ex.id}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
+        <div class="balance-card-name" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
         <div class="balance-card-meta">${ex.duration||10} min</div>
       </div>
-      <button class="balance-add-btn qp-add-btn ${inPhase?'added':''}" onclick="quickPickAddExercise('${ex.id}')">${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}</button>
+      <button class="balance-add-btn qp-add-btn ${inPhase?'added':''}" onclick="quickPickAddExercise('${escJsAttr(ex.id)}')">${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}</button>
     </div>
     ${topScores.length ? `<div class="balance-card-scores">${topScores.map(d=>`<span>${d.label} <b>${d.score}</b></span>`).join('')}</div>` : ''}
     ${tags.length ? `<div class="tag-wrap" style="margin-top:6px;">${tags.map(t=>`<span class="tagpill">${escHtml(t)}</span>`).join('')}</div>` : ''}
@@ -7858,9 +7858,11 @@ function discardDraftExercise(){
 }
 function backFromDetail(){
   if(state.draftExercise){
-    const ok = confirm('Discard this new exercise? It hasn\'t been saved to your library yet.');
-    if(!ok) return;
-    state.draftExercise = null;
+    // In-app modal, not native confirm() -- confirm() is silently swallowed with no UI at all in
+    // iOS Safari's "Add to Home Screen" standalone mode, same reasoning as pendingQuickAdd below.
+    state.confirmDiscardExerciseOpen = true;
+    renderOverlay();
+    return;
   }
   if(state.fromReview){ nav('review'); return; }
   if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
@@ -7868,6 +7870,12 @@ function backFromDetail(){
   // (they're set together, only ever in pickForPhase()), so this naturally lands the coach back
   // on the same Building Session picker screen they came from rather than the full phase grid.
   nav('exercises');
+}
+function cancelDiscardExercise(){ state.confirmDiscardExerciseOpen = false; renderOverlay(); }
+function confirmDiscardExerciseAndBack(){
+  state.confirmDiscardExerciseOpen = false;
+  state.draftExercise = null;
+  backFromDetail();
 }
 
 /* ============ STATE ============ */
@@ -7931,6 +7939,7 @@ const state = {
   viewMode: 'tile',           // 'tile' | 'list' -- how Explore Exercises lays out results
   confirmDiscardOpen: false,  // whether the "discard this draft practice?" confirm sheet is showing
   confirmNewSessionOpen: false, // whether the "you have a session in progress" guard modal is showing
+  confirmDiscardExerciseOpen: false, // whether the "discard this new exercise?" confirm modal is showing -- in-app, not native confirm() (silently swallowed in iOS home-screen mode, same reasoning as pendingQuickAdd below)
   practiceTemplates: [        // coach's own named library of section/percentage splits -- as many as they want, saved locally on their own device
     {id:'tmpl-outdoor-default', name:'Outdoor Practice', location:'outdoor', duration:75, sections: defaultTemplateSections()},
     {id:'tmpl-outdoor-90',      name:'Outdoor Practice (90 min)', location:'outdoor', duration:90, sections: defaultTemplateSections()},
@@ -8538,7 +8547,7 @@ function renderHome(){
     ];
     return `
     <div class="sh" style="margin-top:28px;"><h2>Featured Exercise</h2></div>
-    <button class="home-featured-card" onclick="openDetail('${ex.id}')">
+    <button class="home-featured-card" onclick="openDetail('${escJsAttr(ex.id)}')">
       <div class="hfc-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
       <div class="hfc-body">
         <div class="hfc-meta">${escHtml(ex.section)} &middot; ${ex.duration} min</div>
@@ -8805,17 +8814,17 @@ function exCard(ex){
   const st = secStyle(ex.section);
   const cardTags = allTagsFor(ex).slice(0,3);
   return `
-  <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${ex.id}')" style="cursor:pointer;">
-    <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${ex.id}')">
+  <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">
+    <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${escJsAttr(ex.id)}')">
       ${ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;', false, `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`) : `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`}
       ${inPhase ? `<span class="added-badge">${ICONS.check}</span>` : ''}
     </button>
-    <button class="ex-bookmark ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${ex.id}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
+    <button class="ex-bookmark ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
     <div class="ex-body">
       <div class="ex-sect">${ex.section}${ex.duration?' · '+ex.duration+' min':''}</div>
-      <div class="ex-name" onclick="openDetail('${ex.id}')" style="cursor:pointer;">${ex.name}</div>
+      <div class="ex-name" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
       ${cardTags.length ? `<div class="ex-card-tags">${cardTags.map(t=>`<span class="tagpill sm">${escHtml(t)}</span>`).join('')}</div>` : ''}
-      <button class="ex-addbtn ${inPhase?'added':''}" onclick="quickAdd(event,'${ex.id}')">
+      <button class="ex-addbtn ${inPhase?'added':''}" onclick="quickAdd(event,'${escJsAttr(ex.id)}')">
         ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}
       </button>
     </div>
@@ -8978,6 +8987,11 @@ function removeFromPhase(key, id){
 
 function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// For values (ids from the spreadsheet/synced sessions) interpolated into a single-quoted JS
+// string literal inside an inline event-handler attribute, e.g. onclick="fn('${escJsAttr(x)}')".
+// escAttr() alone only protects the outer double-quoted HTML attribute -- a bare ' in the value
+// would still close the inner JS string early and let anything after it execute as script.
+function escJsAttr(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 
 /* soft render: skip full topbar/bottomnav rebuild for typing responsiveness */
 function renderSoft(){
@@ -9065,6 +9079,19 @@ function renderOverlay(){
         <div class="ios-alert-btns">
           <button class="ios-alert-btn danger" onclick="confirmDuplicateSession()">Discard draft &amp; duplicate</button>
           <button class="ios-alert-btn" onclick="cancelDuplicateSessionModal()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(state.confirmDiscardExerciseOpen){
+    html += `
+    <div class="ios-alert-backdrop" onclick="cancelDiscardExercise()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>Discard this new exercise?</h3>
+        <p>It hasn't been saved to your library yet.</p>
+        <div class="ios-alert-btns">
+          <button class="ios-alert-btn danger" onclick="confirmDiscardExerciseAndBack()">Discard</button>
+          <button class="ios-alert-btn" onclick="cancelDiscardExercise()">Cancel</button>
         </div>
       </div>
     </div>`;
@@ -9222,7 +9249,7 @@ function renderDetail(){
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
-      <select onchange="updateExerciseField('${ex.id}','section',this.value)" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
+      <select onchange="updateExerciseField('${escJsAttr(ex.id)}','section',this.value)" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
         ${SECTION_LIST.map(s=>`<option value="${s}" ${ex.section===s?'selected':''}>${s}</option>`).join('')}
       </select>
       ${ex.category?`<span class="eyebrow-cat">&middot; ${escHtml(ex.category)}</span>`:''}
@@ -9230,18 +9257,18 @@ function renderDetail(){
     <h1 style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${escHtml(ex.name)}</h1>
     <div class="stat-row">
       <div class="stat" style="background:rgba(${st.textOn==='dark'?'16,20,31':'255,255,255'},0.16);">
-        <div class="stat-value snum-row"><span contenteditable="true" class="snum-editable" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onblur="updateExerciseField('${ex.id}','duration',this.innerText,'number')">${ex.duration!=null?ex.duration:'—'}</span>${ex.duration!=null?`<span class="snum-suffix" style="color:${st.textOn==='dark'?'rgba(16,20,31,0.75)':'rgba(255,255,255,0.75)'};">min</span>`:''}</div>
+        <div class="stat-value snum-row"><span contenteditable="true" class="snum-editable" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onblur="updateExerciseField('${escJsAttr(ex.id)}','duration',this.innerText,'number')">${ex.duration!=null?ex.duration:'—'}</span>${ex.duration!=null?`<span class="snum-suffix" style="color:${st.textOn==='dark'?'rgba(16,20,31,0.75)':'rgba(255,255,255,0.75)'};">min</span>`:''}</div>
         <div class="slbl" style="color:${st.textOn==='dark'?'rgba(16,20,31,0.7)':'rgba(255,255,255,0.7)'};">Duration</div>
       </div>
       <div class="stat" style="background:rgba(${st.textOn==='dark'?'16,20,31':'255,255,255'},0.16);">
-        <select class="diff-select stat-value" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onchange="updateExerciseFormat('${ex.id}',this.value)">
+        <select class="diff-select stat-value" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onchange="updateExerciseFormat('${escJsAttr(ex.id)}',this.value)">
           <option value="" ${!ex.formatTags[0]?'selected':''}>—</option>
           ${FORMAT_OPTIONS.map(f=>`<option value="${f}" ${ex.formatTags[0]===f?'selected':''}>${f}</option>`).join('')}
         </select>
         <div class="slbl" style="color:${st.textOn==='dark'?'rgba(16,20,31,0.7)':'rgba(255,255,255,0.7)'};">Format</div>
       </div>
       <div class="stat" style="background:rgba(${st.textOn==='dark'?'16,20,31':'255,255,255'},0.16);">
-        <select class="diff-select stat-value" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onchange="updateExerciseField('${ex.id}','difficulty',this.value,'number')">
+        <select class="diff-select stat-value" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onchange="updateExerciseField('${escJsAttr(ex.id)}','difficulty',this.value,'number')">
           <option value="" ${!ex.difficulty?'selected':''}>—</option>
           ${[1,2,3,4,5].map(n=>`<option value="${n}" ${ex.difficulty===n?'selected':''}>${DIFFICULTY_LABELS[n]}</option>`).join('')}
         </select>
@@ -9261,17 +9288,17 @@ function renderDetail(){
   </div>` : ''}
 
   <div class="detail-actions">
-    <button class="iconbtn-lg ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${ex.id}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
-    <button class="add-session-btn ${inPhase?'added':''}" onclick="detailToggle('${ex.id}')">
+    <button class="iconbtn-lg ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
+    <button class="add-session-btn ${inPhase?'added':''}" onclick="detailToggle('${escJsAttr(ex.id)}')">
       ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}
     </button>
   </div>
   ${isDraft ? `<div class="draft-hint">${ICONS.pencil} Adding this to a session will also save it to your library</div>` : ''}
 
-  <div class="detail-block"><h4>Setup</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','setup',this.innerText)">${escHtml(ex.setup||'—')}</p></div><div class="divider"></div>
-  <div class="detail-block"><h4>Objective &amp; how it works</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','description',this.innerText)">${escHtml(ex.description||'—')}</p></div><div class="divider"></div>
-  <div class="detail-block"><h4>Coaching points</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','coachingPoints',this.innerText)">${escHtml(ex.coachingPoints||'—')}</p></div><div class="divider"></div>
-  <div class="detail-block"><h4>Variations</h4><p contenteditable="true" onblur="updateExerciseField('${ex.id}','variations',this.innerText)">${escHtml(ex.variations||'—')}</p></div><div class="divider"></div>
+  <div class="detail-block"><h4>Setup</h4><p contenteditable="true" onblur="updateExerciseField('${escJsAttr(ex.id)}','setup',this.innerText)">${escHtml(ex.setup||'—')}</p></div><div class="divider"></div>
+  <div class="detail-block"><h4>Objective &amp; how it works</h4><p contenteditable="true" onblur="updateExerciseField('${escJsAttr(ex.id)}','description',this.innerText)">${escHtml(ex.description||'—')}</p></div><div class="divider"></div>
+  <div class="detail-block"><h4>Coaching points</h4><p contenteditable="true" onblur="updateExerciseField('${escJsAttr(ex.id)}','coachingPoints',this.innerText)">${escHtml(ex.coachingPoints||'—')}</p></div><div class="divider"></div>
+  <div class="detail-block"><h4>Variations</h4><p contenteditable="true" onblur="updateExerciseField('${escJsAttr(ex.id)}','variations',this.innerText)">${escHtml(ex.variations||'—')}</p></div><div class="divider"></div>
 
   <div class="detail-block tprof-block">
     <h4>Training profile</h4>
@@ -9279,11 +9306,11 @@ function renderDetail(){
   </div><div class="divider"></div>
 
   <div class="detail-block" style="padding-top:4px;">
-    <div class="detail-block-head"><h4 style="margin:0;">Tags</h4><button class="add-tag-trigger" onclick="openTagPicker('${ex.id}')">${ICONS.plus} Add tags</button></div>
+    <div class="detail-block-head"><h4 style="margin:0;">Tags</h4><button class="add-tag-trigger" onclick="openTagPicker('${escJsAttr(ex.id)}')">${ICONS.plus} Add tags</button></div>
     <div class="tag-wrap">
       <div class="loc-select-pill">
         ${ex.location==='indoor'?ICONS.home:ex.location==='outdoor'?ICONS.sun:ICONS.grid}
-        <select onchange="updateExerciseField('${ex.id}','location',this.value)">
+        <select onchange="updateExerciseField('${escJsAttr(ex.id)}','location',this.value)">
           <option value="both" ${ex.location==='both'?'selected':''}>Indoor or Outdoor</option>
           <option value="indoor" ${ex.location==='indoor'?'selected':''}>Indoor only</option>
           <option value="outdoor" ${ex.location==='outdoor'?'selected':''}>Outdoor only</option>
@@ -9303,7 +9330,7 @@ function renderDetail(){
           ? `<div class="sim-thumb" style="background:${sst.bg};">${mediaTagHtml(s.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, sst.icon)}</div>`
           : `<div class="sim-thumb" style="background:${sst.bg};color:${sst.textOn==='dark'?'var(--pitch-dark)':'white'};">${sst.icon}</div>`;
         return `
-        <button class="sim-card" onclick="openDetail('${s.id}')">
+        <button class="sim-card" onclick="openDetail('${escJsAttr(s.id)}')">
           ${thumb}
           <div class="sname">${escHtml(s.name)}</div>
         </button>`;}).join('')}
@@ -9385,7 +9412,7 @@ function renderTagPickerSheet(){
     ${CATS.map(c => (vocab[c.key]&&vocab[c.key].length) ? `
     <div class="tp-cat-label">${c.label}</div>
     <div class="optrow">
-      ${vocab[c.key].map((t,i) => `<button class="opt ${(ex[c.key]||[]).includes(t)?'active':''}" onclick="toggleExerciseTagAt('${ex.id}','${c.key}',${i})">${escHtml(t)}</button>`).join('')}
+      ${vocab[c.key].map((t,i) => `<button class="opt ${(ex[c.key]||[]).includes(t)?'active':''}" onclick="toggleExerciseTagAt('${escJsAttr(ex.id)}','${c.key}',${i})">${escHtml(t)}</button>`).join('')}
     </div>` : '').join('')}
     <div class="sheet-footer">
       <button class="btn btn-primary" onclick="closeTagPicker()">Done</button>
@@ -9749,7 +9776,7 @@ function extractBullets(ex, maxBullets){
    event.stopPropagation() since these rows are otherwise clickable to open the exercise detail. */
 function replaceButtonHtml(key, id, returnTo){
   const ex = exById(id);
-  return `<button class="build-ex-replace" onclick="event.stopPropagation(); pickReplacementFor('${key}','${id}','${returnTo}')" title="Replace ${escAttr(ex?ex.name:'')}">${ICONS.swap}</button>`;
+  return `<button class="build-ex-replace" onclick="event.stopPropagation(); pickReplacementFor('${key}','${escJsAttr(id)}','${returnTo}')" title="Replace ${escAttr(ex?ex.name:'')}">${ICONS.swap}</button>`;
 }
 
 function buildExRowHtml(id, key, removeCall, showGrip){
@@ -9762,7 +9789,7 @@ function buildExRowHtml(id, key, removeCall, showGrip){
     ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, exFallback)
     : exFallback;
   return `
-  <div class="build-ex-row" data-ex-id="${id}">
+  <div class="build-ex-row" data-ex-id="${escAttr(id)}">
     ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
@@ -10315,7 +10342,7 @@ function renderReview(){
               ${g.items.map(it=>{
                 const ex=exById(it.id);
                 const showGrip = g.items.length>1;
-                return `<div class="phase-ex-item" data-ex-id="${it.id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${it.id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${it.id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
+                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
               }).join('')}
             </div>
           </div>
@@ -10332,7 +10359,7 @@ function renderReview(){
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins} min`}</div></div>
             ${planned ? (phaseProgressBarHtml(mins, planned) || '') : ''}
             <div class="phase-exlist" data-list-key="${s.key}">
-              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${id}" ${ex?`onclick="openDetailFromReview('${ex.id}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${id}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${id}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
+              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${escAttr(id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${escJsAttr(id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${escJsAttr(id)}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
         </div>`;
@@ -10610,7 +10637,7 @@ function setSessionsViewMode(mode){ state.sessionsViewMode = mode; render(); }
 function sessionRowHtml(s){
   const isOwner = s.createdBy === state.coachName;
   return `
-      <div class="session-row" role="button" tabindex="0" onclick="openSessionDetail('${s.id}')">
+      <div class="session-row" role="button" tabindex="0" onclick="openSessionDetail('${escJsAttr(s.id)}')">
         <div class="srthumb">${ICONS.ball}</div>
         <div style="flex:1;min-width:0;">
           <div class="srname">${escHtml(s.name)}</div>
@@ -10618,8 +10645,8 @@ function sessionRowHtml(s){
           <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises${s._syncPending?' &middot; <span style="color:var(--warn);">Not synced yet</span>':''}</div>
           ${s.phases && s.phases.length ? `<div class="srmeta structure">${escHtml(s.phases.map(p=>p.label).join(' → '))}</div>` : ''}
         </div>
-        ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
-        ${isOwner ? `<button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${s.id}')" title="Delete session">${ICONS.trash}</button>` : ''}
+        ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+        ${isOwner ? `<button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${escJsAttr(s.id)}')" title="Delete session">${ICONS.trash}</button>` : ''}
         <div class="srchevron">${ICONS.chevronRight}</div>
       </div>`;
 }
@@ -10702,23 +10729,23 @@ function renderSessionDetail(){
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')">${ICONS.back}</button>
       <div style="display:flex;align-items:center;gap:8px;">
-        ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${s.id}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
-        <button class="dh-icon-btn" onclick="requestDuplicateSession('${s.id}')" title="Duplicate this session into a new editable draft">${ICONS.copy}</button>
+        ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+        <button class="dh-icon-btn" onclick="requestDuplicateSession('${escJsAttr(s.id)}')" title="Duplicate this session into a new editable draft">${ICONS.copy}</button>
         ${isOwner ? `<button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>` : ''}
         ${isOwner
-          ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${s.id}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
+          ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${escJsAttr(s.id)}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
           : `<div class="session-state-tag saved" style="position:static;">${ICONS.user} By ${escHtml(s.createdBy)}</div>`}
       </div>
     </div>
     <div class="dpill" style="margin-top:14px;">${ICONS.soccerBallPhoto} Saved Session</div>
     ${editing
-      ? `<h1 class="editable-title" contenteditable="true" onblur="renameSavedSession('${s.id}', this.innerText)">${escHtml(s.name)}</h1>`
+      ? `<h1 class="editable-title" contenteditable="true" onblur="renameSavedSession('${escJsAttr(s.id)}', this.innerText)">${escHtml(s.name)}</h1>`
       : `<h1>${escHtml(s.name)}</h1>`}
     <div class="stat-row">
       <div class="stat"><div class="snum">${s.totalMin}</div><div class="slbl">Minutes</div></div>
       <div class="stat"><div class="snum">${s.exCount}</div><div class="slbl">Exercises</div></div>
       <div class="stat">${editing
-        ? `<div class="snum-row"><span class="snum-editable" contenteditable="true" onblur="setSavedSessionDuration('${s.id}', this.innerText)">${s.targetDuration}</span></div>`
+        ? `<div class="snum-row"><span class="snum-editable" contenteditable="true" onblur="setSavedSessionDuration('${escJsAttr(s.id)}', this.innerText)">${s.targetDuration}</span></div>`
         : `<div class="snum">${s.targetDuration}</div>`}<div class="slbl">Target</div></div>
     </div>
   </div>
@@ -10726,10 +10753,10 @@ function renderSessionDetail(){
     <div class="rate-session-box">
       <div class="rate-session-title">Rate this Session</div>
       <div class="star-row">
-        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" ${isOwner?`onclick="setSessionRating('${s.id}',${n})"`:'style="cursor:default;"'}>${ICONS.star}</button>`).join('')}
+        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" ${isOwner?`onclick="setSessionRating('${escJsAttr(s.id)}',${n})"`:'style="cursor:default;"'}>${ICONS.star}</button>`).join('')}
       </div>
       ${isOwner
-        ? `<textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${s.id}', this.value)">${escHtml(s.comment||'')}</textarea>`
+        ? `<textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${escJsAttr(s.id)}', this.value)">${escHtml(s.comment||'')}</textarea>`
         : (s.comment ? `<div class="rate-comment" style="min-height:auto;color:var(--ink-soft);">${escHtml(s.comment)}</div>` : '')}
     </div>
 
@@ -10758,9 +10785,9 @@ function renderSessionDetail(){
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
             <div class="phase-exlist">
-              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${e.id}','${s.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${s.id}','${e.id}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
-            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>`:''}
+            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>
         </div>`).join('')}
       ${extras.map((p,i)=>`
@@ -10769,15 +10796,15 @@ function renderSessionDetail(){
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${p.label}</div><div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div></div>
             <div class="phase-exlist">
-              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${e.id}','${s.id}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${s.id}','${e.id}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
-            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>`:''}
+            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>
         </div>`).join('')}
       ${editing && groups.length===0 && extras.length===0 ? `
         <div class="phase-card">
           <div class="phase-content">
-            <button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${s.id}')">+ Add Exercise</button>
+            <button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>
           </div>
         </div>` : ''}
     </div>
