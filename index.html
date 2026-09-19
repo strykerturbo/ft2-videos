@@ -437,6 +437,11 @@ a{color:inherit;text-decoration:none;}
 .qp-dots{display:flex;justify-content:center;align-items:center;gap:6px;margin:2px 0 12px;}
 .qp-dot{width:6px;height:6px;border-radius:50%;background:var(--line);transition:background-color var(--transition-fast),width var(--transition-fast);}
 .qp-dot.active{width:16px;border-radius:3px;background:var(--turf);}
+.qp-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 12px;}
+.qp-pager .qp-dots{margin:0;}
+.qp-pager-arrow{width:26px;height:26px;border-radius:50%;border:none;background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qp-pager-arrow svg{width:12px;height:12px;}
+.qp-pager-arrow:active{background:var(--turf-dim);color:var(--turf);}
 .balance-sheet-title{display:flex;align-items:center;gap:7px;}
 .balance-sheet-title svg{width:19px;height:19px;flex-shrink:0;color:var(--turf);}
 .balance-sub{font-size:var(--fs-base);color:var(--ink-soft);line-height:1.5;margin:-2px 0 14px;}
@@ -1014,8 +1019,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-exlist{margin-top:9px;display:flex;flex-direction:column;gap:8px;}
 .phase-ex-item{
   display:flex;align-items:center;gap:10px;background:var(--bg-surface);border:1px solid var(--line);
-  border-radius:10px;padding:9px 10px 9px 8px;
+  border-radius:10px;padding:9px 10px 9px 8px;transition:box-shadow 150ms ease;
 }
+.phase-ex-item.dragging{position:relative;z-index:5;box-shadow:0 12px 28px -10px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.14);cursor:grabbing;}
 .phase-ex-remove{background:none;border:none;color:var(--ink-soft);opacity:0.5;padding:6px;display:flex;flex-shrink:0;}
 .phase-ex-remove:active{opacity:0.8;}
 .phase-ex-remove svg{width:15px;height:15px;}
@@ -1216,7 +1222,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    inline exercise list needs its own inset -- .phase-box (custom/extra sections) already has
    that padding on itself, so this stays scoped to just the standard-phase case. */
 .phase-row-wrap > .build-ex-list{margin-top:0;padding:6px 14px 14px;background:var(--chalk-dim);}
-.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 4px 11px 0;border-top:1px solid var(--line);}
+.build-ex-row{position:relative;display:flex;gap:11px;padding:11px 4px 11px 0;border-top:1px solid var(--line);transition:box-shadow 150ms ease;}
 .build-ex-list .build-ex-row:first-child{border-top:none;}
 /* Diagram and title/text each take half the row -- equal flex-grow off a 0 basis, with the image
    stretching (flex default cross-axis behavior) to match however tall the text side naturally is. */
@@ -1236,7 +1242,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-ex-bullets li{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.45;margin-bottom:2px;}
 .build-ex-grip{width:20px;align-self:stretch;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;margin-left:-4px;}
 .build-ex-grip svg{width:14px;height:14px;}
-.build-ex-row.dragging{opacity:0.6;box-shadow:0 4px 14px rgba(0,0,0,0.25);position:relative;z-index:5;background:var(--bg-surface);}
+.build-ex-row.dragging{position:relative;z-index:5;opacity:1;background:var(--bg-surface);border-radius:10px;box-shadow:0 12px 28px -10px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.14);cursor:grabbing;}
 .build-ex-remove{
   background:none;border:none;color:var(--ink-soft);flex-shrink:0;
   opacity:0.38;padding:8px;margin:-8px -6px 0 0;display:flex;
@@ -7251,6 +7257,7 @@ function bestSectionKeyForDimension(dim){
    shown, or even silently retarget which section/dimension is being balanced, mid-interaction. */
 function refreshBalanceResults(){
   state.balanceOffset = 0; // any fresh (non-"next") recompute restarts the Refresh Exercises cycle at the top
+  state.balanceCardIndex = 0;
   state.balanceSnapshot = computeBalanceRecommendations();
 }
 /* Shared ranking pass -- same dimension/duration-fit scoring Balance My Session has always used,
@@ -7305,10 +7312,32 @@ function refreshBalanceNext(){
   const {dim, section, phaseKey, ranked} = rankedBalanceCandidates();
   if(!section || !ranked.length){ refreshBalanceResults(); renderOverlay(); return; }
   state.balanceOffset = (state.balanceOffset + 3) % ranked.length;
+  state.balanceCardIndex = 0;
   const items = [];
   for(let i=0;i<3 && i<ranked.length;i++) items.push(ranked[(state.balanceOffset+i) % ranked.length]);
   state.balanceSnapshot = {dim, section, phaseKey, items};
   renderOverlay();
+}
+/* Same one-card-at-a-time pager as Quick Pick's stepQuickPickCard()/qpSwipe -- see the comments
+   there. Stepping past the last of the current 3 rolls into refreshBalanceNext()'s next window
+   instead of wrapping back to a card already seen; stepping "previous" from the first card just
+   wraps within the current 3. */
+function stepBalanceCard(delta){
+  const items = (state.balanceSnapshot || computeBalanceRecommendations()).items;
+  const n = items.length;
+  if(n <= 1) return;
+  const next = state.balanceCardIndex + delta;
+  if(next >= n){ refreshBalanceNext(); return; }
+  state.balanceCardIndex = next < 0 ? n-1 : next;
+  renderOverlay();
+}
+let balanceSwipe = null;
+function balanceSwipeStart(e){ balanceSwipe = {x: e.clientX, y: e.clientY}; }
+function balanceSwipeEnd(e){
+  if(!balanceSwipe) return;
+  const dx = e.clientX - balanceSwipe.x, dy = e.clientY - balanceSwipe.y;
+  balanceSwipe = null;
+  if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepBalanceCard(dx < 0 ? 1 : -1);
 }
 /* Short, data-traceable "why this fits" sentence -- every clause maps directly to a real field
    on the exercise (its score for the dimension being balanced, and, when a Quick Filter is
@@ -7381,6 +7410,7 @@ function renderBalanceSheetHtml(){
   const {dim, section, items} = state.balanceSnapshot || computeBalanceRecommendations();
   const dimMeta = dim ? TRAINING_DIMENSIONS.find(d=>d.key===dim) : null;
   const label = dimMeta ? dimMeta.label : '';
+  const idx = Math.min(state.balanceCardIndex, Math.max(0, items.length-1)); // defensive clamp, same reasoning as renderQuickPickSheetHtml()'s idx
   return `
   <div class="sheet-backdrop" onclick="closeBalanceSheet()"></div>
   <div class="sheet balance-sheet">
@@ -7393,9 +7423,13 @@ function renderBalanceSheetHtml(){
       ? `<div class="balance-sub">This practice is currently lightest on <b>${label}</b> &mdash; here are a few exercises that could help.</div>`
       : `<div class="balance-sub">Add a couple of exercises first so there's a practice profile to balance against.</div>`}
     ${(section && items.length) ? `<div class="balance-target-heading">${balanceTargetHeadingText(section, items.length)}</div>` : ''}
-    ${items.length ? items.map((ex,i) => balanceCardHtml(ex, i, dim)).join('') : (dim ? `<div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>No matching ${section?escHtml(section)+' ':''}exercises found right now.</p></div>` : '')}
+    ${items.length>1 ? `<div class="qp-pager">
+      <button class="qp-pager-arrow" onclick="stepBalanceCard(-1)" title="Previous suggestion" aria-label="Previous suggestion">${ICONS.back}</button>
+      <div class="qp-dots">${items.map((ex2,d)=>`<span class="qp-dot ${d===idx?'active':''}"></span>`).join('')}</div>
+      <button class="qp-pager-arrow" onclick="stepBalanceCard(1)" title="Next suggestion" aria-label="Next suggestion">${ICONS.chevronRight}</button>
+    </div>` : ''}
+    ${items.length ? `<div class="qp-results" onpointerdown="balanceSwipeStart(event)" onpointerup="balanceSwipeEnd(event)">${balanceCardHtml(items[idx], idx, dim)}</div>` : (dim ? `<div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>No matching ${section?escHtml(section)+' ':''}exercises found right now.</p></div>` : '')}
     <div class="sheet-footer">
-      ${items.length ? `<button class="btn btn-ghost" style="flex:1;" onclick="refreshBalanceNext()">${ICONS.swap}<span>Refresh Exercises</span></button>` : ''}
       <button class="btn btn-primary" style="flex:1;" onclick="closeBalanceSheet()">Done</button>
     </div>
   </div>`;
@@ -7660,6 +7694,7 @@ function quickPickReason(ex, ctx){
    exercise out of its own card and swap in a 4th suggestion. */
 function refreshQuickPickResults(){
   state.quickPickOffset = 0; // any fresh (non-"next") recompute restarts the Refresh Exercises cycle at the top
+  state.quickPickCardIndex = 0;
   state.quickPickSnapshot = computeQuickPicks();
 }
 /* Shared ranking pass -- same pool/filter/score logic Quick Pick has always used, just returning
@@ -7714,24 +7749,38 @@ function refreshQuickPickNext(){
   const {section, ctx, ranked, poolSize} = rankedQuickPickCandidates();
   if(!section || !ranked.length){ refreshQuickPickResults(); renderOverlay(); return; }
   state.quickPickOffset = (state.quickPickOffset + 3) % ranked.length;
+  state.quickPickCardIndex = 0;
   const items = [];
   for(let i=0;i<3 && i<ranked.length;i++) items.push(ranked[(state.quickPickOffset+i) % ranked.length]);
   state.quickPickSnapshot = {section, targetMin:ctx.targetMin, primaryDims:ctx.primaryDims, balanceDim:ctx.balanceDim, items, poolSize};
   renderOverlay();
 }
-/* A left flick over the Quick Pick results advances to the next 3 exercises -- exactly
-   refreshQuickPickNext()'s own logic, just triggered by a swipe instead of (or alongside) the
-   "Refresh Exercises" button, with the pagination dots reflecting whichever moved it. Pointer
-   events (not native touch/drag) to match how this app already handles every other gesture.
-   Ignores small movements and anything more vertical than horizontal, so it never hijacks a
-   normal scroll or a tap on the card's own Add button. */
+/* One card shows at a time (the pager dots + arrows above it, or a left/right flick, move
+   between them) -- stepping past the last card of the current 3 rolls straight into
+   refreshQuickPickNext()'s next window of the ranked pool rather than wrapping back to a card
+   you already saw, since that's a genuinely new/different suggestion instead of a repeat.
+   Stepping "previous" from the first card wraps within the current 3 -- there's no previous
+   pool window to go back to, only forward ("Refresh Exercises" never runs in reverse). */
+function stepQuickPickCard(delta){
+  const items = (state.quickPickSnapshot || computeQuickPicks()).items;
+  const n = items.length;
+  if(n <= 1) return;
+  const next = state.quickPickCardIndex + delta;
+  if(next >= n){ refreshQuickPickNext(); return; }
+  state.quickPickCardIndex = next < 0 ? n-1 : next;
+  renderOverlay();
+}
+/* A left/right flick over the current card steps to the next/previous one -- see
+   stepQuickPickCard() above. Pointer events (not native touch/drag) to match how this app
+   already handles every other gesture. Ignores small movements and anything more vertical than
+   horizontal, so it never hijacks a normal scroll or a tap on the card's own Add button. */
 let qpSwipe = null;
 function qpSwipeStart(e){ qpSwipe = {x: e.clientX, y: e.clientY}; }
 function qpSwipeEnd(e){
   if(!qpSwipe) return;
   const dx = e.clientX - qpSwipe.x, dy = e.clientY - qpSwipe.y;
   qpSwipe = null;
-  if(dx < -40 && Math.abs(dx) > Math.abs(dy) * 1.5) refreshQuickPickNext();
+  if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepQuickPickCard(dx < 0 ? 1 : -1);
 }
 function quickPickCardHtml(ex, i, ctx){
   const inPhase = isExerciseInAnyPhase(ex.id);
@@ -7809,6 +7858,7 @@ function renderQuickPickSheetHtml(){
   const label = phase ? phase.label : '';
   const ctx = {primaryDims: result.primaryDims, balanceDim: result.balanceDim, targetMin: result.targetMin, focusTag: state.quickPickCustom.focus, formatTag: state.quickPickCustom.format, phaseLabel: label, dimensionOverride: !!state.quickPickCustom.dimension};
   const n = result.items.length;
+  const idx = Math.min(state.quickPickCardIndex, Math.max(0, n-1)); // defensive clamp -- the index is always reset alongside a new snapshot, but never trust a stale index against a snapshot that's since shrunk
   return `
   <div class="sheet-backdrop" onclick="closeQuickPick()"></div>
   <div class="sheet">
@@ -7819,12 +7869,15 @@ function renderQuickPickSheetHtml(){
     </div>
     ${state.quickPickInfoOpen ? `<div class="qp-info-panel">Quick Pick instantly suggests exercises that fit this section of your practice, based on your session length and this practice's training needs. It's a fast shortcut alongside the full exercise list below &mdash; you can always browse everything yourself or fine-tune these suggestions with Customize.</div>` : ''}
     ${n ? `<div class="balance-sub qp-sub-dark">Here ${n===1?'is':'are'} ${n} suggested exercise${n===1?'':'s'} based on the ${escHtml(label)} section, targeting about ${result.targetMin} min.</div>` : ''}
-    ${n ? `<div class="qp-results" onpointerdown="qpSwipeStart(event)" onpointerup="qpSwipeEnd(event)">${result.items.map((ex,i) => quickPickCardHtml(ex, i, ctx)).join('')}</div>` : `
+    ${n>1 ? `<div class="qp-pager">
+      <button class="qp-pager-arrow" onclick="stepQuickPickCard(-1)" title="Previous suggestion" aria-label="Previous suggestion">${ICONS.back}</button>
+      <div class="qp-dots">${result.items.map((ex2,d)=>`<span class="qp-dot ${d===idx?'active':''}"></span>`).join('')}</div>
+      <button class="qp-pager-arrow" onclick="stepQuickPickCard(1)" title="Next suggestion" aria-label="Next suggestion">${ICONS.chevronRight}</button>
+    </div>` : ''}
+    ${n ? `<div class="qp-results" onpointerdown="qpSwipeStart(event)" onpointerup="qpSwipeEnd(event)">${quickPickCardHtml(result.items[idx], idx, ctx)}</div>` : `
     <div class="empty-state" style="padding:16px 0;">${ICONS.empty}<p>Couldn't find a strong match.</p></div>`}
-    ${n ? `<div class="qp-dots">${[0,1,2].map(d=>`<span class="qp-dot ${d===Math.floor(state.quickPickOffset/3)%3?'active':''}"></span>`).join('')}</div>` : ''}
     ${(n>0 && n<3) ? `<div class="qp-fewer-note">Only ${n} strong match${n===1?'':'es'} right now${(state.quickPickCustom.focus||state.quickPickCustom.format||state.quickPickCustom.time||state.quickPickCustom.dimension)?' for your Customize choices':''} -- showing what's available.</div>` : ''}
     <div class="sheet-footer" style="flex-direction:column;gap:8px;">
-      ${n ? `<button class="btn btn-ghost" style="width:100%;" onclick="refreshQuickPickNext()">${ICONS.swap}<span>Refresh Exercises</span></button>` : ''}
       ${n ? `<button class="btn btn-ghost qp-customize-btn" style="width:100%;" onclick="openQuickPickCustomize()">${ICONS.filter}<span>Customize</span></button>` : ''}
       <button class="btn ${n?'btn-ghost qp-viewall-btn':'btn-primary'}" style="width:100%;" onclick="viewAllFromQuickPick()">View all ${escHtml(label)} exercises</button>
       <button class="btn btn-primary" style="width:100%;" onclick="closeQuickPick()">Done</button>
@@ -7918,10 +7971,12 @@ const state = {
   quickPickCustom: {focus:null, dimension:null, time:null, format:null}, // coach's optional Quick Pick refinements -- reset fresh every time Quick Pick opens; intentionally separate from state.filters, since Quick Pick is not Filters (see QUICK PICK section below)
   quickPickSnapshot: null,        // the 3 (or fewer) recommendations frozen at open/Customize-apply time -- NOT recomputed on every render, so tapping [+ Add] on a card can't cause it to vanish and get replaced (batch 58)
   quickPickOffset: 0,             // how far "Refresh Exercises" has stepped through the ranked list -- see refreshQuickPickNext()
+  quickPickCardIndex: 0,          // which of the current (up to 3) snapshot cards the one-at-a-time pager is showing -- reset to 0 whenever the snapshot itself changes (see refreshQuickPickResults()/refreshQuickPickNext()), separate from quickPickOffset (which tracks position in the underlying ranked pool, not on-screen card position)
   quickPickInfoOpen: false,       // whether the "i" info explanation under the Quick Picks title is expanded
   showAddedInPractice: false,     // whether the "N in [Section]" already-added toggle (batch 60) is expanded -- always reset false on entering/switching a picking phase so every section starts collapsed
   balanceSnapshot: null,          // Balance My Session's frozen recommendation set (batch 63) -- see refreshBalanceResults(), mirrors state.quickPickSnapshot
   balanceOffset: 0,               // how far "Refresh Exercises" has stepped through the ranked list -- see refreshBalanceNext()
+  balanceCardIndex: 0,            // which of the current (up to 3) snapshot cards the one-at-a-time pager is showing -- same idea as quickPickCardIndex above
   balanceInfoOpen: false,         // whether the "i" explanation next to the Balance My Session button is expanded
   trainingProfileInfoOpen: false, // whether the "i" explanation next to the "Training profile" heading is expanded
   filters: { durations: new Set(), tags: new Set(), bookmarkedOnly: false, difficulty: new Set(), focusCategories: new Set(), location: new Set() },
@@ -9837,132 +9892,199 @@ function exerciseListFor(key){
   const es = state.extraSections.find(s=>s.key===key);
   return es ? es.exercises : null;
 }
-let exDrag = null;
-function exGripDown(e, key, id){
-  e.preventDefault();
-  const startY = e.clientY;
-  const timer = setTimeout(()=>{
-    if(!exDrag) return;
-    exDrag.longPressed = true;
-    const row = document.querySelector(`.build-ex-list[data-list-key="${key}"] .build-ex-row[data-ex-id="${id}"]`);
-    if(row) row.classList.add('dragging');
-    if(navigator.vibrate) navigator.vibrate(15);
-  }, 320);
-  exDrag = {key, id, timer, startY, longPressed:false};
-  document.addEventListener('pointermove', exGripMove);
-  document.addEventListener('pointerup', exGripUp);
-}
-function exGripMove(e){
-  if(!exDrag) return;
-  if(!exDrag.longPressed){
-    if(Math.abs(e.clientY - exDrag.startY) > 8){ exGripCancel(); }
-    return;
+/* ============ SHARED DRAG-TO-REORDER ENGINE ============
+   Used by both the Build page's per-phase exercise list (exGripDown/Move/Cancel/Up) and the
+   Review page's per-phase-group list (reviewExGripDown/Move/Cancel/Up) -- same long-press ->
+   live pointer-follow -> adjacent-swap-with-FLIP-animated-neighbor -> settle mechanism,
+   parameterized only by how each screen resolves selectors and applies a swap to its own state
+   shape (see the two configs below).
+
+   The dragged row tracks the pointer directly via a live transform on every pointermove -- no
+   waiting for a render(), unlike the previous version of this code (which only reacted once the
+   pointer crossed into a neighbor's bounding box, then re-rendered the whole screen, so rows
+   just teleported into their new slot with no animation). When the dragged row's visual center
+   crosses an immediate DOM neighbor's midpoint, that one neighbor is physically swapped in the
+   DOM and animated into its new slot with a FLIP transform, while the dragged row's own
+   transform is rebased against its new natural position so it never jumps. The underlying array
+   is updated via the config's onSwap() at the same moment, so it's always authoritative even
+   though the full render() is deferred until drop -- nothing else on either page depends on row
+   order mid-drag, so nothing else needs to update until then. */
+const REORDER_EASE = 'cubic-bezier(0.22,0.61,0.36,1)';
+
+function makeDragReorderController(config){
+  let drag = null;
+
+  function updateDraggedTransform(){
+    const row = drag.row;
+    row.style.transition = 'none';
+    row.style.transform = 'translateY(0px)';
+    const naturalTop = row.getBoundingClientRect().top;
+    const desiredTop = drag.lastY - drag.pointerOffsetInRow;
+    row.style.transform = `translateY(${desiredTop - naturalTop}px) scale(1.02)`;
   }
-  e.preventDefault();
-  const y = e.clientY;
-  const list = exerciseListFor(exDrag.key);
-  if(!list) return;
-  let overId = null;
-  list.forEach(exId=>{
-    const el = document.querySelector(`.build-ex-list[data-list-key="${exDrag.key}"] .build-ex-row[data-ex-id="${exId}"]`);
-    if(!el) return;
-    const r = el.getBoundingClientRect();
-    if(y >= r.top && y <= r.bottom) overId = exId;
-  });
-  if(!overId || overId===exDrag.id) return;
-  const fromIdx = list.indexOf(exDrag.id);
-  const toIdx = list.indexOf(overId);
-  if(fromIdx<0 || toIdx<0) return;
-  const [moved] = list.splice(fromIdx,1);
-  list.splice(toIdx,0,moved);
-  render();
-  const id = exDrag.id, key = exDrag.key;
-  setTimeout(()=>{ const row=document.querySelector(`.build-ex-list[data-list-key="${key}"] .build-ex-row[data-ex-id="${id}"]`); if(row) row.classList.add('dragging'); }, 0);
-}
-function exGripCancel(){
-  if(exDrag) clearTimeout(exDrag.timer);
-  exDrag = null;
-  document.removeEventListener('pointermove', exGripMove);
-  document.removeEventListener('pointerup', exGripUp);
-}
-function exGripUp(){
-  exGripCancel();
-  render();
+
+  function flipNeighbor(row, oldRect){
+    const newRect = row.getBoundingClientRect();
+    const dy = oldRect.top - newRect.top;
+    if(!dy) return;
+    row.style.transition = 'none';
+    row.style.transform = `translateY(${dy}px)`;
+    void row.offsetHeight; // force layout so the browser registers this starting point before we transition away from it
+    row.style.transition = `transform 220ms ${REORDER_EASE}`;
+    row.style.transform = '';
+  }
+
+  function doSwap(neighborRow){
+    const neighborId = neighborRow.dataset.exId;
+    const oldRect = neighborRow.getBoundingClientRect();
+    const neighborFollows = !!(drag.row.compareDocumentPosition(neighborRow) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if(neighborFollows) neighborRow.after(drag.row);
+    else neighborRow.before(drag.row);
+    config.onSwap(drag.ctx, drag.id, neighborId);
+    flipNeighbor(neighborRow, oldRect);
+    updateDraggedTransform();
+  }
+
+  function checkSwaps(){
+    // Looped so a fast drag that crosses several rows in one pointermove event still reorders
+    // correctly instead of lagging a step behind.
+    for(let guard=0; guard<50; guard++){
+      const rows = [...drag.container.querySelectorAll(config.rowSelectorAll)];
+      const idx = rows.indexOf(drag.row);
+      if(idx===-1) break;
+      const draggedRect = drag.row.getBoundingClientRect();
+      const center = draggedRect.top + draggedRect.height/2;
+      const next = rows[idx+1], prev = rows[idx-1];
+      if(next && center > next.getBoundingClientRect().top + next.getBoundingClientRect().height/2){ doSwap(next); continue; }
+      if(prev && center < prev.getBoundingClientRect().top + prev.getBoundingClientRect().height/2){ doSwap(prev); continue; }
+      break;
+    }
+  }
+
+  function acquireRow(){
+    const container = document.querySelector(config.containerSelector(drag.ctx));
+    const row = container && document.querySelector(config.rowSelector(drag.ctx, drag.id));
+    if(!row) return false;
+    drag.container = container;
+    drag.row = row;
+    row.classList.add('dragging');
+    row.style.zIndex = '5';
+    return true;
+  }
+
+  function down(e, ctx, id){
+    e.preventDefault();
+    const startY = e.clientY;
+    drag = {ctx, id, startY, lastY:startY, longPressed:false, container:null, row:null, timer:null};
+    drag.timer = setTimeout(()=>{
+      if(!drag) return;
+      drag.longPressed = true;
+      if(!acquireRow()){ drag = null; return; }
+      drag.pointerOffsetInRow = drag.lastY - drag.row.getBoundingClientRect().top;
+      updateDraggedTransform();
+      if(navigator.vibrate) navigator.vibrate(15);
+    }, 320);
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  }
+
+  function move(e){
+    if(!drag) return;
+    drag.lastY = e.clientY;
+    if(!drag.longPressed){
+      if(Math.abs(e.clientY - drag.startY) > 8) cancel();
+      return;
+    }
+    e.preventDefault();
+    if(!drag.row || !drag.row.isConnected){
+      // Something else re-rendered mid-drag (e.g. a toast) -- reacquire rather than operate on a
+      // detached node, or bail out cleanly if the row is genuinely gone.
+      if(!acquireRow()){ cancel(); return; }
+      drag.pointerOffsetInRow = drag.lastY - drag.row.getBoundingClientRect().top;
+    }
+    updateDraggedTransform();
+    checkSwaps();
+  }
+
+  function cancel(){
+    if(drag) clearTimeout(drag.timer);
+    drag = null;
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+  }
+
+  function up(){
+    const settling = drag && drag.longPressed && drag.row && drag.row.isConnected;
+    if(settling){
+      const row = drag.row;
+      row.style.transition = `transform 220ms ${REORDER_EASE}`;
+      row.style.transform = 'translateY(0px) scale(1)';
+      setTimeout(render, 230);
+    }
+    cancel();
+    if(!settling) render();
+  }
+
+  return {down, move, cancel, up};
 }
 
-// Review-page reordering: same long-press-then-drag mechanism as exGripDown/Move/Up/Cancel above,
-// but scoped by a phase-GROUP key (e.g. "activate") instead of a single phase key, since a
-// group's list on this page can blend exercises from 2-3 real phases into one visual card and
-// the coach can drag freely across that whole blend. A drag never changes which real phase an
-// exercise belongs to (see reviewExGripMove) -- only its position in the Review-page display,
-// and the relative order of same-phase exercises, which is what actually carries into Save.
-let reviewExDrag = null;
-function reviewExGripDown(e, groupKey, id){
-  e.preventDefault();
-  const startY = e.clientY;
-  const timer = setTimeout(()=>{
-    if(!reviewExDrag) return;
-    reviewExDrag.longPressed = true;
-    const row = document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${id}"]`);
-    if(row) row.classList.add('dragging');
-    if(navigator.vibrate) navigator.vibrate(15);
-  }, 320);
-  reviewExDrag = {groupKey, id, timer, startY, longPressed:false};
-  document.addEventListener('pointermove', reviewExGripMove);
-  document.addEventListener('pointerup', reviewExGripUp);
-}
-function reviewExGripMove(e){
-  if(!reviewExDrag) return;
-  if(!reviewExDrag.longPressed){
-    if(Math.abs(e.clientY - reviewExDrag.startY) > 8){ reviewExGripCancel(); }
-    return;
-  }
-  e.preventDefault();
-  const y = e.clientY;
-  const groupKey = reviewExDrag.groupKey;
-  const flat = reviewGroupFlatOrder(groupKey);
-  let overId = null;
-  flat.forEach(it=>{
-    const el = document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${it.id}"]`);
-    if(!el) return;
-    const r = el.getBoundingClientRect();
-    if(y >= r.top && y <= r.bottom) overId = it.id;
-  });
-  if(!overId || overId===reviewExDrag.id) return;
-  const phaseKeyById = new Map(flat.map(it=>[it.id, it.phaseKey]));
-  const ids = flat.map(it=>it.id);
-  const fromIdx = ids.indexOf(reviewExDrag.id);
-  const toIdx = ids.indexOf(overId);
-  if(fromIdx<0 || toIdx<0) return;
-  const [moved] = ids.splice(fromIdx,1);
-  ids.splice(toIdx,0,moved);
-  state.reviewGroupOrder[groupKey] = ids;
-  // Re-sync each real phase's own array to the new relative order of just its own items, so a
-  // same-phase reorder persists normally into the saved session on completeSession(). A custom
-  // section is its own single "phase" here, so it just gets the reordered list directly.
-  const group = PHASE_GROUPS.find(g=>g.key===groupKey);
-  if(group){
-    group.phaseKeys.forEach(key=>{
-      state.phaseData[key] = ids.filter(id=>phaseKeyById.get(id)===key);
-    });
-  } else {
-    const extra = state.extraSections.find(s=>s.key===groupKey);
-    if(extra) extra.exercises = ids;
-  }
-  render();
-  const id = reviewExDrag.id;
-  setTimeout(()=>{ const row=document.querySelector(`.phase-exlist[data-list-key="${groupKey}"] .phase-ex-item[data-ex-id="${id}"]`); if(row) row.classList.add('dragging'); }, 0);
-}
-function reviewExGripCancel(){
-  if(reviewExDrag) clearTimeout(reviewExDrag.timer);
-  reviewExDrag = null;
-  document.removeEventListener('pointermove', reviewExGripMove);
-  document.removeEventListener('pointerup', reviewExGripUp);
-}
-function reviewExGripUp(){
-  reviewExGripCancel();
-  render();
-}
+const buildDragCtl = makeDragReorderController({
+  containerSelector: key => `.build-ex-list[data-list-key="${CSS.escape(key)}"]`,
+  rowSelector: (key, id) => `.build-ex-list[data-list-key="${CSS.escape(key)}"] .build-ex-row[data-ex-id="${CSS.escape(id)}"]`,
+  rowSelectorAll: '.build-ex-row',
+  onSwap(key, draggedId, neighborId){
+    const list = exerciseListFor(key);
+    if(!list) return;
+    const fromIdx = list.indexOf(draggedId);
+    const toIdx = list.indexOf(neighborId);
+    if(fromIdx<0 || toIdx<0) return;
+    const [moved] = list.splice(fromIdx,1);
+    list.splice(toIdx,0,moved);
+  },
+});
+function exGripDown(e, key, id){ buildDragCtl.down(e, key, id); }
+function exGripMove(e){ buildDragCtl.move(e); }
+function exGripCancel(){ buildDragCtl.cancel(); }
+function exGripUp(){ buildDragCtl.up(); }
+
+// Review-page reordering: same shared engine as exGripDown/Move/Up/Cancel above, but scoped by a
+// phase-GROUP key (e.g. "activate") instead of a single phase key, since a group's list on this
+// page can blend exercises from 2-3 real phases into one visual card and the coach can drag
+// freely across that whole blend. A drag never changes which real phase an exercise belongs to
+// (see onSwap below) -- only its position in the Review-page display, and the relative order of
+// same-phase exercises, which is what actually carries into Save.
+const reviewDragCtl = makeDragReorderController({
+  containerSelector: groupKey => `.phase-exlist[data-list-key="${CSS.escape(groupKey)}"]`,
+  rowSelector: (groupKey, id) => `.phase-exlist[data-list-key="${CSS.escape(groupKey)}"] .phase-ex-item[data-ex-id="${CSS.escape(id)}"]`,
+  rowSelectorAll: '.phase-ex-item',
+  onSwap(groupKey, draggedId, neighborId){
+    const flat = reviewGroupFlatOrder(groupKey);
+    const phaseKeyById = new Map(flat.map(it=>[it.id, it.phaseKey]));
+    const ids = flat.map(it=>it.id);
+    const fromIdx = ids.indexOf(draggedId);
+    const toIdx = ids.indexOf(neighborId);
+    if(fromIdx<0 || toIdx<0) return;
+    const [moved] = ids.splice(fromIdx,1);
+    ids.splice(toIdx,0,moved);
+    state.reviewGroupOrder[groupKey] = ids;
+    // Re-sync each real phase's own array to the new relative order of just its own items, so a
+    // same-phase reorder persists normally into the saved session on completeSession(). A custom
+    // section is its own single "phase" here, so it just gets the reordered list directly.
+    const group = PHASE_GROUPS.find(g=>g.key===groupKey);
+    if(group){
+      group.phaseKeys.forEach(key=>{
+        state.phaseData[key] = ids.filter(id=>phaseKeyById.get(id)===key);
+      });
+    } else {
+      const extra = state.extraSections.find(s=>s.key===groupKey);
+      if(extra) extra.exercises = ids;
+    }
+  },
+});
+function reviewExGripDown(e, groupKey, id){ reviewDragCtl.down(e, groupKey, id); }
+function reviewExGripMove(e){ reviewDragCtl.move(e); }
+function reviewExGripCancel(){ reviewDragCtl.cancel(); }
+function reviewExGripUp(){ reviewDragCtl.up(); }
 
 function renderBuild(){
   const presets = [60,75,90];
