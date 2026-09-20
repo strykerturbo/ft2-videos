@@ -1299,6 +1299,11 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .setup-title-name .session-name-pencil{top:10px;}
 .setup-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;}
+.setup-field-card{display:flex;gap:12px;align-items:flex-start;background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:14px;margin-top:12px;}
+.setup-field-icon{width:44px;height:44px;border-radius:12px;background:var(--turf-dim);color:var(--turf);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.setup-field-icon svg{width:19px;height:19px;}
+.setup-field-body{flex:1;min-width:0;}
+.setup-field-body .ps-label{margin-bottom:6px;}
 .setup-date-input{
   /* fs-input (not a smaller size) is protected -- iOS Safari auto-zooms on focus for any real
      text input under 16px, so the width fix here is padding/box-sizing, not font-size. */
@@ -10559,11 +10564,6 @@ function selectSetupTemplate(id){
   render();
 }
 function selectSetupScratch(){ state.setupSelectedTemplateId = null; render(); }
-// Back from Setup never needs to guard against an accidental empty practice: nothing in the live
-// builder state has been touched yet (see startFromSetup below), so there's nothing to undo. If a
-// practice IS already in progress (reached via the "< Setup" button below, batch 70), "back" means
-// back to that practice, not out to Home.
-function backFromPracticeSetup(){ nav(currentTotalMinutes().count>0 ? 'build' : 'home'); }
 // Build Practice's "< Setup" button (batch 70): jump back to Practice Setup to tweak this
 // already-in-progress practice's name/date/duration/location/template. Unlike initSetupDraft()
 // (fresh-start defaults), this seeds Setup's draft fields from the CURRENT practice, and
@@ -10645,21 +10645,24 @@ function renderPracticeSetup(){
 
   return `
   <div class="section-pad">
-    <button class="back-pill-flat" onclick="backFromPracticeSetup()">${ICONS.back} Back</button>
-    <div class="eyebrow" style="margin-top:16px;">New Session</div>
+    <div class="eyebrow">New Session</div>
     <div class="session-name-wrap setup-title-name">
       <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)">
       <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
 
-    <div class="setup-row-2col">
-      <div class="setup-block tight">
-        <div class="ps-label with-icon">${ICONS.calendar}<span>Date</span></div>
+    <div class="setup-field-card">
+      <div class="setup-field-icon">${ICONS.calendar}</div>
+      <div class="setup-field-body">
+        <div class="ps-label">Date</div>
         <input type="date" class="setup-date-input" value="${state.setupDate}" onchange="setSetupDate(this.value)">
       </div>
+    </div>
 
-      <div class="setup-block tight">
-        <div class="ps-label with-icon">${ICONS.clock}<span>Duration (min)</span></div>
+    <div class="setup-field-card">
+      <div class="setup-field-icon">${ICONS.clock}</div>
+      <div class="setup-field-body">
+        <div class="ps-label">Duration (min)</div>
         <div class="duration-target col">
           <div class="duration-target-row">
             ${presets.map(v => `<button class="dtarget ${state.setupDuration===v?'active':''}" onclick="setSetupDuration(${v})">${v}</button>`).join('')}
@@ -10671,11 +10674,14 @@ function renderPracticeSetup(){
       </div>
     </div>
 
-    <div class="setup-block">
-      <div class="ps-label">Location</div>
-      <div class="location-toggle setup-loc-toggle">
-        <button class="loc-btn ${state.setupLocation==='outdoor'?'active':''}" onclick="setSetupLocation('outdoor')">${ICONS.sun} Outdoor</button>
-        <button class="loc-btn ${state.setupLocation==='indoor'?'active':''}" onclick="setSetupLocation('indoor')">${ICONS.home} Indoor</button>
+    <div class="setup-field-card">
+      <div class="setup-field-icon">${ICONS.globe}</div>
+      <div class="setup-field-body">
+        <div class="ps-label">Location</div>
+        <div class="location-toggle setup-loc-toggle">
+          <button class="loc-btn ${state.setupLocation==='outdoor'?'active':''}" onclick="setSetupLocation('outdoor')">${ICONS.sun} Outdoor</button>
+          <button class="loc-btn ${state.setupLocation==='indoor'?'active':''}" onclick="setSetupLocation('indoor')">${ICONS.home} Indoor</button>
+        </div>
       </div>
     </div>
 
