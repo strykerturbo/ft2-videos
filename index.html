@@ -749,6 +749,7 @@ select.section-select option{color:var(--ink);background:var(--bg-surface);text-
 .draft-hint svg{width:10px;height:10px;flex-shrink:0;opacity:0.7;}
 .detail-header h1{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-size:var(--fs-display);line-height:1.08;margin:0 0 12px;font-weight:700;}
 .stat-row{display:flex;gap:10px;}
+.sd-saved-caption{margin-top:10px;font-size:var(--fs-sm);color:rgba(255,255,255,0.65);}
 .stat{background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;flex:1;}
 .stat .snum{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-xl);}
 .stat .slbl{font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:0.05em;color:rgba(255,255,255,0.7);}
@@ -1283,7 +1284,12 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   display:flex;align-items:center;justify-content:center;gap:6px;
 }
 .build-add-btn svg{width:13px;height:13px;}
-.session-state-tag{display:inline-block;font-size:var(--fs-2xs);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;padding:5px 10px;border-radius:20px;flex-shrink:0;}
+.session-state-tag{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-2xs);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;padding:5px 10px;border-radius:20px;flex-shrink:0;}
+/* The plain "New"/"In Progress" tags are text-only, but the Session Detail header's Shared/
+   Private/By-coach variant (renderSessionDetail()) puts an icon in front of the text -- without an
+   explicit size, that SVG rendered at the browser's oversized intrinsic default instead of a small
+   inline icon. */
+.session-state-tag svg{width:13px;height:13px;flex-shrink:0;}
 .session-state-tag.new{background:var(--bg-surface);color:var(--ink-soft);border:1px solid var(--line);}
 .session-state-tag.inprogress{background:var(--cone-dim);color:#7a4a10;border:1px solid var(--cone);}
 .session-state-tag.saved{background:rgba(255,255,255,0.18);color:white;position:absolute;top:16px;right:18px;}
@@ -10969,6 +10975,7 @@ function renderSessionDetail(){
         ? `<div class="snum-row"><span class="snum-editable" contenteditable="true" onblur="setSavedSessionDuration('${escJsAttr(s.id)}', this.innerText)">${s.targetDuration}</span></div>`
         : `<div class="snum">${s.targetDuration}</div>`}<div class="slbl">Target</div></div>
     </div>
+    <div class="sd-saved-caption">Saved ${formatWhen(s.createdAt)}</div>
   </div>
   <div class="section-pad">
     <div class="rate-session-box">
@@ -10987,7 +10994,6 @@ function renderSessionDetail(){
     </div>
     <div class="sd-meta-row" style="margin-top:10px;">
       <div class="sd-meta"><div class="smnum">${s.createdBy}</div><div class="smlbl">Added by</div></div>
-      <div class="sd-meta"><div class="smnum">${formatWhen(s.createdAt)}</div><div class="smlbl">Saved</div></div>
     </div>
 
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>

@@ -208,6 +208,20 @@ function readSessions(requestingCoach) {
       }
       delete obj.phasesJson;
       obj.favorited = (obj.favorited === true || obj.favorited === 'true' || obj.favorited === 'TRUE');
+      // practiceDate is written as a plain "YYYY-MM-DD" string, but that shape is exactly what
+      // Sheets' own input parser auto-detects as a real date and silently converts the cell to --
+      // so it can come back here as a JS Date object instead of the string the client sent. Left
+      // alone, JSON.stringify() turns that Date into a full ISO timestamp ("...T00:00:00.000Z"),
+      // which index.html's formatPracticeDateShort() can't parse and silently blanks out (this is
+      // exactly what caused Practice Date to show blank on the Session Detail screen). Converting
+      // back to YYYY-MM-DD here using the Date's own local fields (not toISOString(), which can
+      // shift the day for a coach west of UTC) heals both older rows already written this way and
+      // any that slip through despite the plain-text write in upsertSession() below.
+      if (obj.practiceDate instanceof Date) {
+        const d = obj.practiceDate;
+        const pad = n => String(n).padStart(2, '0');
+        obj.practiceDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
       return obj;
     });
 }
@@ -243,8 +257,18 @@ function upsertSession(session, requestingCoach) {
     if (h === 'updatedAt') return Date.now();
     return session[h] !== undefined && session[h] !== null ? session[h] : '';
   });
+  const destRow = rowIndex === -1 ? sheet.getLastRow() + 1 : rowIndex;
+  // Force the practiceDate cell to Plain Text *before* writing the row -- otherwise Sheets sees
+  // the "YYYY-MM-DD" string and auto-converts the cell to a real date, which is what corrupts it
+  // on the next read (see the practiceDate handling in readSessions() above). Setting the format
+  // has to happen before setValues(); doing it after only changes the display, not the type
+  // Sheets already committed the cell to.
+  const practiceDateCol = SESSIONS_HEADERS.indexOf('practiceDate');
+  if (practiceDateCol !== -1) {
+    sheet.getRange(destRow, practiceDateCol + 1).setNumberFormat('@');
+  }
   if (rowIndex === -1) {
-    sheet.appendRow(row);
+    sheet.getRange(destRow, 1, 1, row.length).setValues([row]);
   } else {
     sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
   }
