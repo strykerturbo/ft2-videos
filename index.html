@@ -1040,6 +1040,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pei-thumb-fallback svg{width:15px;height:15px;opacity:0.9;}
 .pei-thumb-fallback-label{font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:0.02em;opacity:0.9;text-align:center;line-height:1.2;padding:0 3px;}
 .phase-ex-item .peiname{flex:1;font-size:var(--fs-md);font-weight:600;}
+.phase-ex-item .peiname.peiname-missing{font-style:italic;font-weight:500;color:var(--ink-soft);}
 .phase-ex-item .peidur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;}
 .phase-ex-item button{background:none;border:none;color:var(--ink-soft);padding:8px;display:flex;margin:-8px;}
 .phase-ex-item button svg{width:15px;height:15px;}
@@ -1234,10 +1235,21 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-ex-list .build-ex-row:first-child{border-top:none;}
 /* Diagram and title/text each take half the row -- equal flex-grow off a 0 basis, with the image
    stretching (flex default cross-axis behavior) to match however tall the text side naturally is. */
-.build-ex-image{flex:1;min-width:0;min-height:80px;border-radius:10px;overflow:hidden;background:var(--chalk-dim);}
+.build-ex-image{
+  /* Fixed rectangle, not flex:1 -- it used to stretch to match .build-ex-info's height, which grows
+     with however many setup/variation bullets an exercise has, so a 3-bullet row made the thumbnail
+     tower to match. align-self:flex-start keeps it from stretching even though the row is a flex
+     container. */
+  width:110px;height:82px;flex:0 0 auto;align-self:flex-start;border-radius:10px;overflow:hidden;background:var(--chalk-dim);
+}
 .build-ex-image img,.build-ex-image video{width:100%;height:100%;object-fit:cover;display:block;}
-.build-ex-image-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
-.build-ex-image-fallback svg{width:24px;height:24px;}
+.build-ex-image-fallback{
+  /* Deliberately a fixed dark neutral, not a theme token or the exercise's section color -- a plain
+     "no media yet" placeholder should look the same regardless of section or light/dark theme. */
+  width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#374151;color:#E2E8F0;
+}
+.build-ex-image-fallback svg{width:20px;height:20px;opacity:0.85;}
+.build-ex-image-fallback-label{font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:0.02em;opacity:0.85;text-align:center;line-height:1.2;padding:0 6px;}
 .build-ex-info{flex:1;min-width:0;}
 .build-ex-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
 .build-ex-name{font-size:var(--fs-md);font-weight:700;line-height:1.3;}
@@ -7944,6 +7956,7 @@ function backFromDetail(){
   if(state.fromReview){ nav('review'); return; }
   if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
   if(state.fromHome){ nav('home', {fromHome:false}); return; }
+  if(state.fromBuildList){ nav('build', {fromBuildList:false}); return; }
   // Always back to Explore Exercises -- when fromBuild is true, state.pickingPhase is still set
   // (they're set together, only ever in pickForPhase()), so this naturally lands the coach back
   // on the same Building Session picker screen they came from rather than the full phase grid.
@@ -7968,6 +7981,7 @@ const state = {
   fromSavedSession: false,    // came from a SAVED practice's detail screen (viewing or adding)
   fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
   fromHome: false,            // came from Home's Featured Exercise card -- backFromDetail() returns to Home, not the Explore Exercises fallback
+  fromBuildList: false,      // tapped an already-added exercise's row on the Build page itself (distinct from fromBuild, the picker flow) -- backFromDetail() returns to Build
   editingSavedSessionId: null,// set while browsing the library to add an exercise to a saved
                                // session (as opposed to the live build-a-new-session draft)
   replaceContext: null,       // {key, oldId, returnTo} while picking a replacement for an
@@ -8947,7 +8961,10 @@ function targetPhaseKeyFor(ex){
 }
 /* Small visual thumbnail for an exercise row — quick "what am I doing" scan, echoing a coach's own session-sheet doodles */
 function peiThumbHtml(ex){
-  if(!ex) return `<div class="pei-thumb" style="background:var(--chalk-dim);"></div>`;
+  // ex is undefined when this id no longer resolves in EXERCISES (the exercise it pointed to was
+  // removed/renamed upstream) -- a blank chalk-dim box here used to look like an empty loading
+  // state rather than the actual problem, leaving the coach unable to tell why a row had no name.
+  if(!ex) return `<div class="pei-thumb"><div class="build-ex-image-fallback">${ICONS.image}<span class="build-ex-image-fallback-label">Missing</span></div></div>`;
   const st = secStyle(ex.section);
   const noMedia = `<div class="pei-thumb-fallback" style="background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}<span class="pei-thumb-fallback-label">Coming soon</span></div>`;
   if(ex.mediaUrl) return `<div class="pei-thumb">${mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, noMedia)}</div>`;
@@ -9318,6 +9335,10 @@ function openDetail(id){ nav('detail', {detailId:id, fromHome:false}); }
 function openDetailFromHome(id){ nav('detail', {detailId:id, fromHome:true, fromBuild:false, fromReview:false, fromSavedSession:false}); }
 function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false, fromSavedSession:false, fromHome:false}); }
 function openDetailFromSavedSession(id, sessionId){ nav('detail', {detailId:id, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, fromHome:false}); }
+// Tapping an exercise already added to a Building Session phase -- distinct from fromBuild (which
+// means "came from the Explore Exercises picker" and returns there via backFromDetail()'s
+// fallthrough); this returns straight to the Build page itself.
+function openDetailFromBuild(id){ nav('detail', {detailId:id, fromBuildList:true, fromBuild:false, fromReview:false, fromSavedSession:false, fromHome:false}); }
 
 function renderDetail(){
   const ex = exById(state.detailId);
@@ -9336,7 +9357,7 @@ function renderDetail(){
 
   return `
   <div class="detail-header" style="background:${st.bg};">
-    ${state.fromBuild
+    ${(state.fromBuild || state.fromBuildList)
       ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
       : state.fromReview
         ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
@@ -9877,21 +9898,40 @@ function extractBullets(ex, maxBullets){
    event.stopPropagation() since these rows are otherwise clickable to open the exercise detail. */
 function replaceButtonHtml(key, id, returnTo){
   const ex = exById(id);
-  return `<button class="build-ex-replace" onclick="event.stopPropagation(); pickReplacementFor('${key}','${escJsAttr(id)}','${returnTo}')" title="Replace ${escAttr(ex?ex.name:'')}">${ICONS.swap}</button>`;
+  return `<button class="build-ex-replace" onclick="event.stopPropagation(); pickReplacementFor('${key}','${escJsAttr(id)}','${returnTo}')" title="${ex?`Replace ${escAttr(ex.name)}`:'Replace this unavailable exercise'}">${ICONS.swap}</button>`;
 }
 
 function buildExRowHtml(id, key, removeCall, showGrip){
   const ex = exById(id);
-  if(!ex) return '';
-  const st = secStyle(ex.section);
+  // ex is undefined when this id no longer resolves in EXERCISES (removed/renamed upstream since
+  // it was added). This used to `return ''` -- silently dropping the row -- but the phase header's
+  // count is the raw array length, so a coach would see e.g. "1 exercise" on a phase that visibly
+  // showed none, with no way to find or remove the dangling reference. Render it as a clearly-
+  // labeled, still-removable row instead, same treatment as the identical problem on Review.
+  if(!ex){
+    return `
+    <div class="build-ex-row" data-ex-id="${escAttr(id)}">
+      ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" onclick="event.stopPropagation();" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
+      <div class="build-ex-image"><div class="build-ex-image-fallback">${ICONS.image}<span class="build-ex-image-fallback-label">Missing</span></div></div>
+      <div class="build-ex-info">
+        <div class="build-ex-name-row">
+          <div class="build-ex-name" style="font-style:italic;font-weight:500;color:var(--ink-soft);">Exercise unavailable</div>
+          <div class="build-ex-actions">
+            ${replaceButtonHtml(key, id, 'build')}
+            <button class="build-ex-remove" onclick="event.stopPropagation(); ${removeCall}" title="Remove this unavailable exercise">${ICONS.trash}</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
   const bullets = extractBullets(ex, 3);
-  const exFallback = `<div class="build-ex-image-fallback" style="background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`;
+  const exFallback = `<div class="build-ex-image-fallback">${ICONS.image}<span class="build-ex-image-fallback-label">Diagram coming soon</span></div>`;
   const img = ex.mediaUrl
     ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, exFallback)
     : exFallback;
   return `
-  <div class="build-ex-row" data-ex-id="${escAttr(id)}">
-    ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
+  <div class="build-ex-row" data-ex-id="${escAttr(id)}" onclick="openDetailFromBuild('${escJsAttr(id)}')" style="cursor:pointer;">
+    ${showGrip ? `<span class="build-ex-grip" onpointerdown="exGripDown(event,'${key}','${id}')" onclick="event.stopPropagation();" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}
     <div class="build-ex-image">${img}</div>
     <div class="build-ex-info">
       <div class="build-ex-name-row">
@@ -9899,7 +9939,7 @@ function buildExRowHtml(id, key, removeCall, showGrip){
         <div class="build-ex-actions">
           <span class="build-ex-dur">${ex.duration||10}m</span>
           ${replaceButtonHtml(key, id, 'build')}
-          <button class="build-ex-remove" onclick="${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
+          <button class="build-ex-remove" onclick="event.stopPropagation(); ${removeCall}" title="Remove ${escAttr(ex.name)}">${ICONS.trash}</button>
         </div>
       </div>
       ${bullets.length ? `<ul class="build-ex-bullets">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>` : ''}
@@ -10521,7 +10561,7 @@ function renderReview(){
               ${g.items.length ? g.items.map(it=>{
                 const ex=exById(it.id);
                 const showGrip = g.items.length>1;
-                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;
+                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;
               }).join('') : `<div class="build-ex-empty">No exercises yet</div>`}
             </div>
           </div>
@@ -10538,7 +10578,7 @@ function renderReview(){
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins} min`}</div></div>
             ${planned ? (phaseProgressBarHtml(mins, planned) || '') : ''}
             <div class="phase-exlist" data-list-key="${s.key}">
-              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${escAttr(id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${escJsAttr(id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}<span class="peiname">${ex?ex.name:''}</span><span class="peidur">${ex?.duration||10}m</span>${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${escJsAttr(id)}')" title="Remove ${escAttr(ex?ex.name:'')}">${ICONS.trash}</button></div>`;}).join('')}
+              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${escAttr(id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${escJsAttr(id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${escJsAttr(id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
         </div>`;
