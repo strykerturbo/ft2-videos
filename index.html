@@ -973,12 +973,25 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .tp-chevron svg{width:16px;height:16px;transform:rotate(90deg);}
 .tp-chevron.open svg{transform:rotate(-90deg);}
 .tp-body{padding:0 13px 13px;border-top:1px solid var(--line);padding-top:12px;}
-.tp-row-label{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:6px;}
-.split-bar{display:flex;height:11px;border-radius:6px;overflow:hidden;background:var(--chalk-dim);}
-.split-legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 8px;}
-.split-legend-item{font-size:var(--fs-xs);color:var(--ink-soft);font-weight:600;display:flex;align-items:center;gap:6px;line-height:1.35;}
-.split-legend-item i{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
-.split-legend-item span{color:var(--ink-soft);font-weight:500;}
+.sb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sb-header-title{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);}
+.sb-total{font-family:'Inter',sans-serif;font-size:var(--fs-md);font-weight:700;color:var(--ink-soft);}
+.sb-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--chalk-dim);margin-bottom:6px;}
+.sb-row{border-top:1px solid var(--line);padding:12px 0;}
+.sb-row:first-child{border-top:none;}
+.sb-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sb-row-left{display:flex;align-items:center;gap:9px;min-width:0;}
+.sb-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.sb-row-label{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.sb-row-sublabel{font-size:var(--fs-2xs);color:var(--ink-soft);}
+.sb-row-status{flex-shrink:0;display:flex;align-items:center;}
+.sb-check{color:var(--turf);display:flex;}
+.sb-check svg{width:16px;height:16px;}
+.sb-diff{font-size:var(--fs-xs);font-weight:800;white-space:nowrap;}
+.sb-row-bottom{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.sb-row-mins{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);flex-shrink:0;white-space:nowrap;}
+.sb-row-track{flex:1;height:5px;}
+.sb-row-fill{height:100%;border-radius:6px;transition:width .2s;}
 
 .phase-strip{margin-top:20px;position:relative;}
 .phase-card{
@@ -7180,6 +7193,7 @@ function trainingProfileInfoPanelHtml(){
 }
 function toggleTrainingProfileInfo(){ state.trainingProfileInfoOpen = !state.trainingProfileInfoOpen; render(); }
 function toggleBalanceInfo(){ state.balanceInfoOpen = !state.balanceInfoOpen; render(); }
+function toggleSessionBalanceInfo(){ state.sessionBalanceInfoOpen = !state.sessionBalanceInfoOpen; render(); }
 
 /* ============ TRAINING-PROFILE-AWARE DISCOVERY & QUICK PICK ============ */
 /* Maps a tag VALUE (e.g. "Speed", "Possession", "Decision Making") to the single Training
@@ -8013,6 +8027,7 @@ const state = {
   balanceCardIndex: 0,            // which of the current (up to 3) snapshot cards the one-at-a-time pager is showing -- same idea as quickPickCardIndex above
   balanceInfoOpen: false,         // whether the "i" explanation next to the Balance My Session button is expanded
   trainingProfileInfoOpen: false, // whether the "i" explanation next to the "Training profile" heading is expanded
+  sessionBalanceInfoOpen: false,  // whether the "i" explanation next to "Session Balance" (Review's Time Breakdown) is expanded
   filters: { durations: new Set(), tags: new Set(), bookmarkedOnly: false, difficulty: new Set(), focusCategories: new Set(), location: new Set() },
   bookmarks: new Set(),
   targetDuration: 75,
@@ -9581,20 +9596,51 @@ function updateExerciseFormat(id, value){
    Session Detail passes its own frozen total/target/group-minutes instead, so the exact same
    panel and math serve both a live draft and a historical record. */
 // Shared by renderTimeComparisonPanel() below and the Review page's compact row (batch 65) --
-// the actual-vs-suggested split bars + legend, independent of whatever triggers showing them.
+// the "Session Balance" breakdown, independent of whatever triggers showing it. The header bar's
+// segments are sized by each group's share of the actual total (not the target), so it always
+// reads as "how your built time is currently split" -- a session well under target still fills
+// the bar edge-to-edge instead of leaving a confusing empty tail.
 function timeComparisonBodyHtml(total, target, groups){
   const suggestedMins = suggestedSplitMinutes(target);
-  const actualSegs = PHASE_GROUPS.map(s => `<div style="width:${Math.max(0, groups[s.key]/target*100)}%;background:${s.bg};"></div>`).join('');
-  const suggestedSegs = PHASE_GROUPS.map(s => `<div style="width:${s.pct}%;background:${s.bg};"></div>`).join('');
-  return `
-    <div class="tp-body">
-      <div class="tp-row-label">Your session</div>
-      <div class="split-bar">${actualSegs}</div>
-      <div class="tp-row-label" style="margin-top:9px;">Suggested split</div>
-      <div class="split-bar">${suggestedSegs}</div>
-      <div class="split-legend" style="margin-top:10px;">
-        ${PHASE_GROUPS.map((s,i) => `<div class="split-legend-item"><i style="background:${s.bg};"></i>${s.label} &middot; ${groups[s.key]}m <span>(sugg. ~${suggestedMins[i]}m)</span></div>`).join('')}
+  const barSegs = PHASE_GROUPS.map(s => `<div style="width:${total>0 ? Math.max(0, groups[s.key]/total*100) : 0}%;background:${s.bg};"></div>`).join('');
+  const rows = PHASE_GROUPS.map((s,i) => {
+    const actual = groups[s.key];
+    const t = suggestedMins[i];
+    const met = t<=0 || actual>=t;
+    const over = t>0 && actual>t;
+    const pct = t>0 ? Math.min(100, Math.round(actual/t*100)) : (actual>0?100:0);
+    const statusHtml = met
+      ? `<span class="sb-check" title="On target">${ICONS.check}</span>`
+      : `<span class="sb-diff" style="color:${s.color};">+${t-actual} min</span>`;
+    return `
+    <div class="sb-row">
+      <div class="sb-row-top">
+        <div class="sb-row-left">
+          <span class="sb-dot" style="background:${s.bg};"></span>
+          <div>
+            <div class="sb-row-label">${escHtml(s.label)}</div>
+            <div class="sb-row-sublabel">${escHtml(s.sublabel)}</div>
+          </div>
+        </div>
+        <div class="sb-row-status">${statusHtml}</div>
       </div>
+      <div class="sb-row-bottom">
+        <div class="sb-row-mins">${actual} / ${t} min${over?` <span class="phase-over-tag">Over</span>`:''}</div>
+        <div class="progress-track sb-row-track"><div class="sb-row-fill" style="width:${pct}%;background:${s.bg};"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+  return `
+    <div class="tp-body sb-body">
+      <div class="sb-header">
+        <div class="sb-header-title">Session Balance
+          <button class="qp-info-btn" onclick="toggleSessionBalanceInfo()" title="What is Session Balance?" aria-label="What is Session Balance?">i</button>
+        </div>
+        <div class="sb-total">${total} min</div>
+      </div>
+      ${state.sessionBalanceInfoOpen ? `<div class="qp-info-panel">Shows how this practice's time splits across Activate (Warmup + Athletic), Develop (Duels, Rondos, Small Sided Games), and Play (Scrimmage), against the suggested split for a session this long.</div>` : ''}
+      <div class="sb-bar">${barSegs}</div>
+      <div class="sb-rows">${rows}</div>
     </div>`;
 }
 function renderTimeComparisonPanel(totalOverride, targetOverride, groupsOverride){
