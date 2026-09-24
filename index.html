@@ -241,7 +241,7 @@ a{color:inherit;text-decoration:none;}
 #content{
   flex:1;
   overflow-y:auto;
-  padding-bottom:calc(130px + env(safe-area-inset-bottom)); /* keeps the same clearance above the 1.75x-taller .bottomnav */
+  padding-bottom:calc(110px + env(safe-area-inset-bottom)); /* keeps the same clearance above .bottomnav's current height */
   background:var(--chalk);
 }
 #content::-webkit-scrollbar{width:0;}
@@ -253,8 +253,8 @@ a{color:inherit;text-decoration:none;}
   position:absolute;bottom:0;left:0;right:0;z-index:50;
   background:var(--chrome);
   display:flex;justify-content:space-around;align-items:stretch;
-  /* Scaled 1.75x from the original 7px/6px per request. */
-  padding:12px 11px calc(12px + env(safe-area-inset-bottom));
+  /* Scaled 1.75x, then reduced to 80% of that (net 1.4x of the original 7px/6px), per request. */
+  padding:10px 9px calc(10px + env(safe-area-inset-bottom));
   box-shadow:var(--shadow-chrome);
   border-top:1px solid transparent; /* dark mode gives this a real color below -- light mode
                                         already separates via --shadow-chrome alone */
@@ -265,26 +265,22 @@ a{color:inherit;text-decoration:none;}
 }
 .navitem{
   flex:1;min-width:0;background:none;border:none;color:rgba(255,255,255,0.6);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   font-family:'Inter',sans-serif;
-  padding:9px 4px;border-radius:21px;
+  padding:7px 3px;border-radius:17px;
   transition:background-color var(--transition-fast),color var(--transition-fast);
 }
 .navitem-label{
-  /* 1.75x of --fs-2xs (10px) -- a literal value here, not the shared token, so this doesn't also
-     resize every other small uppercase label across the app that happens to use --fs-2xs. */
-  font-size:17.5px;font-weight:600;letter-spacing:0.01em;
+  /* Net 1.4x of --fs-2xs (10px) -- a literal value here, not the shared token, so this doesn't
+     also resize every other small uppercase label across the app that happens to use --fs-2xs. */
+  font-size:14px;font-weight:600;letter-spacing:0.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1;
 }
 /* Active = the one universal nav accent (--turf), never a phase color -- color alone never
    carries the state alone, a soft teal pill + bolder label weight go with it. */
 .navitem.active{color:var(--turf);background:color-mix(in srgb, var(--turf) 18%, transparent);}
 .navitem.active .navitem-label{font-weight:700;}
-.navitem svg{width:35px;height:35px;flex-shrink:0;}
-/* The Exercises tab uses the real Apple soccer-ball emoji instead of a drawn icon (by request) --
-   a fixed-color glyph, so unlike the other nav icons it can't pick up .navitem.active's --turf
-   recolor; sized by font-size instead of the svg width/height rule above. */
-.navitem-emoji{font-size:32px;line-height:1;}
+.navitem svg{width:28px;height:28px;flex-shrink:0;}
 
 /* ---------- home ---------- */
 .main-actions-row{display:flex;gap:4px;margin-top:6px;}
@@ -304,7 +300,6 @@ a{color:inherit;text-decoration:none;}
 }
 .mact-icon svg{width:27px;height:27px;}
 .mact-icon img.icon-ball-img{width:27px;height:27px;display:block;}
-.mact-emoji{font-size:26px;line-height:1;}
 .mact-label{display:flex;flex-direction:column;gap:1px;text-align:center;font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-base);color:white;line-height:1.25;}
 .mact-stat{font-size:var(--fs-xs);color:rgba(255,255,255,0.72);margin-top:3px;text-align:center;font-variant-numeric:tabular-nums;}
 
@@ -6255,6 +6250,10 @@ const LOGO_MARK = `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAA
 
 const ICONS = {
   home: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5M9 20v-5h6v5"/></g></svg>`,
+  // Solid/filled house, scoped to the bottom nav's Home tab only (per a screenshot of ESPN's app) --
+  // a separate icon from the plain outline `home` above, which stays as-is everywhere else it's
+  // used (Indoor location chips, templates, exercise cards) since only the nav tab was asked to change.
+  homeFilled: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
   search: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4 4"/></g></svg>`,
   bookmark: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5Z"/></g></svg>`,
   lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
@@ -8178,8 +8177,8 @@ function renderBottomnav(){
       <span class="navitem-label">${label}</span>
     </button>`;
   el.innerHTML = `
-    ${item('home','Home',ICONS.home,"nav('home')")}
-    ${item('exercises','Exercises','<span class="navitem-emoji">⚽</span>',"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
+    ${item('home','Home',ICONS.homeFilled,"nav('home')")}
+    ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
     ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
   `;
@@ -8725,7 +8724,7 @@ function renderHome(){
 
     <div class="main-actions-row">
       <button class="mac-tile" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
-        <div class="mact-icon"><span class="mact-emoji">⚽</span></div>
+        <div class="mact-icon">${ICONS.ballOutline}</div>
         <div class="mact-label"><span>Exercise</span><span>Library</span></div>
         <div class="mact-stat">${totalEx} Exercises</div>
       </button>
