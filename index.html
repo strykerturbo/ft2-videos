@@ -241,7 +241,7 @@ a{color:inherit;text-decoration:none;}
 #content{
   flex:1;
   overflow-y:auto;
-  padding-bottom:calc(86px + env(safe-area-inset-bottom));
+  padding-bottom:calc(130px + env(safe-area-inset-bottom)); /* keeps the same clearance above the 1.75x-taller .bottomnav */
   background:var(--chalk);
 }
 #content::-webkit-scrollbar{width:0;}
@@ -253,7 +253,8 @@ a{color:inherit;text-decoration:none;}
   position:absolute;bottom:0;left:0;right:0;z-index:50;
   background:var(--chrome);
   display:flex;justify-content:space-around;align-items:stretch;
-  padding:7px 6px calc(7px + env(safe-area-inset-bottom));
+  /* Scaled 1.75x from the original 7px/6px per request. */
+  padding:12px 11px calc(12px + env(safe-area-inset-bottom));
   box-shadow:var(--shadow-chrome);
   border-top:1px solid transparent; /* dark mode gives this a real color below -- light mode
                                         already separates via --shadow-chrome alone */
@@ -264,20 +265,26 @@ a{color:inherit;text-decoration:none;}
 }
 .navitem{
   flex:1;min-width:0;background:none;border:none;color:rgba(255,255,255,0.6);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   font-family:'Inter',sans-serif;
-  padding:5px 2px;border-radius:12px;
+  padding:9px 4px;border-radius:21px;
   transition:background-color var(--transition-fast),color var(--transition-fast);
 }
 .navitem-label{
-  font-size:var(--fs-2xs);font-weight:600;letter-spacing:0.01em;
+  /* 1.75x of --fs-2xs (10px) -- a literal value here, not the shared token, so this doesn't also
+     resize every other small uppercase label across the app that happens to use --fs-2xs. */
+  font-size:17.5px;font-weight:600;letter-spacing:0.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1;
 }
 /* Active = the one universal nav accent (--turf), never a phase color -- color alone never
    carries the state alone, a soft teal pill + bolder label weight go with it. */
 .navitem.active{color:var(--turf);background:color-mix(in srgb, var(--turf) 18%, transparent);}
 .navitem.active .navitem-label{font-weight:700;}
-.navitem svg{width:20px;height:20px;flex-shrink:0;}
+.navitem svg{width:35px;height:35px;flex-shrink:0;}
+/* The Exercises tab uses the real Apple soccer-ball emoji instead of a drawn icon (by request) --
+   a fixed-color glyph, so unlike the other nav icons it can't pick up .navitem.active's --turf
+   recolor; sized by font-size instead of the svg width/height rule above. */
+.navitem-emoji{font-size:32px;line-height:1;}
 
 /* ---------- home ---------- */
 .main-actions-row{display:flex;gap:4px;margin-top:6px;}
@@ -297,6 +304,7 @@ a{color:inherit;text-decoration:none;}
 }
 .mact-icon svg{width:27px;height:27px;}
 .mact-icon img.icon-ball-img{width:27px;height:27px;display:block;}
+.mact-emoji{font-size:26px;line-height:1;}
 .mact-label{display:flex;flex-direction:column;gap:1px;text-align:center;font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-base);color:white;line-height:1.25;}
 .mact-stat{font-size:var(--fs-xs);color:rgba(255,255,255,0.72);margin-top:3px;text-align:center;font-variant-numeric:tabular-nums;}
 
@@ -8171,7 +8179,7 @@ function renderBottomnav(){
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.home,"nav('home')")}
-    ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
+    ${item('exercises','Exercises','<span class="navitem-emoji">⚽</span>',"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
     ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()",['sessions','sessionDetail'])}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
   `;
@@ -8717,7 +8725,7 @@ function renderHome(){
 
     <div class="main-actions-row">
       <button class="mac-tile" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
-        <div class="mact-icon">${ICONS.ball}</div>
+        <div class="mact-icon"><span class="mact-emoji">⚽</span></div>
         <div class="mact-label"><span>Exercise</span><span>Library</span></div>
         <div class="mact-stat">${totalEx} Exercises</div>
       </button>
@@ -11201,7 +11209,11 @@ function loadAppStateFromStorage(){
     // Restore navigation context last, once savedSessions/etc. above are already in place, so the
     // screen-specific data a restored screen depends on (a saved session's id, an exercise's id)
     // can actually be checked against real, current data rather than trusted blindly.
-    if(typeof snap.screen === 'string' && screens[snap.screen]){
+    // Skipped entirely when opened as the installed Home Screen web app (navigator.standalone) --
+    // tapping that icon should always open to Home, not wherever the coach last was, even though
+    // the actual draft/session data above is still restored either way. A regular Safari tab
+    // (navigator.standalone is false there) keeps resuming the last screen as before.
+    if(typeof snap.screen === 'string' && screens[snap.screen] && window.navigator.standalone !== true){
       let restoredScreen = snap.screen;
       state.detailId = snap.detailId ?? null;
       state.pickingPhase = snap.pickingPhase ?? null;
