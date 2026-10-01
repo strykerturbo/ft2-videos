@@ -293,7 +293,7 @@ a{color:inherit;text-decoration:none;}
   /* Icon on the left, title/subtitle stacked to its right, chevron at the far right -- one
      horizontal row per tile, matching the reference layout (not the earlier icon-on-top design). */
   min-width:0;display:flex;flex-direction:row;align-items:center;gap:9px;
-  border:none;border-radius:16px;
+  border:none;border-radius:10px;
   padding:14px 12px;text-align:left;min-height:96px;
 }
 .mact-icon{
@@ -442,7 +442,7 @@ a{color:inherit;text-decoration:none;}
      must stay a fixed dark color too -- var(--ink) flips to near-white in dark mode, which made
      this unreadable against the still-light background. */
   background:var(--turf-dim);border:1px solid var(--turf);border-radius:10px;
-  padding:10px 12px;font-size:var(--fs-base);line-height:1.5;color:#0F172A;margin:2px 0 10px;
+  padding:10px 12px;font-size:var(--fs-base);line-height:1.5;color:#0F172A;margin:8px 0 10px;
 }
 .qp-fewer-note{font-size:var(--fs-sm);color:var(--ink-soft);font-style:italic;margin:-2px 0 12px;line-height:1.4;}
 .qp-results{touch-action:pan-y;} /* leaves vertical scroll to the browser; the swipe-left handler only looks at horizontal-dominant gestures */
@@ -1231,9 +1231,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-row-sub .prs-starthere{color:var(--turf);font-weight:700;}
 .phase-row-sub .pcard-sugg{font-weight:600;opacity:0.75;}
 .pcard-add-pill{
-  border:none;border-radius:var(--radius-pill);padding:9px 13px;font-size:var(--fs-sm);font-weight:700;
-  flex-shrink:0;white-space:nowrap;display:flex;align-items:center;
+  /* "+" sits to the left, vertically centered against the two centered text lines beside it
+     ("Add" over "Exercise") -- see the .pcard-add-plus/.pcard-add-text children at the call site. */
+  border:none;border-radius:14px;padding:8px 14px;font-weight:700;
+  flex-shrink:0;display:flex;align-items:center;gap:6px;
 }
+.pcard-add-plus{font-size:var(--fs-lg);line-height:1;flex-shrink:0;}
+.pcard-add-text{display:flex;flex-direction:column;align-items:center;font-size:var(--fs-sm);line-height:1.2;text-align:center;}
 .phase-row .phase-collapse-btn{margin:0 -5px 0 -3px;}
 .bp-meta-line{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.03em;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .bp-meta-edit-btn{background:none;border:none;color:var(--ink-soft);opacity:0.55;padding:3px;display:flex;flex-shrink:0;}
@@ -1326,7 +1330,10 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .discard-session-btn.tmpl-del-btn{color:var(--ink-soft);}
 .discard-session-btn svg{width:13px;height:13px;}
 .build-cta{
-  position:sticky;bottom:0;background:linear-gradient(180deg, rgba(246,244,236,0) 0%, var(--chalk) 30%);
+  /* Solid background, not a transparent-to-opaque gradient fade -- the fade let whatever phase
+     color was scrolling underneath bleed through unevenly, looking inconsistent from one scroll
+     position to the next. */
+  position:sticky;bottom:0;background:var(--chalk);
   padding:16px 18px 6px;
 }
 .build-cta .btn-primary{width:100%;padding:16px 0;font-size:var(--fs-lg);border-radius:12px;background:#F7FF00;}
@@ -1682,11 +1689,10 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    promoted to a full card since it's now the dominant element on the page when a draft exists. */
 /* ---------- home hero (mockup-inspired top banner) ---------- */
 .home-hero{
-  /* Bleeds edge-to-edge under the (unchanged) global topbar by canceling out .section-pad's own
-     padding with a matching negative margin -- .section-pad's left/right is overridden to 20px
-     elsewhere in this file, its top/bottom stays the base rule's 16px. */
-  background:var(--cone);margin:-16px -20px 0;padding:14px 20px 26px;
-  border-radius:0 0 28px 28px;
+  /* Sits inset within .section-pad's own padding now (no more edge-to-edge bleed), so there's
+     visible whitespace on every side, plus a thin border to separate it from the page background. */
+  background:var(--cone);margin-top:2px;padding:14px 20px 26px;
+  border-radius:16px;border:1px solid var(--line);
 }
 .home-hero-eyebrow{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-size:var(--fs-sm);color:var(--pitch-dark);opacity:0.65;}
 .home-hero h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-display);line-height:1.05;color:var(--pitch-dark);margin:2px 0 8px;text-transform:uppercase;letter-spacing:-0.02em;}
@@ -1739,10 +1745,16 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hfc-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.4;margin-top:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .hfc-link{
   /* Less prominent than the bright --cone CTA yellow -- this is a "read more" action on a
-     card the coach is already looking at, not the primary thing this screen wants tapped. */
+     card the coach is already looking at, not the primary thing this screen wants tapped.
+     Dark gray in light mode specifically (a fixed literal, not a theme token) -- dark mode below
+     restores the lighter chalk-dim/ink look it already had, unchanged. */
   display:inline-flex;align-items:center;gap:5px;margin-top:12px;
-  background:var(--chalk-dim);color:var(--ink);font-weight:700;font-size:var(--fs-sm);
-  border:1px solid var(--line);border-radius:10px;padding:8px 13px;
+  background:#374151;color:#ffffff;font-weight:700;font-size:var(--fs-sm);
+  border:1px solid #374151;border-radius:10px;padding:8px 13px;
+}
+:root[data-theme="dark"] .hfc-link{background:var(--chalk-dim);color:var(--ink);border-color:var(--line);}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .hfc-link{background:var(--chalk-dim);color:var(--ink);border-color:var(--line);}
 }
 .hfc-link svg{width:13px;height:13px;}
 .home-empty-recent{background:var(--bg-surface);border:1px dashed var(--line);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
@@ -1866,7 +1878,7 @@ body{background:var(--bg-main);}
   background:#F7FF00 !important;color:#0B0F1A !important;
 }
 .section-pad{padding-left:20px;padding-right:20px;}
-.mac-tile{padding:16px 14px;}
+.mac-tile{padding:14px 10px;}
 * { transition:background-color .15s ease,color .15s ease,border-color .15s ease; }
 </style>
 </head>
@@ -9793,11 +9805,15 @@ function initSetupDraft(){
 // it doesn't change every time Home re-renders but still rotates day to day. Returns null when
 // the library is empty so Home can skip the section instead of crashing.
 function featuredExercise(){
-  if(!EXERCISES.length) return null;
+  // Only cycles through exercises that actually have a video (ex.videoUrl -- distinct from
+  // ex.mediaUrl, which is just a diagram/image thumbnail) -- no point featuring one a coach can't
+  // watch. Same deterministic day-of-year rotation as before, just scoped to that smaller pool.
+  const withVideo = EXERCISES.filter(e => e.videoUrl);
+  if(!withVideo.length) return null;
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
   const dayOfYear = Math.floor((now - start) / 86400000);
-  return EXERCISES[dayOfYear % EXERCISES.length];
+  return withVideo[dayOfYear % withVideo.length];
 }
 // Home screen's Recent Sessions -- same ranking idiom as rankedSetupTemplates() just below, but
 // by actual save time (createdAt) rather than last-used, and scoped to the signed-in coach's own
@@ -10334,7 +10350,7 @@ function renderBuild(){
               ${phaseProgressBarHtml(mins, suggested) || ''}
             </div>
           </div>
-          <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 24%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')">+ Add Exercise</button>
+          <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 24%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')"><span class="pcard-add-plus">+</span><span class="pcard-add-text"><span>Add</span><span>Exercise</span></span></button>
           ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
         </div>
       </div>
@@ -10667,7 +10683,6 @@ function renderReview(){
         <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
       </button>
     </div>
-    ${phaseStructureStripHtml(liveSectionEntries())}
     ${state.splitExpanded ? `<div class="time-panel standalone" style="margin-top:8px;">${timeComparisonBodyHtml(total, state.targetDuration, computeGroupMinutes())}</div>` : ''}
 
     <div class="phase-strip">
@@ -10694,7 +10709,7 @@ function renderReview(){
               ${g.items.length ? g.items.map(it=>{
                 const ex=exById(it.id);
                 const showGrip = g.items.length>1;
-                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}${replaceButtonHtml(it.phaseKey, it.id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;
+                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;
               }).join('') : `<div class="build-ex-empty">No exercises yet</div>`}
             </div>
           </div>
@@ -10711,7 +10726,7 @@ function renderReview(){
             <div class="phase-title-row"><div class="phase-title">${s.label}</div><div class="phase-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins} min`}</div></div>
             ${planned ? (phaseProgressBarHtml(mins, planned) || '') : ''}
             <div class="phase-exlist" data-list-key="${s.key}">
-              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${escAttr(id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${escJsAttr(id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}${replaceButtonHtml(s.key, id, 'review')}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${escJsAttr(id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;}).join('')}
+              ${s.exercises.map(id=>{const ex=exById(id); const showGrip = s.exercises.length>1; return `<div class="phase-ex-item" data-ex-id="${escAttr(id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${s.key}','${escJsAttr(id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}<button onclick="event.stopPropagation(); removeFromPhase('${s.key}','${escJsAttr(id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;}).join('')}
             </div>
           </div>
         </div>`;
