@@ -1758,6 +1758,160 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .hfc-link svg{width:13px;height:13px;}
 .home-empty-recent{background:var(--bg-surface);border:1px dashed var(--line);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+
+/* ---------- Quick Start (3-screen shell: Home / Pre-Built Practices / Build a Custom Session) ----------
+   Fixed pastel tokens (--sky-dim, --mint-dim, etc.) and --cone/--pitch are used throughout for
+   card backgrounds -- none of these vary between light/dark themes (see CLAUDE.md "Color
+   system"), so text sitting on them uses var(--pitch-dark) (dark in both themes) or a fixed
+   white, never var(--ink)/var(--text-primary) (which flips to white in dark mode and would
+   vanish against a still-light background) -- the same rule .mac-tile and .home-hero already
+   follow. */
+.qs-header{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
+.qs-header-btn{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:var(--chalk-dim);border:1px solid var(--line);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+}
+.qs-header-btn svg{width:16px;height:16px;}
+.qs-header-title{
+  flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:var(--fs-2xl);text-transform:uppercase;letter-spacing:-0.01em;color:var(--ink);
+  margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.qs-header-spacer{width:38px;flex-shrink:0;}
+.qs-eyebrow{margin-top:14px;}
+.qs-sub{font-size:var(--fs-md);color:var(--ink-soft);line-height:1.45;margin:4px 0 18px;}
+
+/* Screen 1 -- the two big "Use a Pre-Built Practice" / "Build a Custom Session" cards, same
+   icon-left/body/chevron shape as Home's .home-continue-card, just its own namespace since this
+   is a different screen's component. */
+.qs-option-card{
+  position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:16px 52px 16px 16px;margin-bottom:12px;
+}
+.qs-option-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--pitch-dark);}
+.qs-option-icon svg{width:24px;height:24px;}
+.qs-option-body{flex:1;min-width:0;}
+.qs-option-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-lg);color:var(--ink);line-height:1.2;}
+.qs-option-desc{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:3px;line-height:1.4;}
+.qs-option-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qs-option-chevron svg{width:15px;height:15px;}
+
+/* Popular Focuses grid, Screen 1 */
+.qs-focus-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px;}
+.qs-focus-card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;
+  border:1px solid rgba(0,0,0,0.06);border-radius:var(--radius-card);padding:14px;
+}
+.qs-focus-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--pitch-dark);flex-shrink:0;background:rgba(255,255,255,0.55);}
+.qs-focus-icon svg{width:17px;height:17px;}
+.qs-focus-label{font-size:var(--fs-md);font-weight:700;color:var(--pitch-dark);}
+.qs-focus-sub{font-size:var(--fs-xs);color:var(--pitch-dark);opacity:0.75;line-height:1.3;}
+
+/* Surprise Me, Screen 1 -- deliberately dark/full-width so it reads as a distinct "let the app
+   decide" action, not just a 7th Popular Focus card. */
+.qs-surprise-card{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:var(--pitch);color:#fff;border:none;border-radius:var(--radius-card);
+  padding:16px;margin-top:18px;
+}
+.qs-surprise-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.12);color:var(--cone);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qs-surprise-icon svg{width:20px;height:20px;}
+.qs-surprise-body{flex:1;min-width:0;}
+.qs-surprise-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-lg);line-height:1.2;}
+.qs-surprise-desc{font-size:var(--fs-sm);opacity:0.75;margin-top:2px;}
+.qs-surprise-chevron{flex-shrink:0;display:flex;opacity:0.8;}
+.qs-surprise-chevron svg{width:16px;height:16px;}
+
+/* Screen 2 -- Pre-Built Practices */
+.qs-filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.qs-filter-row::-webkit-scrollbar{display:none;}
+.qs-filter-tab{
+  flex-shrink:0;padding:9px 16px;border-radius:var(--radius-pill);border:1px solid var(--line);
+  background:var(--chalk);font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);white-space:nowrap;
+}
+.qs-filter-tab.active{background:var(--pitch);border-color:var(--pitch);color:#fff;}
+
+.qs-practice-card{
+  display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:14px;margin-bottom:12px;position:relative;
+}
+.qs-practice-thumb{width:60px;height:60px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;}
+.qs-practice-thumb svg{width:22px;height:22px;}
+.qs-practice-body{flex:1;min-width:0;padding-right:18px;}
+.qs-practice-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-lg);color:var(--ink);line-height:1.2;}
+.qs-practice-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.qs-practice-meta{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:7px;font-weight:600;}
+.qs-practice-desc{font-size:var(--fs-base);color:var(--ink-soft);margin-top:5px;line-height:1.4;}
+.qs-practice-chevron{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);display:flex;}
+.qs-practice-chevron svg{width:16px;height:16px;}
+.qs-empty-practices{padding:30px 10px;text-align:center;color:var(--ink-soft);font-size:var(--fs-base);}
+
+/* Screen 3 -- Build a Custom Session */
+.qs-section-label{font-size:var(--fs-xs);font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.05em;margin:24px 0 10px;}
+.qs-section-label:first-of-type{margin-top:6px;}
+.qs-section-hint{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin-left:6px;text-transform:none;letter-spacing:0;}
+
+.qs-primary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.qs-primary-card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;
+  border:1.5px solid var(--line);border-radius:var(--radius-card);padding:14px;background:var(--bg-surface);
+}
+.qs-primary-card.active{background:var(--cone);border-color:var(--cone);}
+.qs-primary-icon{width:36px;height:36px;border-radius:10px;background:var(--chalk-dim);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qs-primary-card.active .qs-primary-icon{background:rgba(11,15,26,0.12);color:var(--pitch-dark);}
+.qs-primary-icon svg{width:17px;height:17px;}
+.qs-primary-label{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.qs-primary-card.active .qs-primary-label{color:var(--pitch-dark);}
+.qs-primary-desc{font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.3;}
+.qs-primary-card.active .qs-primary-desc{color:var(--pitch-dark);opacity:0.75;}
+
+.qs-tag-wrap{display:flex;flex-wrap:wrap;gap:8px;}
+.qs-tag-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:8px 13px;border-radius:var(--radius-pill);border:1px solid var(--line);
+  background:var(--chalk);font-size:var(--fs-base);font-weight:600;color:var(--ink-soft);
+}
+.qs-tag-chip.active{background:var(--cone);border-color:var(--cone);color:var(--pitch-dark);font-weight:700;}
+.qs-tag-chip svg{width:12px;height:12px;}
+
+.qs-select-wrap{position:relative;}
+.qs-select{
+  width:100%;appearance:none;-webkit-appearance:none;
+  background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-control);
+  padding:14px 38px 14px 14px;font-size:var(--fs-input);font-weight:700;color:var(--ink);
+}
+.qs-select-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%) rotate(90deg);color:var(--ink-soft);pointer-events:none;}
+.qs-select-chevron svg{width:14px;height:14px;}
+
+.qs-len-row{display:flex;gap:8px;}
+.qs-len-btn{
+  flex:1;padding:13px 0;border-radius:var(--radius-control);border:1px solid var(--line);
+  background:var(--bg-surface);font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);
+}
+.qs-len-btn.active{background:var(--cone);border-color:var(--cone);color:var(--pitch-dark);}
+
+.qs-generate-btn{
+  width:100%;border:none;border-radius:var(--radius-control);padding:16px 0;
+  background:var(--pitch);color:#fff;font-size:var(--fs-lg);font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.qs-generate-btn svg{width:17px;height:17px;}
+
+/* Placeholder "Building Your Session..." overlay -- shared by Screen 1's Surprise Me and
+   Screen 3's Generate My Session, neither of which has a real generator behind it yet. */
+.qs-generating-wrap{position:absolute;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.qs-generating-card{background:var(--pitch);color:#fff;border-radius:16px;padding:28px 24px;text-align:center;width:min(280px,84%);}
+.qs-generating-icon{
+  width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.1);color:var(--cone);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;animation:qs-pulse 1.1s ease-in-out infinite;
+}
+.qs-generating-icon svg{width:22px;height:22px;}
+@keyframes qs-pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.12);opacity:0.75;}}
+.qs-generating-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl);text-transform:uppercase;}
+.qs-generating-sub{font-size:var(--fs-sm);opacity:0.7;margin-top:6px;}
 .home-feed-header h2{font-size:var(--fs-base);opacity:0.75;}
 
 /* ---------- editable fields ---------- */
@@ -6355,6 +6509,8 @@ const ICONS = {
   flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s-5 5.5-5 10a5 5 0 0010 0c0-1.5-1-2.5-1-2.5s-.5 2-2 2c-1.8 0-2-2-1-3.5C13.5 6.5 12 2 12 2z"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>`,
   sparkles: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/><circle cx="19" cy="5" r="1.3"/><circle cx="5" cy="18.5" r="1"/></svg>`,
+  dice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/></g><g fill="currentColor" stroke="none"><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="9" r="1.1"/><circle cx="9" cy="15" r="1.1"/><circle cx="15" cy="15" r="1.1"/><circle cx="12" cy="12" r="1.1"/></g></svg>`,
+  brain: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3.6c-1.9 0-3.4 1.4-3.4 3.2 0 .6.2 1.2.5 1.7-1.2.5-2 1.6-2 2.9 0 1.1.6 2 1.4 2.6-.3.5-.4 1-.4 1.6 0 1.8 1.5 3.3 3.4 3.3.3 0 .6 0 .9-.1.5 1 1.5 1.6 2.6 1.6V5.1c0-.9-.8-1.5-1.7-1.5Z"/><path d="M14.5 3.6c1.9 0 3.4 1.4 3.4 3.2 0 .6-.2 1.2-.5 1.7 1.2.5 2 1.6 2 2.9 0 1.1-.6 2-1.4 2.6.3.5.4 1 .4 1.6 0 1.8-1.5 3.3-3.4 3.3-.3 0-.6 0-.9-.1-.5 1-1.5 1.6-2.6 1.6V5.1c0-.9.8-1.5 1.7-1.5Z"/></g></svg>`,
   swords: `<svg viewBox="0 0 24 24" fill="none"><text x="12" y="16.5" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-weight="800" font-size="12.5" letter-spacing="-0.5" fill="currentColor" transform="rotate(-14 12 12)">VS</text></svg>`,
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></g></svg>`,
@@ -8145,6 +8301,15 @@ const state = {
   setupLocation: null,
   setupSelectedTemplateId: null,  // null = Start From Scratch (the default); a template's id once chosen
   setupEditingDuration: false,    // whether Setup's own custom-duration input is active (separate from the Build page's state.editingDuration)
+
+  // ---- Quick Start (3-screen shell) ----
+  quickStartInfoOpen: false,      // Screen 1's "i" info panel toggle, same pattern as Quick Pick/Balance's
+  qsPracticeFilter: 'all',        // Screen 2's dimension filter tab: 'all'|'Technical'|'Tactical'|'Physical'|'Mental'
+  qsPrimaryFocus: 'Technical',    // Screen 3 Section 1 -- single-select, Technical by default per spec
+  qsTags: new Set(),              // Screen 3 Section 2 -- up to 3
+  qsAgeGroup: 'U9 – U12',         // Screen 3 Section 3
+  qsDuration: 60,                 // Screen 3 Section 4
+  qsGenerating: false,            // true while the placeholder "Building Your Session..." overlay shows
 };
 
 function setState(patch){ Object.assign(state, patch); render(); }
@@ -8831,6 +8996,237 @@ function formatWhen(ts){
   return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
 
+/* ============ QUICK START ============
+   Three-screen shell: Quick Start Home -> Pre-Built Practices (browse) or Build a Custom
+   Session (define parameters). UI/navigation shell only for now -- "Generate My Session" and
+   "Surprise Me" both land on the placeholder qsGenerate()/qsSurpriseMe() below; neither the
+   real session-generation algorithm nor the pre-built practice content database exist yet.
+   Deliberately its OWN small vocabulary ('Technical'/'Tactical'/'Physical'/'Mental', plain
+   strings) rather than reusing TRAINING_DIMENSIONS' score-key system (technicalScore etc, with
+   a 'Cognitive' label) -- this shell doesn't feed any scoring logic yet, and the coach's own
+   spec for this feature calls the 4th dimension "Mental", not "Cognitive". */
+
+// Icon + solid accent color for each dimension/tag this feature shows -- shared by Screen 2's
+// practice thumbnails/tags and Screen 3's Primary Focus cards so the same dimension reads the
+// same way on both screens. Colors are fixed app accents (not phase colors, not theme-varying),
+// chosen distinct from one another.
+const QS_DIM_META = {
+  Technical: {icon:'ballOutline', color:'var(--turf)'},
+  Tactical:  {icon:'pitch',       color:'var(--set-purple)'},
+  Physical:  {icon:'bolt',        color:'var(--sec-athletic)'},
+  Mental:    {icon:'brain',       color:'var(--set-blue)'},
+  Fun:       {icon:'trophy',      color:'var(--sec-duels)'},
+};
+function qsDimIcon(label){ return ICONS[(QS_DIM_META[label]||{}).icon] || ICONS.doc; }
+function qsDimColor(label){ return (QS_DIM_META[label]||{}).color || 'var(--ink-soft)'; }
+
+// Screen 3, Section 1 -- Primary Focus (single-select, Technical default)
+const QUICKSTART_PRIMARY_OPTIONS = [
+  {key:'Technical', desc:'Ball skills, passing, finishing'},
+  {key:'Tactical',  desc:'Positioning, team play'},
+  {key:'Physical',  desc:'Speed, agility, athleticism'},
+  {key:'Mental',    desc:'Decision making, awareness'},
+];
+
+// Screen 1 -- Popular Focuses grid. The 4 core dimensions pre-select that Primary Focus on
+// Screen 3 (setPrimary); Team Dynamics and Fun / High Engagement aren't one of Screen 3's 4
+// Primary Focus options, so they pre-select a matching Optional Tag instead (setTag).
+const QUICKSTART_FOCUSES = [
+  {key:'Technical', label:'Technical',             sub:'Ball skills, passing, finishing', bg:'var(--sky-dim)',        icon:'ballOutline', setPrimary:'Technical'},
+  {key:'Tactical',  label:'Tactical',              sub:'Positioning, team play',          bg:'var(--mint-dim)',       icon:'pitch',        setPrimary:'Tactical'},
+  {key:'Physical',  label:'Physical',              sub:'Speed, agility, athleticism',     bg:'var(--claret-dim)',     icon:'bolt',         setPrimary:'Physical'},
+  {key:'Mental',    label:'Mental',                sub:'Decision making, awareness',      bg:'var(--set-purple-dim)', icon:'brain',        setPrimary:'Mental'},
+  {key:'teamdyn',   label:'Team Dynamics',         sub:'Communication, cooperation',      bg:'var(--turf-dim)',       icon:'user',         setTag:'Team Dynamics'},
+  {key:'fun',       label:'Fun / High Engagement', sub:'Games, challenges, competition',  bg:'var(--cone-dim)',       icon:'trophy',       setTag:'Fun / Competitive'},
+];
+
+// Screen 2 -- Pre-Built Practices. Placeholder content per the coach's spec, shaped as the
+// reusable card this is eventually meant to be populated from the real exercise/session
+// database with -- never a permanent content source itself.
+const PREBUILT_PRACTICES = [
+  {id:'pbp-1', title:'Ball Mastery & 1v1s',   dimensions:['Technical','Physical'], duration:60, ageGroup:'U9–U12',  description:'Develop close control, dribbling and 1v1 confidence.'},
+  {id:'pbp-2', title:'Passing & Possession',  dimensions:['Technical','Tactical'], duration:60, ageGroup:'U9–U12',  description:'Improve passing, movement and keeping possession.'},
+  {id:'pbp-3', title:'Attacking Transitions', dimensions:['Tactical','Technical'], duration:60, ageGroup:'U10–U14', description:'Quick transition from defense to attack with finishing.'},
+  {id:'pbp-4', title:'Defending as a Team',   dimensions:['Tactical','Mental'],    duration:60, ageGroup:'U10–U14', description:'Pressing, positioning and team defending.'},
+  {id:'pbp-5', title:'High Energy Games',     dimensions:['Physical','Fun'],       duration:60, ageGroup:'U8–U11',  description:'Keep players engaged with fast-paced, competitive games.'},
+];
+
+// Screen 2's dimension filter tabs
+const QS_PRACTICE_FILTERS = ['all','Technical','Tactical','Physical','Mental'];
+
+// Screen 3, Section 2 -- Optional Tags (up to 3)
+const QUICKSTART_TAGS = ['1v1s','2v2s','Rondos','Shooting','Passing','Possession','Transition','Defending','Small Sided Games','End Zone','Agility','Speed','Team Play','Fun / Competitive','Team Dynamics'];
+
+// Screen 3, Sections 3 + 4
+const QS_AGE_GROUPS = ['U6 – U8','U9 – U12','U13 – U15','U16+'];
+const QS_DURATIONS = [45,60,75,90];
+
+/* Shared header for all 3 Quick Start screens: a round back button, a bold title, and an
+   optional right-side action (Screen 1's "i" info toggle, Screen 2's filter-reset icon) -- an
+   empty spacer keeps the title's position consistent on screens with no right action. */
+function qsHeaderHtml(title, backOnclick, rightHtml){
+  return `
+  <div class="qs-header">
+    <button class="qs-header-btn" onclick="${backOnclick}" aria-label="Back">${ICONS.back}</button>
+    <h1 class="qs-header-title">${escHtml(title)}</h1>
+    ${rightHtml || '<span class="qs-header-spacer"></span>'}
+  </div>`;
+}
+
+function toggleQuickStartInfo(){ state.quickStartInfoOpen = !state.quickStartInfoOpen; render(); }
+function setQsPracticeFilter(dim){ state.qsPracticeFilter = dim; render(); }
+function openPrebuiltPractice(id){
+  // Placeholder destination -- eventually opens the existing session/practice workflow with
+  // this practice's exercises pre-loaded. No practice content database exists yet.
+  showToast('Opening pre-built practices is coming soon');
+}
+function setQsPrimaryFocus(key){ state.qsPrimaryFocus = key; render(); }
+function toggleQsTag(tag){
+  if(state.qsTags.has(tag)){ state.qsTags.delete(tag); render(); return; }
+  if(state.qsTags.size >= 3){ showToast('You can select up to 3 tags'); return; }
+  state.qsTags.add(tag);
+  render();
+}
+function setQsAgeGroup(v){ state.qsAgeGroup = v; render(); }
+function setQsDuration(v){ state.qsDuration = v; render(); }
+// From a Popular Focus tap on Quick Start Home -- pre-selects Screen 3's Primary Focus (the 4
+// core dimensions) or a matching Optional Tag (Team Dynamics / Fun, neither of which is a
+// Primary Focus option), then opens Screen 3.
+function navToCustomSessionWithFocus(key){
+  const focus = QUICKSTART_FOCUSES.find(f=>f.key===key);
+  if(focus){
+    if(focus.setPrimary) state.qsPrimaryFocus = focus.setPrimary;
+    if(focus.setTag) state.qsTags = new Set([focus.setTag]);
+  }
+  nav('quickStartCustom');
+}
+// Placeholder only -- no session-generation algorithm exists yet. Collects exactly the 4
+// parameters the real generator will eventually consume (Primary Focus, Optional Tags, Age
+// Group, Session Length) and shows a temporary "Building Your Session..." state.
+function qsGenerate(){
+  const params = {primaryDimension: state.qsPrimaryFocus, tags: [...state.qsTags], ageGroup: state.qsAgeGroup, duration: state.qsDuration};
+  state.qsGenerating = true;
+  render();
+  setTimeout(()=>{ state.qsGenerating = false; showToast('Session generation is coming soon'); render(); }, 1400);
+}
+function qsSurpriseMe(){
+  state.qsGenerating = true;
+  render();
+  setTimeout(()=>{ state.qsGenerating = false; showToast('Session generation is coming soon'); render(); }, 1400);
+}
+
+function renderQuickStartHome(){
+  return `
+  <div class="section-pad">
+    ${qsHeaderHtml('Quick Start', "nav('home')", `<button class="qp-info-btn" onclick="toggleQuickStartInfo()" title="What is Quick Start?" aria-label="What is Quick Start?">i</button>`)}
+    <div class="eyebrow qs-eyebrow">Quick Start</div>
+    <div class="qs-sub">Get a great session in seconds. Choose a pre-built practice or build one around what you want to work on.</div>
+    ${state.quickStartInfoOpen ? `<div class="qp-info-panel">Pick a ready-made practice built around a common coaching goal, or tell us what you want to work on and we'll put a session together from your exercise library. Either way you end up on the usual Build Session screen, ready to tweak before you coach it.</div>` : ''}
+
+    <button class="qs-option-card" onclick="nav('quickStartPractices')">
+      <div class="qs-option-icon" style="background:var(--sky-dim);">${ICONS.clipboard}</div>
+      <div class="qs-option-body">
+        <div class="qs-option-title">Use a Pre-Built Practice</div>
+        <div class="qs-option-desc">Ready-to-coach sessions designed around common coaching goals.</div>
+      </div>
+      <span class="qs-option-chevron">${ICONS.chevronRight}</span>
+    </button>
+    <button class="qs-option-card" onclick="nav('quickStartCustom')">
+      <div class="qs-option-icon" style="background:var(--cone-dim);">${ICONS.sparkles}</div>
+      <div class="qs-option-body">
+        <div class="qs-option-title">Build a Custom Session</div>
+        <div class="qs-option-desc">Select a focus and we'll create a new session for you.</div>
+      </div>
+      <span class="qs-option-chevron">${ICONS.chevronRight}</span>
+    </button>
+
+    <div class="sh" style="margin-top:26px;"><h2>Popular Focuses</h2></div>
+    <div class="qs-focus-grid">
+      ${QUICKSTART_FOCUSES.map(f => `
+      <button class="qs-focus-card" style="background:${f.bg};" onclick="navToCustomSessionWithFocus('${escJsAttr(f.key)}')">
+        <div class="qs-focus-icon">${ICONS[f.icon]}</div>
+        <div class="qs-focus-label">${escHtml(f.label)}</div>
+        <div class="qs-focus-sub">${escHtml(f.sub)}</div>
+      </button>`).join('')}
+    </div>
+
+    <button class="qs-surprise-card" onclick="qsSurpriseMe()">
+      <div class="qs-surprise-icon">${ICONS.dice}</div>
+      <div class="qs-surprise-body">
+        <div class="qs-surprise-title">Surprise Me</div>
+        <div class="qs-surprise-desc">Generate a balanced session</div>
+      </div>
+      <span class="qs-surprise-chevron">${ICONS.chevronRight}</span>
+    </button>
+  </div>`;
+}
+
+function renderQuickStartPractices(){
+  const filter = state.qsPracticeFilter;
+  const list = filter==='all' ? PREBUILT_PRACTICES : PREBUILT_PRACTICES.filter(p=>p.dimensions.includes(filter));
+  return `
+  <div class="section-pad">
+    ${qsHeaderHtml('Pre-Built Practices', "nav('quickStartHome')", `<button class="qs-header-btn" onclick="setQsPracticeFilter('all')" title="Reset filter" aria-label="Reset filter">${ICONS.filter}</button>`)}
+    <div class="qs-sub">Ready-to-coach sessions designed around common coaching goals.</div>
+
+    <div class="qs-filter-row">
+      ${QS_PRACTICE_FILTERS.map(f => `<button class="qs-filter-tab ${filter===f?'active':''}" onclick="setQsPracticeFilter('${escJsAttr(f)}')">${f==='all'?'All':escHtml(f)}</button>`).join('')}
+    </div>
+
+    ${list.length ? list.map(p => `
+    <button class="qs-practice-card" onclick="openPrebuiltPractice('${escJsAttr(p.id)}')">
+      <div class="qs-practice-thumb" style="background:${qsDimColor(p.dimensions[0])};">${qsDimIcon(p.dimensions[0])}</div>
+      <div class="qs-practice-body">
+        <div class="qs-practice-title">${escHtml(p.title)}</div>
+        <div class="qs-practice-tags">${p.dimensions.map(d=>`<span class="tagpill">${escHtml(d)}</span>`).join('')}</div>
+        <div class="qs-practice-meta">${p.duration} min &middot; ${escHtml(p.ageGroup)}</div>
+        <div class="qs-practice-desc">${escHtml(p.description)}</div>
+      </div>
+      <span class="qs-practice-chevron">${ICONS.chevronRight}</span>
+    </button>`).join('') : `<div class="qs-empty-practices">No pre-built practices match that focus yet.</div>`}
+  </div>`;
+}
+
+function renderQuickStartCustom(){
+  return `
+  <div class="section-pad">
+    ${qsHeaderHtml('Build a Custom Session', "nav('quickStartHome')")}
+    <div class="qs-sub">Select a focus and we'll create a new session from your exercise library.</div>
+
+    <div class="qs-section-label">Primary Focus</div>
+    <div class="qs-primary-grid">
+      ${QUICKSTART_PRIMARY_OPTIONS.map(o => `
+      <button class="qs-primary-card ${state.qsPrimaryFocus===o.key?'active':''}" onclick="setQsPrimaryFocus('${escJsAttr(o.key)}')">
+        <div class="qs-primary-icon">${qsDimIcon(o.key)}</div>
+        <div class="qs-primary-label">${escHtml(o.key)}</div>
+        <div class="qs-primary-desc">${escHtml(o.desc)}</div>
+      </button>`).join('')}
+    </div>
+
+    <div class="qs-section-label">Optional Tags <span class="qs-section-hint">Select up to 3</span></div>
+    <div class="qs-tag-wrap">
+      ${QUICKSTART_TAGS.map(t => { const active = state.qsTags.has(t); return `
+      <button class="qs-tag-chip ${active?'active':''}" onclick="toggleQsTag('${escJsAttr(t)}')">${active?ICONS.check:''}<span>${escHtml(t)}</span></button>`; }).join('')}
+    </div>
+
+    <div class="qs-section-label">Age Group</div>
+    <div class="qs-select-wrap">
+      <select class="qs-select" onchange="setQsAgeGroup(this.value)">
+        ${QS_AGE_GROUPS.map(g => `<option value="${escAttr(g)}" ${state.qsAgeGroup===g?'selected':''}>${escHtml(g)}</option>`).join('')}
+      </select>
+      <span class="qs-select-chevron">${ICONS.chevronRight}</span>
+    </div>
+
+    <div class="qs-section-label">Session Length</div>
+    <div class="qs-len-row">
+      ${QS_DURATIONS.map(d => `<button class="qs-len-btn ${state.qsDuration===d?'active':''}" onclick="setQsDuration(${d})">${d} min</button>`).join('')}
+    </div>
+  </div>
+  <div class="build-cta">
+    <button class="qs-generate-btn" onclick="qsGenerate()">${ICONS.sparkles}<span>Generate My Session</span>${ICONS.chevronRight}</button>
+  </div>`;
+}
+
 /* ============ EXERCISES (grid + filters) ============ */
 function matchesFilters(ex){
   if(state.replaceContext && ex.id === state.replaceContext.oldId) return false; // can't "replace" with itself
@@ -9413,6 +9809,19 @@ function renderOverlay(){
   }
   if(state.quickPickOpen && state.pickingPhase){
     html += renderQuickPickSheetHtml();
+  }
+  if(state.qsGenerating){
+    // Placeholder only -- shared by Screen 3's "Generate My Session" and Screen 1's "Surprise
+    // Me", neither of which has a real generation algorithm yet (see qsGenerate()/qsSurpriseMe()).
+    html += `
+    <div class="sheet-backdrop"></div>
+    <div class="qs-generating-wrap">
+      <div class="qs-generating-card">
+        <div class="qs-generating-icon">${ICONS.sparkles}</div>
+        <div class="qs-generating-title">Building Your Session...</div>
+        <div class="qs-generating-sub">This won't take long</div>
+      </div>
+    </div>`;
   }
   if(state.toast){
     html += `<div class="toast">${state.toast}</div>`;
@@ -10538,9 +10947,8 @@ function requestBuildNewSession(){
 // state.targetDuration/practiceLocation/sessionName already carry sane defaults on their own.
 function quickStartFromHome(){
   const {count} = currentTotalMinutes();
-  if(count>0){ nav('build'); return; }
-  pickForPhase(PHASES[0].key);
-  openQuickPick();
+  if(count>0){ nav('build'); return; } // a session is already in progress -- resume it, same as before
+  nav('quickStartHome');
 }
 function scrollToClubFeed(){
   document.getElementById('home-feed-anchor')?.scrollIntoView({behavior:'smooth', block:'start'});
@@ -11343,6 +11751,9 @@ const screens = {
   sessions: renderSessions,
   sessionDetail: renderSessionDetail,
   settings: renderSettings,
+  quickStartHome: renderQuickStartHome,
+  quickStartPractices: renderQuickStartPractices,
+  quickStartCustom: renderQuickStartCustom,
 };
 
 function render(){
