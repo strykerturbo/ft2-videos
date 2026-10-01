@@ -7206,11 +7206,45 @@ function mediaTagHtml(url, altText, extraStyle, autoplay, fallbackHtml){
       return `<video src="${escAttr(url)}" autoplay muted loop playsinline style="${style}" onerror="mediaLoadFailed(this,'${fid}')"></video>`;
     }
     // Plain first-frame still, no play badge overlay -- reads as a normal photo thumbnail.
+    // No real src yet -- data-lazy-src only. initLazyMedia() (called after every render()) hands
+    // it a real src once the card is actually near the viewport; see the comment there for why.
     return `<div class="media-still-wrap" style="${style}">
-      <video src="${escAttr(url)}#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;" onloadedmetadata="this.currentTime=0.1" onerror="mediaLoadFailed(this,'${fid}')"></video>
+      <video data-lazy-src="${escAttr(url)}#t=0.1" muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;display:block;" onloadedmetadata="this.currentTime=0.1" onerror="mediaLoadFailed(this,'${fid}')"></video>
     </div>`;
   }
   return `<img src="${escAttr(url)}" alt="${escAttr(altText||'')}" style="${style}" onerror="mediaLoadFailed(this,'${fid}')">`;
+}
+/* Hands a real src to the still-thumbnail <video data-lazy-src> elements above once they're
+   actually near the viewport, instead of every one of them loading at once the moment a long
+   list (e.g. the full Exercises grid, 100+ cards) renders. Without this, every exercise whose
+   thumbnail is a video got its own real <video src preload="metadata">, all starting to fetch
+   and decode simultaneously regardless of whether they were ever scrolled into view -- dozens
+   of concurrent video decode sessions, which is exactly what crashes mobile Safari (it caps how
+   many <video> elements can decode at once) after sitting on a long list for a bit. Called at
+   the end of every render() since #content's innerHTML (and therefore every <video
+   data-lazy-src>) is fully replaced on every render. */
+let lazyMediaObserver = null;
+function initLazyMedia(){
+  const pending = document.querySelectorAll('#content video[data-lazy-src]');
+  if(!pending.length) return;
+  if(!lazyMediaObserver && 'IntersectionObserver' in window){
+    lazyMediaObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(!entry.isIntersecting) return;
+        const el = entry.target;
+        lazyMediaObserver.unobserve(el);
+        el.src = el.dataset.lazySrc;
+        delete el.dataset.lazySrc;
+      });
+    }, {rootMargin:'300px 0px'});
+  }
+  if(lazyMediaObserver){
+    pending.forEach(el => lazyMediaObserver.observe(el));
+  } else {
+    // No IntersectionObserver support -- fail safe to loading everything rather than leaving
+    // every thumbnail permanently blank.
+    pending.forEach(el => { el.src = el.dataset.lazySrc; delete el.dataset.lazySrc; });
+  }
 }
 /* A Diagram URL that's set but unreachable/invalid (wrong link type -- a Google Drive share page
    or YouTube page instead of a direct file link -- a typo'd/renamed filename, or a link accidentally
@@ -11770,6 +11804,7 @@ function render(){
   bottomnavEl.style.display = '';
   renderTopbar();
   document.getElementById('content').innerHTML = screens[state.screen]();
+  initLazyMedia();
   renderBottomnav();
   renderOverlay();
   scheduleSaveAppStateToStorage();

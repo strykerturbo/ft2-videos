@@ -312,6 +312,22 @@ rather than letting it get rediscovered next session.
 - When testing session sync by hand against the live Sheet, clean up any
   test rows afterward (`{action:'delete', session:{id}}` per row) so
   scratch data doesn't linger in the coach's real spreadsheet.
+- **The Exercises grid crashing after sitting on the page a while (2026-10)**: every exercise
+  whose thumbnail comes from a video (no dedicated diagram image, so `mediaTagHtml()`'s
+  still-frame path kicks in) used to get a real `<video src preload="metadata">` the instant the
+  grid rendered — with 100+ exercises and ~30-40 of them video-backed, that's dozens of
+  concurrently fetching/decoding `<video>` elements at once regardless of whether they were ever
+  scrolled into view. Mobile Safari in particular caps how many video decoder sessions can be
+  active at once and kills the page once that's exceeded — which lines up with a delayed crash
+  ("after a minute or so"), not an instant one, since it takes a bit for all of them to finish
+  fetching and decoding before the cap is hit. Fixed by deferring the real `src` behind
+  `data-lazy-src` + a shared `IntersectionObserver` (`initLazyMedia()`, called at the end of
+  every `render()`) so only cards actually near the viewport ever get a real video element —
+  this is exactly the "video thumbnails should lazy-load" rule already called out under Mobile
+  app best practices above, which this still-thumbnail path hadn't actually implemented. Any
+  *new* still-thumbnail call site should keep going through `mediaTagHtml()` rather than hand-
+  rolling its own `<video>` tag, or it'll silently bypass this lazy-loading and reintroduce the
+  same crash as the exercise library grows.
 
 ## Where things live
 
