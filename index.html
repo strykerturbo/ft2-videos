@@ -247,12 +247,37 @@ a{color:inherit;text-decoration:none;}
   background:var(--chalk);
 }
 #content::-webkit-scrollbar{width:0;}
+/* Session Setup/Build Session/Session Review's fixed workflow CTA (see #workflowFooter) adds
+   ~76px on top of the bottom nav it docks above -- #shell carries .has-workflow-cta (toggled in
+   render(), based on workflowFooterHtml() actually returning something for the current screen)
+   so #content reserves enough extra scroll clearance to clear BOTH, never just the bottom nav. */
+#shell.has-workflow-cta #content{
+  padding-bottom:calc(186px + env(safe-area-inset-bottom));
+}
 
 .section-pad{padding:16px 18px;}
 
+/* ---------- bottom dock (fixed workflow CTA + permanent bottom nav, stacked as one unit) ----------
+   A single positioned wrapper around both, rather than each positioning itself independently --
+   guarantees the CTA sits flush immediately above the bottom nav (flex stacking, not separately
+   computed offsets) and that both share one fully opaque surface, so scrolled page content can
+   never show through the gap between them. */
+#bottomDock{
+  position:absolute;left:0;right:0;bottom:0;z-index:50;
+  display:flex;flex-direction:column;
+}
+/* Only Session Setup/Build Session/Session Review ever populate this (see workflowFooterHtml(),
+   called from render()) -- every other screen leaves it empty, which collapses it to zero height
+   via :empty below so there's no dead gap above the bottom nav on screens with no workflow CTA. */
+#workflowFooter{
+  background:var(--chalk); /* opaque, matches the current screen -- same token #content itself uses */
+  padding:12px 18px 8px;
+}
+#workflowFooter:empty{display:none;}
+#workflowFooter .btn-primary{width:100%;padding:16px 0;font-size:var(--fs-lg);border-radius:12px;background:#F7FF00;}
+
 /* ---------- bottom nav ---------- */
 .bottomnav{
-  position:absolute;bottom:0;left:0;right:0;z-index:50;
   background:var(--chrome);
   display:flex;justify-content:space-around;align-items:stretch;
   /* Scaled 1.75x, then reduced to 80% of that (net 1.4x of the original 7px/6px), per request. */
@@ -2065,7 +2090,10 @@ body{background:var(--bg-main);}
   <div class="topbar" id="topbar"></div>
   <div id="content"></div>
   <div id="overlay"></div>
-  <div class="bottomnav" id="bottomnav"></div>
+  <div id="bottomDock">
+    <div id="workflowFooter"></div>
+    <div class="bottomnav" id="bottomnav"></div>
+  </div>
 </div>
 
 <script id="exercise-data" type="application/json">
@@ -9134,10 +9162,28 @@ function navPageTitleHtml(title, subtitle){
   return `<h1 class="nav-page-title">${escHtml(title)}</h1>${subtitle ? `<div class="nav-page-sub">${escHtml(subtitle)}</div>` : ''}`;
 }
 function navNextCtaHtml(label, onclick, disabled){
-  return `
-  <div class="build-cta">
-    <button class="btn btn-primary" ${disabled?'disabled':''} onclick="${onclick}"><span>Next: ${escHtml(label)}</span>${ICONS.chevronRight}</button>
-  </div>`;
+  return `<button class="btn btn-primary" ${disabled?'disabled':''} onclick="${onclick}"><span>Next: ${escHtml(label)}</span>${ICONS.chevronRight}</button>`;
+}
+/* Fills #workflowFooter (docked directly above the permanent bottom nav -- see #bottomDock)
+   with whichever forward CTA belongs to the current screen, or '' on every screen that isn't
+   part of this one workflow. render() calls this on every render and toggles #shell's
+   has-workflow-cta class on the result, which is what drives #content's extra scroll clearance
+   (see its CSS) -- so a screen gaining/losing its CTA (e.g. Build Session's count hitting 0)
+   automatically keeps that clearance in sync without any extra bookkeeping. */
+function workflowFooterHtml(){
+  if(state.screen === 'practiceSetup'){
+    return navNextCtaHtml('Build Session', 'startFromSetup()');
+  }
+  if(state.screen === 'build'){
+    const {count} = currentTotalMinutes();
+    return navNextCtaHtml('Session Review', "nav('review')", count===0);
+  }
+  if(state.screen === 'review' && currentTotalMinutes().count > 0){
+    // No CTA at all for the count===0 empty-review state -- that screen already shows its own
+    // "Build a Session" redirect as regular content, and there's nothing to save yet.
+    return `<button class="btn btn-primary" onclick="completeSession()">Save Session</button>`;
+  }
+  return '';
 }
 
 /* Shared header for all 3 Quick Start screens: a round back button, a bold title, and an
@@ -10890,10 +10936,6 @@ function renderBuild(){
   const dateLabel = formatPracticeDateShort(state.practiceDate).toUpperCase();
   const locLabel = state.practiceLocation === 'indoor' ? 'INDOOR' : 'OUTDOOR';
 
-  // Forward CTA disabled with nothing added yet -- never required to hit every phase or reach
-  // the target length first.
-  const ctaDisabled = count===0;
-
   return `
   <div class="section-pad">
     ${navBackRowHtml('Session Setup', 'editPracticeSetup()')}
@@ -10955,7 +10997,6 @@ function renderBuild(){
     </div>` : ''}
 
   </div>
-  ${navNextCtaHtml('Session Review', "nav('review')", ctaDisabled)}
   `;
 }
 
@@ -11244,8 +11285,7 @@ function renderReview(){
       ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Session looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
     </div>
 
-    <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="completeSession()">Save Session</button>
-    <div class="build-bottom-actions trio" style="margin-top:10px;">
+    <div class="build-bottom-actions trio" style="margin-top:8px;">
       <button class="bba-btn" onclick="nav('build')">${ICONS.pencil} Edit</button>
       <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
       <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
@@ -11413,8 +11453,7 @@ function renderPracticeSetup(){
       </div>
       <button class="setup-viewall-btn" onclick="openTemplatePickerForSetup()"><span>View All Templates</span>${ICONS.chevronRight}</button>
     ` : ''}
-  </div>
-  ${navNextCtaHtml('Build Session', 'startFromSetup()')}`;
+  </div>`;
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
@@ -11851,16 +11890,21 @@ function render(){
     // Gate the whole app behind "who's coaching" -- no nav makes sense before that's known.
     document.getElementById('topbar').innerHTML = `<div class="brand"><div class="logo-badge">${LOGO_MARK}</div><div class="brand-lockup"><div class="bl-line1">Fast Tigers</div><div class="bl-line2">Futbol Training</div></div></div>`;
     bottomnavEl.innerHTML = '';
-    bottomnavEl.style.display = 'none';
+    document.getElementById('bottomDock').style.display = 'none';
+    document.getElementById('workflowFooter').innerHTML = '';
+    document.getElementById('shell').classList.remove('has-workflow-cta');
     document.getElementById('content').innerHTML = renderWhoIsCoaching();
     renderOverlay();
     return;
   }
-  bottomnavEl.style.display = '';
+  document.getElementById('bottomDock').style.display = '';
   renderTopbar();
   document.getElementById('content').innerHTML = screens[state.screen]();
   initLazyMedia();
   renderBottomnav();
+  const footerHtml = workflowFooterHtml();
+  document.getElementById('workflowFooter').innerHTML = footerHtml;
+  document.getElementById('shell').classList.toggle('has-workflow-cta', !!footerHtml);
   renderOverlay();
   scheduleSaveAppStateToStorage();
 }
