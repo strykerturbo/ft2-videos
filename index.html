@@ -9214,7 +9214,7 @@ function workflowFooterHtml(){
   }
   if(state.screen === 'build'){
     const {count} = currentTotalMinutes();
-    return navNextCtaHtml('Session Review', "nav('review')", count===0);
+    return navNextCtaHtml('Session Review', 'goToReviewFromBuild()', count===0);
   }
   if(state.screen === 'review' && currentTotalMinutes().count > 0){
     // No CTA at all for the count===0 empty-review state -- that screen already shows its own
@@ -9749,6 +9749,8 @@ function addToPhase(key, id){
   if(key==='scrimmage') state.showReviewPrompt = true;
   render();
 }
+// The fixed "Next: Session Review" footer CTA is the one and only way from Build to Review (the
+// "looks complete" banner is feedback only); it also dismisses that banner on the way out.
 function goToReviewFromBuild(){
   state.showReviewPrompt = false;
   nav('review');
@@ -11025,7 +11027,6 @@ function renderBuild(){
     ${state.showReviewPrompt ? `
     <div class="info-banner tip" style="margin-top:10px;">
       <div class="ptxt">${ICONS.check}<span>Scrimmage added -- this session looks complete!</span></div>
-      <button onclick="goToReviewFromBuild()"><span>Next: Session Review</span>${ICONS.chevronRight}</button>
     </div>` : ''}
 
     <div class="phase-grid">
