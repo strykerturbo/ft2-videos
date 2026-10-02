@@ -232,10 +232,10 @@ a{color:inherit;text-decoration:none;}
 .icon-btn::after,.avatar::after{content:'';position:absolute;border-radius:50%;}
 .icon-btn::after{inset:-7px;}
 .avatar::after{inset:-8px;}
-.icon-btn{transition:transform .1s ease,opacity .1s ease;}
-.icon-btn:active{transform:scale(0.92);opacity:0.75;}
+.icon-btn,.avatar{transition:transform .1s ease,opacity .1s ease;}
+.icon-btn:active,.avatar:active{transform:scale(0.92);opacity:0.75;}
 .avatar{
-  position:relative;
+  position:relative;padding:0;cursor:pointer;
   width:32px;height:32px;border-radius:50%;
   background:var(--turf);
   display:flex;align-items:center;justify-content:center;
@@ -1698,6 +1698,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 /* New Training Session page's Save Draft / Discard row -- real full-width buttons underneath
    the last phase box (Scrimmage), not the plain text links used elsewhere. */
+.draft-note-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;}
+.draft-autosave-note{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);font-weight:600;color:var(--ink-soft);}
+.draft-autosave-note svg{width:14px;height:14px;color:var(--turf);flex-shrink:0;}
+.discard-link{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--ink-soft);font-size:var(--fs-base);font-weight:700;padding:12px 8px;margin-right:-8px;min-height:44px;border-radius:8px;}
+.discard-link svg{width:14px;height:14px;flex-shrink:0;}
+.discard-link:disabled{opacity:var(--opacity-disabled);cursor:not-allowed;}
+.discard-link:active:not(:disabled){opacity:0.6;}
 .build-bottom-actions{display:flex;gap:10px;margin-top:14px;}
 .bba-btn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 0;font-weight:700;font-size:var(--fs-md);border:1.5px solid var(--line);background:var(--bg-surface);}
 .bba-btn:active{background:var(--chalk-dim);}
@@ -8459,7 +8466,7 @@ function renderTopbar(){
     <div class="topbar-icons">
       <button class="icon-btn" onclick="openSearch()" title="Search">${ICONS.search}</button>
       <button class="icon-btn" style="${bmActive?'background:var(--cone);color:var(--pitch-dark);':''}" onclick="openBookmarks()" title="Bookmarks">${bmActive?ICONS.bookmarkFilled:ICONS.bookmark}</button>
-      <div class="avatar" title="Coach profile">TA</div>
+      <button class="avatar" onclick="nav('settings')" title="Coach profile" aria-label="Open coach profile">TA</button>
     </div>`;
 }
 function initTheme(){
@@ -11042,10 +11049,7 @@ function renderBuild(){
       ${activePhases.map((p,idx)=>phaseBoxHtml(p,idx)).join('')}
       ${state.extraSections.map(s=>extraBoxHtml(s)).join('')}
     </div>
-    <div class="build-bottom-actions trio" style="margin-top:22px;">
-      <button class="bba-btn save" ${count===0?'disabled':''} onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
-      <button class="bba-btn discard" ${count===0?'disabled':''} onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
-    </div>
+    ${draftNoteRowHtml(count===0)}
 
   </div>
   `;
@@ -11100,12 +11104,18 @@ function completeSession(){
 function dayName(){
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
 }
-function saveDraftAndExit(){
-  // The active build already auto-persists to localStorage on every render (see
-  // saveAppStateToStorage) -- this just gives the coach an explicit, reassuring exit point instead
-  // of silently trusting that background persistence.
-  showToast('Draft saved — find it on Home');
-  nav('home');
+/* An unfinished session is an automatically preserved draft -- saveAppStateToStorage() snapshots
+   the whole builder on every render and when the tab is hidden, and Home's Continue Session card
+   picks it back up -- so there's deliberately no manual "Save Draft" button (it only ever showed a
+   toast and went Home, which made it look like saving was required). The only drafts-related
+   actions are Save Session (commit to the Sessions library) and Discard (explicitly throw it away).
+   This row just states the auto-save and offers the quiet, confirm-guarded Discard. */
+function draftNoteRowHtml(disabled){
+  return `
+    <div class="draft-note-row">
+      <div class="draft-autosave-note">${ICONS.check}<span>Draft saves automatically</span></div>
+      <button class="discard-link" ${disabled?'disabled':''} onclick="requestDiscardSession()">${ICONS.trash}<span>Discard</span></button>
+    </div>`;
 }
 function requestDiscardSession(){ state.confirmDiscardOpen = true; renderOverlay(); }
 function cancelDiscardSession(){ state.confirmDiscardOpen = false; renderOverlay(); }
@@ -11336,11 +11346,7 @@ function renderReview(){
       ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Session looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
     </div>
 
-    <div class="build-bottom-actions trio" style="margin-top:22px;">
-      <button class="bba-btn" onclick="nav('build')">${ICONS.pencil} Edit</button>
-      <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
-      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
-    </div>
+    ${draftNoteRowHtml(false)}
   </div>`;
 }
 
