@@ -1759,6 +1759,25 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hfc-link svg{width:13px;height:13px;}
 .home-empty-recent{background:var(--bg-surface);border:1px dashed var(--line);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
 
+/* ---------- Workflow navigation (Session Setup -> Build Session -> Session Review, plus Find
+   Exercises / Exercise Detail nested under Build Session) ----------
+   The back link is deliberately plain text, not a bordered pill -- it must read as subordinate
+   to .nav-page-title, never compete with it. Both use theme-aware tokens throughout (no fixed
+   pastel backgrounds involved here), so no dark-mode-specific overrides are needed. */
+.nav-back-link{
+  display:inline-flex;align-items:center;gap:5px;
+  background:none;border:none;color:var(--ink-soft);
+  font-size:var(--fs-sm);font-weight:600;
+  padding:8px 2px;margin:0 0 2px -2px;min-height:34px;
+}
+.nav-back-link svg{width:11px;height:11px;flex-shrink:0;}
+.nav-back-link:active{opacity:0.6;}
+.nav-page-title{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-2xl);
+  text-transform:uppercase;letter-spacing:-0.01em;color:var(--ink);margin:0;line-height:1.15;
+}
+.nav-page-sub{font-size:var(--fs-md);color:var(--ink-soft);line-height:1.4;margin:4px 0 0;}
+
 /* ---------- Quick Start (3-screen shell: Home / Pre-Built Practices / Build a Custom Session) ----------
    Fixed pastel tokens (--sky-dim, --mint-dim, etc.) and --cone/--pitch are used throughout for
    card backgrounds -- none of these vary between light/dark themes (see CLAUDE.md "Color
@@ -9095,6 +9114,27 @@ const QUICKSTART_TAGS = ['1v1s','2v2s','Rondos','Shooting','Passing','Possession
 const QS_AGE_GROUPS = ['U6 – U8','U9 – U12','U13 – U15','U16+'];
 const QS_DURATIONS = [45,60,75,90];
 
+/* ============ WORKFLOW NAVIGATION (2026-10) ============
+   Session Setup -> Build Session -> Session Review is the app's one primary workflow, with Find
+   Exercises and Exercise Detail nested one level under Build Session (not peer stages). Every
+   screen in it gets the same shape: a small, visually-subordinate "Back to X" link naming where
+   it returns to, the literal screen name as the Page Title (never a coach-entered name -- that
+   stays page content below it), and identical "Next: X ->" wording on every forward step so the
+   coach's place in the workflow is always legible. Find Exercises/Exercise Detail only ever get
+   the back link, never a bottom "Next" CTA -- they're a subtask, not a stage to advance past. */
+function navBackRowHtml(label, onclick){
+  return `<button class="nav-back-link" onclick="${onclick}">${ICONS.back}<span>Back to ${escHtml(label)}</span></button>`;
+}
+function navPageTitleHtml(title, subtitle){
+  return `<h1 class="nav-page-title">${escHtml(title)}</h1>${subtitle ? `<div class="nav-page-sub">${escHtml(subtitle)}</div>` : ''}`;
+}
+function navNextCtaHtml(label, onclick, disabled){
+  return `
+  <div class="build-cta">
+    <button class="btn btn-primary" ${disabled?'disabled':''} onclick="${onclick}"><span>Next: ${escHtml(label)}</span>${ICONS.chevronRight}</button>
+  </div>`;
+}
+
 /* Shared header for all 3 Quick Start screens: a round back button, a bold title, and an
    optional right-side action (Screen 1's "i" info toggle, Screen 2's filter-reset icon) -- an
    empty spacer keeps the title's position consistent on screens with no right action. */
@@ -9334,6 +9374,12 @@ function renderExercises(){
   const replacingEx = state.replaceContext ? exById(state.replaceContext.oldId) : null;
   return `
   <div class="section-pad" style="padding-bottom:4px;">
+    ${pickingLabel ? `
+    <div style="margin-bottom:16px;">
+      ${navBackRowHtml('Build Session', "nav('build')")}
+      ${navPageTitleHtml('Find Exercises', 'Browse and add exercises to your session.')}
+    </div>
+    ` : ''}
     ${renderSessionBuilderBox(pickingLabel)}
     ${replacingEx ? `
       <div class="info-banner replace-banner">
@@ -9897,16 +9943,28 @@ function renderDetail(){
     .map(x => x.e);
   const st = secStyle(ex.section);
   const isDraft = state.draftExercise && state.draftExercise.id === ex.id;
+  // Opened via Find Exercises (pickForPhase() -> the picker -> this card) gets the standardized
+  // workflow header prepended below instead of its own back control inside the hero -- every
+  // other entry point (an already-added Build row, Review, a Saved Session, plain browsing) is
+  // untouched, same pill/circle treatment as before.
+  const heroBackHtml = state.fromBuildList
+    ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
+    : state.fromReview
+      ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
+      : state.fromSavedSession
+        ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Saved Session</button>`
+        : state.fromBuild
+          ? ''
+          : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`;
 
   return `
+  ${state.fromBuild ? `
+  <div class="section-pad" style="padding-bottom:0;">
+    ${navBackRowHtml('Find Exercises', 'backFromDetail()')}
+    ${navPageTitleHtml('Exercise Detail')}
+  </div>` : ''}
   <div class="detail-header" style="background:${st.bg};">
-    ${(state.fromBuild || state.fromBuildList)
-      ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
-      : state.fromReview
-        ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
-        : state.fromSavedSession
-          ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Saved Session</button>`
-          : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`}
+    ${heroBackHtml}
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
@@ -9951,7 +10009,7 @@ function renderDetail(){
   <div class="detail-actions">
     <button class="iconbtn-lg ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
     <button class="add-session-btn ${inPhase?'added':''}" onclick="detailToggle('${escJsAttr(ex.id)}')">
-      ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}
+      ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add to Session`}
     </button>
   </div>
   ${isDraft ? `<div class="draft-hint">${ICONS.pencil} Adding this to a session will also save it to your library</div>` : ''}
@@ -10420,19 +10478,16 @@ function renderSessionBuilderBox(pickingLabel){
   const pct = Math.min(100, Math.round((total/state.targetDuration)*100));
   const over = total > state.targetDuration;
   // pickingLabel is always truthy from here down -- the browsing-only case already returned above.
-  // Compact header (batch 60, revised batch 61/64): a "< Full Session" button (left) back to the
-  // Build/Review screen, with "Building Session" centered on that same row; exercise count + total
-  // minutes share the row below; then a thin progress bar and the equal-width section-chip row. No
-  // separate "Adding to: X" row -- the active chip below already communicates the current section.
+  // Compact sticky summary while picking: exercise count + total minutes, a thin progress bar,
+  // and the equal-width section-chip row. The page-level "<- Back to Build Session" / "Find
+  // Exercises" header above this (renderExercises()) already covers navigation/title -- this box
+  // is just the live stats readout, not its own header. No separate "Adding to: X" row -- the
+  // active chip below already communicates the current section.
   const NAV_CHIP_LABEL = {warmup:'Warmup', athletic:'Ath', duels:'Duels', rondos:'Rondos', ssg:'SSG', scrimmage:'Scrim'};
   return `
   <div class="sbb-sticky-wrap">
   <div class="session-builder-box">
-    <div class="sbb-back-row">
-      <button class="sbb-full-link" onclick="nav('build')">${ICONS.back} Full Session</button>
-    </div>
-    <div class="sbb-compact-title left">Building Session</div>
-    <div class="sbb-compact-row2">
+    <div class="sbb-compact-row2" style="margin-top:0;">
       <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>
       <div class="sbb-compact-stats"><b>${total}</b>/${state.targetDuration} min</div>
     </div>
@@ -10830,19 +10885,18 @@ function renderBuild(){
   const dateLabel = formatPracticeDateShort(state.practiceDate).toUpperCase();
   const locLabel = state.practiceLocation === 'indoor' ? 'INDOOR' : 'OUTDOOR';
 
-  // REVIEW button (batch 71): back to a single static "Review Session" label -- secondary/
-  // disabled with nothing added yet, same wording once anything exists. Never required to hit
-  // every phase or reach the target length first.
-  const ctaLabel = 'Review Session';
+  // Forward CTA disabled with nothing added yet -- never required to hit every phase or reach
+  // the target length first.
   const ctaDisabled = count===0;
 
   return `
   <div class="section-pad">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div class="eyebrow">Build Session</div>
-      <div class="session-state-tag ${count>0?'inprogress':'new'}">${count>0?'In Progress':'New'}</div>
+    ${navBackRowHtml('Session Setup', 'editPracticeSetup()')}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <h1 class="nav-page-title">Build Session</h1>
+      <div class="session-state-tag ${count>0?'inprogress':'new'}" style="flex-shrink:0;margin-top:3px;">${count>0?'In Progress':'New'}</div>
     </div>
-    <div class="session-name-wrap setup-title-name">
+    <div class="session-name-wrap setup-title-name" style="margin-top:12px;">
       <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.sessionName)}" oninput="setSessionName(this.value)">
       <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
@@ -10883,7 +10937,7 @@ function renderBuild(){
     ${state.showReviewPrompt ? `
     <div class="info-banner tip" style="margin-top:10px;">
       <div class="ptxt">${ICONS.check}<span>Scrimmage added -- this session looks complete!</span></div>
-      <button onclick="goToReviewFromBuild()"><span>Review Session</span>${ICONS.chevronRight}</button>
+      <button onclick="goToReviewFromBuild()"><span>Next: Session Review</span>${ICONS.chevronRight}</button>
     </div>` : ''}
 
     <div class="phase-grid">
@@ -10896,9 +10950,7 @@ function renderBuild(){
     </div>` : ''}
 
   </div>
-  <div class="build-cta">
-    <button class="btn btn-primary" ${ctaDisabled?'disabled':''} onclick="nav('review')">${ctaLabel.toUpperCase()}</button>
-  </div>
+  ${navNextCtaHtml('Session Review', "nav('review')", ctaDisabled)}
   `;
 }
 
@@ -11102,7 +11154,7 @@ function renderReview(){
   if(count===0){
     return `
     <div class="section-pad">
-      <button class="back-pill-flat" onclick="nav('build')">${ICONS.back} Build Session</button>
+      ${navBackRowHtml('Build Session', "nav('build')")}
       <div class="empty-state">
         ${ICONS.empty}
         <p>No exercises added yet.<br>Head to Build a Session to get started.</p>
@@ -11113,10 +11165,10 @@ function renderReview(){
 
   return `
   <div class="section-pad">
-    <button class="back-pill-flat" onclick="nav('build')">${ICONS.back} Build Session</button>
-    <div style="margin-top:14px;">
-      <div class="eyebrow">Session Review (unsaved)</div>
-      <h2 style="font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:700;font-size:var(--fs-2xl);margin:2px 0 0;">${state.sessionName.trim() ? escHtml(state.sessionName) : 'New Training Session'}</h2>
+    ${navBackRowHtml('Build Session', "nav('build')")}
+    ${navPageTitleHtml('Session Review')}
+    <div style="margin-top:10px;">
+      <div class="eyebrow">${state.sessionName.trim() ? escHtml(state.sessionName) : 'New Training Session'} (unsaved)</div>
     </div>
     <div class="review-stats-row">
       <div class="review-total-mini">${total} total minutes &middot; ${count} exercises &middot; ${state.practiceLocation==='indoor'?'Indoor':'Outdoor'}</div>
@@ -11303,12 +11355,12 @@ function renderPracticeSetup(){
   const presets = [60,75,90];
   const isCustomActive = !presets.includes(state.setupDuration);
   const topTemplates = rankedSetupTemplates();
-  const ctaLabel = state.setupSelectedTemplateId ? 'START WITH TEMPLATE' : 'START BUILDING';
 
   return `
   <div class="section-pad">
-    <div class="eyebrow">New Session</div>
-    <div class="session-name-wrap setup-title-name">
+    ${navBackRowHtml('Home', "nav('home')")}
+    ${navPageTitleHtml('Session Setup')}
+    <div class="session-name-wrap setup-title-name" style="margin-top:16px;">
       <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)">
       <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
@@ -11357,9 +11409,7 @@ function renderPracticeSetup(){
       <button class="setup-viewall-btn" onclick="openTemplatePickerForSetup()"><span>View All Templates</span>${ICONS.chevronRight}</button>
     ` : ''}
   </div>
-  <div class="build-cta">
-    <button class="btn btn-primary" onclick="startFromSetup()"><span>${ctaLabel}</span>${ICONS.chevronRight}</button>
-  </div>`;
+  ${navNextCtaHtml('Build Session', 'startFromSetup()')}`;
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
