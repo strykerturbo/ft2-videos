@@ -131,23 +131,23 @@
 }
 :root[data-theme="dark"]{
   --bg-main:#0B0F1A;      /* Primary Dark */
-  --bg-surface:#111827;   /* Dark Surface */
+  --bg-surface:#1C2535;   /* Dark Surface -- deliberately a clear step lighter than --bg-main so grouped cards/rectangles stay visible instead of reading black-on-black */
   --text-primary:#FFFFFF;
   --text-secondary:#94A3B8;/* Muted Text */
-  --border-color:#1F2937; /* Dark Gray */
+  --border-color:#2D394C; /* Dark Gray -- lifted along with --bg-surface so card outlines still read */
   --accent-volt:#F7FF00;
   --pitch:#111827;       /* lighter than --bg-main so tiles/chrome stay visible, not black-on-black */
   --pitch-dark:#1F2937;
-  --chrome:#151E2E;       /* one step lighter than --bg-surface (#111827) so nav/header chrome
+  --chrome:#151E2E;       /* one step lighter than the old dark surface (#111827) so nav/header chrome
                               reads as its own layer instead of blending into cards/content */
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg-main:#0B0F1A;
-    --bg-surface:#111827;
+    --bg-surface:#1C2535;
     --text-primary:#FFFFFF;
     --text-secondary:#94A3B8;
-    --border-color:#1F2937;
+    --border-color:#2D394C;
     --accent-volt:#F7FF00;
     --pitch:#111827;
     --pitch-dark:#1F2937;
@@ -1692,6 +1692,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-bottom-actions{display:flex;gap:10px;margin-top:14px;}
 .bba-btn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 0;font-weight:700;font-size:var(--fs-md);border:1.5px solid var(--line);background:var(--bg-surface);}
 .bba-btn:active{background:var(--chalk-dim);}
+.bba-btn:disabled{opacity:var(--opacity-disabled);cursor:not-allowed;}
+.bba-btn:disabled:active{background:var(--bg-surface);}
 .bba-btn svg{width:14px;height:14px;flex-shrink:0;}
 .bba-btn.discard{border-color:var(--warn);color:var(--warn);}
 /* Review page's row only: Discard Session toned down to gray (this is the "softer" review-stage
@@ -1809,6 +1811,14 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .nav-back-link svg{width:19px;height:19px;flex-shrink:0;}
 .nav-back-link:active{opacity:0.7;}
+/* Find Exercises only: the back link stays pinned at the top while the exercise list scrolls, with
+   the sticky session-stats box (see renderSessionBuilderBox) pinned directly beneath it -- that
+   box's inline top:39px is this wrapper's 55px height minus the 16px of its own top padding. */
+.nav-sticky-back{
+  position:sticky;top:0;z-index:12;background:var(--chalk);
+  margin:0 -18px;padding:0 18px 8px;
+}
+.nav-sticky-back .nav-back-link{margin-bottom:0;}
 .nav-page-title{
   font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-2xl);
   text-transform:uppercase;letter-spacing:-0.01em;color:var(--ink);margin:0;line-height:1.15;
@@ -9433,8 +9443,8 @@ function renderExercises(){
   return `
   <div class="section-pad" style="padding-bottom:4px;">
     ${pickingLabel ? `
+    <div class="nav-sticky-back">${navBackRowHtml('Build Session', "nav('build')")}</div>
     <div style="margin-bottom:16px;">
-      ${navBackRowHtml('Build Session', "nav('build')")}
       ${navPageTitleHtml('Find Exercises', 'Browse and add exercises to your session.')}
     </div>
     ` : ''}
@@ -10543,7 +10553,7 @@ function renderSessionBuilderBox(pickingLabel){
   // active chip below already communicates the current section.
   const NAV_CHIP_LABEL = {warmup:'Warmup', athletic:'Ath', duels:'Duels', rondos:'Rondos', ssg:'SSG', scrimmage:'Scrim'};
   return `
-  <div class="sbb-sticky-wrap">
+  <div class="sbb-sticky-wrap" style="top:39px;">
   <div class="session-builder-box">
     <div class="sbb-compact-row2" style="margin-top:0;">
       <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>
@@ -11001,10 +11011,10 @@ function renderBuild(){
       ${activePhases.map((p,idx)=>phaseBoxHtml(p,idx)).join('')}
       ${state.extraSections.map(s=>extraBoxHtml(s)).join('')}
     </div>
-    ${count>0 ? `<div class="build-bottom-actions trio" style="margin-top:22px;">
-      <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
-      <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
-    </div>` : ''}
+    <div class="build-bottom-actions trio" style="margin-top:22px;">
+      <button class="bba-btn save" ${count===0?'disabled':''} onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
+      <button class="bba-btn discard" ${count===0?'disabled':''} onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
+    </div>
 
   </div>
   `;
