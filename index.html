@@ -8486,17 +8486,38 @@ function clearBookmarkFilter(){
 }
 
 /* ============ BOTTOM NAV ============ */
+/* Which bottom-nav tab is active. The whole session-building workflow (Session Setup, Build
+   Session, Find Exercises, Exercise Detail, Session Review) lives under Sessions, so Sessions stays
+   lit throughout it -- but only the CONTEXTUAL versions of Find Exercises/Exercise Detail count:
+   Find Exercises = the exercises screen while picking for a phase (state.pickingPhase, set by
+   pickForPhase()/pickReplacementFor() and cleared by every standalone entry point); Exercise Detail
+   = opened from that picker (fromBuild, which only ever travels with pickingPhase -- a stale
+   fromBuild alone doesn't count), from a Build row, from Review, or from a Saved Session. The
+   standalone Exercise Library (Home's Explore Exercises, the Exercises tab) keeps lighting
+   Exercises instead. Returns 'home' | 'exercises' | 'sessions' | 'settings' | null. */
+function activeNavKey(){
+  const sc = state.screen;
+  if(sc === 'home') return 'home';
+  if(sc === 'settings') return 'settings';
+  if(['practiceSetup','build','review','sessions','sessionDetail'].includes(sc)) return 'sessions';
+  if(sc === 'exercises') return state.pickingPhase ? 'sessions' : 'exercises';
+  if(sc === 'detail'){
+    return ((state.fromBuild && state.pickingPhase) || state.fromBuildList || state.fromReview || state.fromSavedSession) ? 'sessions' : null;
+  }
+  return null;
+}
 function renderBottomnav(){
   const el = document.getElementById('bottomnav');
-  const item = (key,label,icon,onclick,activeKeys) => `
-    <button class="navitem ${ (activeKeys||[key]).includes(state.screen) ?'active':''}" onclick="${onclick}" aria-label="${label}" title="${label}">
+  const activeKey = activeNavKey();
+  const item = (key,label,icon,onclick) => `
+    <button class="navitem ${key===activeKey?'active':''}" onclick="${onclick}" aria-label="${label}" title="${label}">
       ${icon}
       <span class="navitem-label">${label}</span>
     </button>`;
   el.innerHTML = `
     ${item('home','Home',ICONS.homeFilled,"nav('home')")}
-    ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
-    ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()",['sessions','sessionDetail'])}
+    ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
+    ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()")}
     ${item('settings','Settings',ICONS.gear,"nav('settings')")}
   `;
 }
@@ -9041,7 +9062,7 @@ function renderHome(){
 
     <div class="sh" style="margin-top:22px;"><h2>Quick Access</h2></div>
     <div class="main-actions-row">
-      <button class="mac-tile" style="background:var(--sky-dim);" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
+      <button class="mac-tile" style="background:var(--sky-dim);" onclick="nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
         <div class="mact-icon">${ICONS.ballOutline}</div>
         <div class="mact-body">
           <div class="mact-label"><span>Explore Exercises</span></div>
@@ -9053,7 +9074,7 @@ function renderHome(){
         <div class="mact-icon">${ICONS.bolt}</div>
         <div class="mact-body">
           <div class="mact-label"><span>Quick Start</span></div>
-          <div class="mact-stat">Build a session in seconds</div>
+          <div class="mact-stat" style="font-weight:800;letter-spacing:0.06em;">COMING SOON</div>
         </div>
         <span class="mact-chevron">${ICONS.chevronRight}</span>
       </button>
