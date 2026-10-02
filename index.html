@@ -1763,15 +1763,20 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    Exercises / Exercise Detail nested under Build Session) ----------
    The back link is deliberately plain text, not a bordered pill -- it must read as subordinate
    to .nav-page-title, never compete with it. Both use theme-aware tokens throughout (no fixed
-   pastel backgrounds involved here), so no dark-mode-specific overrides are needed. */
+   pastel backgrounds involved here), so no dark-mode-specific overrides are needed.
+   Touch target is deliberately bigger than the visible glyph+label (padding, not a visible box)
+   -- 10px/14px padding around a 19px icon clears the 44px minimum with room to spare, landing
+   close to the ~48px preferred size, while the negative left margin keeps the chevron's visible
+   left edge flush with the page's own left padding instead of the touch target pushing it in. */
 .nav-back-link{
-  display:inline-flex;align-items:center;gap:5px;
+  display:inline-flex;align-items:center;gap:6px;
   background:none;border:none;color:var(--ink-soft);
-  font-size:var(--fs-sm);font-weight:600;
-  padding:8px 2px;margin:0 0 2px -2px;min-height:34px;
+  font-size:var(--fs-base);font-weight:600;
+  padding:14px 10px;margin:0 0 8px -10px;min-height:44px;box-sizing:border-box;
+  border-radius:8px;
 }
-.nav-back-link svg{width:11px;height:11px;flex-shrink:0;}
-.nav-back-link:active{opacity:0.6;}
+.nav-back-link svg{width:19px;height:19px;flex-shrink:0;}
+.nav-back-link:active{opacity:0.7;}
 .nav-page-title{
   font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-2xl);
   text-transform:uppercase;letter-spacing:-0.01em;color:var(--ink);margin:0;line-height:1.15;
