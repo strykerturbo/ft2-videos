@@ -254,6 +254,13 @@ a{color:inherit;text-decoration:none;}
 #shell.has-workflow-cta #content{
   padding-bottom:calc(186px + env(safe-area-inset-bottom));
 }
+/* Session Review / Build Session: the last content row (Edit / Save Draft / Discard) is meant to read as one
+   group with the Save Session button docked right below it, so at the bottom of the scroll it
+   sits flush against the footer's own 12px top padding (i.e. ~12px above the button) instead of
+   the usual extra clearance -- footer ~73px + nav ~82px, minus the 16px overlap with that padding. */
+#shell.has-workflow-cta.workflow-tight #content{
+  padding-bottom:calc(139px + env(safe-area-inset-bottom));
+}
 
 .section-pad{padding:16px 18px;}
 
@@ -1251,7 +1258,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-row-icon svg{width:36px;height:36px;}
 .phase-row-body{flex:1;min-width:0;}
 .phase-row-title{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-md);color:var(--ink);}
-.phase-row-sub{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin-top:1px;}
+.phase-row-sub{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .phase-row-sub svg{width:11px;height:11px;color:var(--turf);vertical-align:-1px;margin-left:3px;display:inline-block;}
 .phase-row-sub .prs-starthere{color:var(--turf);font-weight:700;}
 .phase-row-sub .pcard-sugg{font-weight:600;opacity:0.75;}
@@ -9994,14 +10001,14 @@ function renderDetail(){
     .map(x => x.e);
   const st = secStyle(ex.section);
   const isDraft = state.draftExercise && state.draftExercise.id === ex.id;
-  // Opened via Find Exercises (pickForPhase() -> the picker -> this card) gets the standardized
-  // workflow header prepended below instead of its own back control inside the hero -- every
-  // other entry point (an already-added Build row, Review, a Saved Session, plain browsing) is
-  // untouched, same pill/circle treatment as before.
+  // Opened via Find Exercises (pickForPhase() -> the picker -> this card) or from Session Review
+  // gets the standardized workflow header prepended below instead of its own back control inside
+  // the hero -- every other entry point (an already-added Build row, a Saved Session, plain
+  // browsing) is untouched, same pill/circle treatment as before.
   const heroBackHtml = state.fromBuildList
     ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Building Session</button>`
     : state.fromReview
-      ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Review Session</button>`
+      ? ''
       : state.fromSavedSession
         ? `<button class="back-to-session-pill" onclick="backFromDetail()">${ICONS.back} Back to Saved Session</button>`
         : state.fromBuild
@@ -10009,9 +10016,9 @@ function renderDetail(){
           : `<button class="backbtn" onclick="backFromDetail()">${ICONS.back}</button>`;
 
   return `
-  ${state.fromBuild ? `
+  ${(state.fromBuild || state.fromReview) ? `
   <div class="section-pad" style="padding-bottom:0;">
-    ${navBackRowHtml('Find Exercises', 'backFromDetail()')}
+    ${navBackRowHtml(state.fromReview ? 'Session Review' : 'Find Exercises', 'backFromDetail()')}
     ${navPageTitleHtml('Exercise Detail')}
   </div>` : ''}
   <div class="detail-header" style="background:${st.bg};">
@@ -10874,11 +10881,14 @@ function renderBuild(){
     // independent of (and layered under) the stronger turf "current phase" ring above.
     const filledBorder = !isEmpty ? `border-color:color-mix(in srgb, ${st.color} 45%, var(--line));` : '';
 
+    // Kept deliberately short so it always fits on ONE line next to the Add Exercise pill -- a
+    // wrapped second line made the row taller, which stretched the icon square into a rectangle.
+    // Over-target reads from the red time text (plus the red progress bar), not a trailing word.
     let subHtml = `${ids.length} exercise${ids.length===1?'':'s'}`;
     if(!isEmpty){
-      subHtml += ` &middot; ${mins} / ${suggested} min${over ? ` <span class="phase-over-tag">Over</span>` : ''}`;
+      subHtml = `<span class="${over ? 'phase-over-tag' : ''}" title="${over ? 'Over the suggested time' : 'Planned vs suggested time'}">${mins}/${suggested} min</span>`;
     } else if(isFirstPhaseWhileEmpty){
-      subHtml += ` &middot; <span class="prs-starthere">Start here</span>`;
+      subHtml = `<span class="prs-starthere">Start here</span>`;
     }
 
     // Tapping the icon/title area expands or collapses this phase's already-added exercises
@@ -10900,7 +10910,7 @@ function renderBuild(){
             </div>
           </div>
           <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 24%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')"><span class="pcard-add-plus">+</span><span class="pcard-add-text"><span>Add</span><span>Exercise</span></span></button>
-          ${isEmpty ? '' : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
+          ${isEmpty ? `<span class="phase-collapse-btn" style="visibility:hidden;" aria-hidden="true">${ICONS.chevronRight}</span>` : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
         </div>
       </div>
       ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
@@ -10991,7 +11001,7 @@ function renderBuild(){
       ${activePhases.map((p,idx)=>phaseBoxHtml(p,idx)).join('')}
       ${state.extraSections.map(s=>extraBoxHtml(s)).join('')}
     </div>
-    ${count>0 ? `<div class="build-bottom-actions">
+    ${count>0 ? `<div class="build-bottom-actions trio" style="margin-top:22px;">
       <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
       <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
     </div>` : ''}
@@ -11285,7 +11295,7 @@ function renderReview(){
       ${state.balanceInfoOpen ? `<div class="qp-info-panel">Balance My Session looks at every exercise already in this session and finds whichever Training Dimension is currently developed the least. It then suggests a few exercises for the right section of your practice that would help even that out.</div>` : ''}
     </div>
 
-    <div class="build-bottom-actions trio" style="margin-top:8px;">
+    <div class="build-bottom-actions trio" style="margin-top:22px;">
       <button class="bba-btn" onclick="nav('build')">${ICONS.pencil} Edit</button>
       <button class="bba-btn save" onclick="saveDraftAndExit()">${ICONS.check} Save Draft</button>
       <button class="bba-btn discard" onclick="requestDiscardSession()">${ICONS.trash} Discard</button>
@@ -11892,7 +11902,7 @@ function render(){
     bottomnavEl.innerHTML = '';
     document.getElementById('bottomDock').style.display = 'none';
     document.getElementById('workflowFooter').innerHTML = '';
-    document.getElementById('shell').classList.remove('has-workflow-cta');
+    document.getElementById('shell').classList.remove('has-workflow-cta', 'workflow-tight');
     document.getElementById('content').innerHTML = renderWhoIsCoaching();
     renderOverlay();
     return;
@@ -11905,6 +11915,7 @@ function render(){
   const footerHtml = workflowFooterHtml();
   document.getElementById('workflowFooter').innerHTML = footerHtml;
   document.getElementById('shell').classList.toggle('has-workflow-cta', !!footerHtml);
+  document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'build'));
   renderOverlay();
   scheduleSaveAppStateToStorage();
 }
