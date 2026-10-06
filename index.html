@@ -290,7 +290,12 @@ a{color:inherit;text-decoration:none;}
   padding:12px 18px 8px;
 }
 #workflowFooter:empty{display:none;}
-#workflowFooter .btn-primary{width:100%;padding:16px 0;font-size:var(--fs-lg);border-radius:12px;background:#F7FF00;}
+#workflowFooter .btn-primary{width:100%;padding:14.5px 0;font-size:var(--fs-lg);border-radius:12px;background:#F7FF00;
+  border:1.5px solid #B8C2CF; /* small gray outline; padding trimmed by the border width so the button's total height stays 52.5px */}
+:root[data-theme="dark"] #workflowFooter .btn-primary{border-color:#64748B;}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) #workflowFooter .btn-primary{border-color:#64748B;}
+}
 
 /* ---------- bottom nav ---------- */
 .bottomnav{
@@ -1827,6 +1832,11 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .nav-back-link svg{width:19px;height:19px;flex-shrink:0;}
 .nav-back-link:active{opacity:0.7;}
+/* Whitespace above the back link's text (page top -> text) should match the whitespace below it
+   (text -> step label/title). The link's own 14px padding is its touch target, so the extra top
+   space is trimmed from the page padding instead -- only on pages whose first element is the link. */
+.section-pad:has(> .nav-back-link:first-child),
+.section-pad:has(> .nav-sticky-back:first-child){padding-top:11px;}
 /* Find Exercises only: the back link stays pinned at the top while the exercise list scrolls, with
    the sticky session-stats box (see renderSessionBuilderBox) pinned directly beneath it -- that
    box's inline top:39px is this wrapper's 55px height minus the 16px of its own top padding. */
