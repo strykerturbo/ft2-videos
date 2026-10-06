@@ -1899,6 +1899,62 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hm-feed-head.open .hm-feed-chev{transform:rotate(90deg);}
 .hm-feed-head + .feed-item{margin-top:10px;}
 
+/* ---------- Session Setup (su-*) -- a quiet settings list, not a stack of form cards: big centered mint
+   icon tiles on the left, one control per row on the right, selected states in deep navy. Date,
+   Duration and Location rows deliberately share one height. */
+.su-page{padding-top:11px;}
+.su-eyebrow{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);}
+.su-title{margin-top:6px;}
+.su-title .session-name-input{
+  font-family:'Sora','Inter',sans-serif;font-weight:800;font-size:23px;text-transform:none;letter-spacing:-0.02em;
+  border-bottom:1px solid var(--line);padding:2px 26px 12px 0;
+}
+.su-title .session-name-pencil{top:8px;opacity:0.7;}
+.su-group{margin-top:2px;border-bottom:1px solid var(--line);}
+.su-row{display:flex;align-items:stretch;gap:10px;min-height:104px;padding:8px 0;}
+.su-row + .su-row{border-top:1px solid var(--line);}
+.su-lead{width:88px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-right:1px solid var(--line);}
+.su-icon{width:58px;height:58px;border-radius:15px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;}
+.su-icon svg{width:27px;height:27px;}
+.su-lab{font-size:10px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-soft);text-align:center;line-height:1.2;}
+.su-ctl{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
+.su-date-field{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;height:52px;padding:0 14px;border:1px solid var(--ink);border-radius:12px;cursor:pointer;}
+.su-date-value{font-size:var(--fs-lg);font-weight:700;color:var(--ink);}
+.su-date-chev{display:flex;color:var(--ink-soft);}
+.su-date-chev svg{width:16px;height:16px;}
+.su-date-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:none;cursor:pointer;}
+.su-seg{display:flex;gap:6px;}
+.su-seg-btn{
+  flex:1;min-width:0;height:52px;display:flex;align-items:center;justify-content:center;gap:6px;
+  border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);
+  font-size:var(--fs-md);font-weight:700;color:var(--ink-soft);padding:0 2px;white-space:nowrap;
+}
+.su-seg-btn svg{width:17px;height:17px;flex-shrink:0;}
+.su-seg-btn.active{background:var(--pitch);border-color:var(--pitch);color:#fff;}
+:root[data-theme="dark"] .su-seg-btn.active{border-color:#64748B;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .su-seg-btn.active{border-color:#64748B;} }
+.su-seg-input{text-align:center;font-size:var(--fs-input);color:var(--ink);background:var(--bg-main);border-color:var(--ink);outline:none;}
+.su-startwith{margin-top:20px;margin-bottom:10px;}
+.su-opt{
+  position:relative;display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:transparent;border:1px solid var(--line);border-radius:14px;padding:10px 12px 10px 10px;margin-top:10px;
+}
+.su-startwith + .su-opt{margin-top:0;}
+.su-opt.selected{border:1.5px solid var(--ink);padding:9.5px 11.5px 9.5px 9.5px;}
+.su-opt-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.su-dots{display:flex;gap:3px;}
+.su-dots span{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.su-opt-title{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-lg);color:var(--ink);}
+.su-opt-sub{font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.35;letter-spacing:-0.005em;}
+.su-opt-icon{width:56px;height:48px;border-radius:12px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.su-opt-icon svg{width:22px;height:22px;}
+.su-opt-chev{display:flex;color:var(--ink-soft);flex-shrink:0;}
+.su-opt-chev svg{width:16px;height:16px;}
+.su-check{width:22px;height:22px;border-radius:50%;background:var(--pitch);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+:root[data-theme="dark"] .su-check{background:#fff;color:#0B0F1A;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .su-check{background:#fff;color:#0B0F1A;} }
+.su-check svg{width:13px;height:13px;}
+
 /* ---------- Workflow navigation (Session Setup -> Build Session -> Session Review, plus Find
    Exercises / Exercise Detail nested under Build Session) ----------
    The back link is deliberately plain text, not a bordered pill -- it must read as subordinate
@@ -6693,6 +6749,7 @@ const ICONS = {
   user: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.3-6 8-6s7.3 2 8 6"/></g></svg>`,
   clock: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></g></svg>`,
   calendar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h2M13 13h2M8 17h2"/></g></svg>`,
+  mapPin: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/></g></svg>`,
   clipboard: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h8v16H5V5h3ZM9 3h6v4H9M8 11h7M8 15h7M8 19h4"/></g></svg>`,
   book: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v18H7.5A2.5 2.5 0 0 0 5 22V4.5ZM5 18.5A2.5 2.5 0 0 1 7.5 16H20"/></g></svg>`,
   folder: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h7l2 2h9v11H3V6Z"/></g></svg>`,
@@ -11555,6 +11612,20 @@ function setupTemplateCardHtml(t){
     <div class="setup-tmpl-meta">${t.duration}m &middot; ${locLabel} &middot; ${sectionCount} section${sectionCount===1?'':'s'}</div>
   </button>`;
 }
+function setupDateLabel(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+  if(!m) return '';
+  return new Date(+m[1], +m[2]-1, +m[3]).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+}
+/* One settings row: a big centered mint icon tile with its label directly beneath, control on the
+   right. All three rows (Date, Duration, Location) share this exact shape and height. */
+function setupRowHtml(icon, label, controlHtml){
+  return `
+  <div class="su-row">
+    <div class="su-lead"><span class="su-icon">${icon}</span><span class="su-lab">${label}</span></div>
+    <div class="su-ctl">${controlHtml}</div>
+  </div>`;
+}
 function renderPracticeSetup(){
   // Defensive lazy-init: covers a reload that lands directly back on this screen (state.screen is
   // persisted; Setup's own draft fields deliberately are not -- see the persistence functions).
@@ -11562,60 +11633,62 @@ function renderPracticeSetup(){
 
   const presets = [60,75,90];
   const isCustomActive = !presets.includes(state.setupDuration);
-  const topTemplates = rankedSetupTemplates();
+  const tmpl = state.setupSelectedTemplateId ? getTemplate(state.setupSelectedTemplateId) : null;
+  const scratchSelected = !tmpl;
+
+  const dateCtl = `
+    <label class="su-date-field">
+      <span class="su-date-value">${escHtml(setupDateLabel(state.setupDate))}</span>
+      <span class="su-date-chev">${ICONS.chevronRight}</span>
+      <input type="date" class="su-date-input" value="${state.setupDate}" aria-label="Date" onclick="try{this.showPicker()}catch(e){}" onchange="setSetupDate(this.value)">
+    </label>`;
+
+  const durationCtl = `
+    <div class="su-seg">
+      ${presets.map(v => `<button class="su-seg-btn ${state.setupDuration===v?'active':''}" onclick="setSetupDuration(${v})">${v}</button>`).join('')}
+      ${state.setupEditingDuration
+        ? `<input id="setupCustomDurInput" class="su-seg-btn su-seg-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${isCustomActive?state.setupDuration:''}" placeholder="#" onblur="commitSetupCustomDuration(this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
+        : `<button class="su-seg-btn ${isCustomActive?'active':''}" onclick="toggleSetupCustomDurationEdit()">${isCustomActive?state.setupDuration+' min':'Custom'}</button>`}
+    </div>`;
+
+  const locationCtl = `
+    <div class="su-seg">
+      <button class="su-seg-btn ${state.setupLocation==='outdoor'?'active':''}" onclick="setSetupLocation('outdoor')">${ICONS.sun}<span>Outdoor</span></button>
+      <button class="su-seg-btn ${state.setupLocation==='indoor'?'active':''}" onclick="setSetupLocation('indoor')">${ICONS.home}<span>Indoor</span></button>
+    </div>`;
 
   return `
-  <div class="section-pad">
+  <div class="section-pad su-page">
     ${navBackRowHtml('Home', "nav('home')")}
-    ${navPageTitleHtml('Session Setup', '', 'STEP 1 OF 3')}
-    <div class="session-name-wrap setup-title-name" style="margin-top:16px;">
-      <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)">
+    <div class="su-eyebrow">Session Setup</div>
+    <div class="session-name-wrap setup-title-name su-title">
+      <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)" aria-label="Session name">
       <span class="session-name-pencil">${ICONS.pencil}</span>
     </div>
 
-    <div class="setup-field-card">
-      <div class="setup-field-icon">${ICONS.calendar}</div>
-      <div class="setup-field-body">
-        <div class="ps-label">Date</div>
-        <input type="date" class="setup-date-input" value="${state.setupDate}" onchange="setSetupDate(this.value)">
-      </div>
+    <div class="su-group">
+      ${setupRowHtml(ICONS.calendar, 'Date', dateCtl)}
+      ${setupRowHtml(ICONS.clock, 'Duration (min)', durationCtl)}
+      ${setupRowHtml(ICONS.mapPin, 'Location', locationCtl)}
     </div>
 
-    <div class="setup-field-card">
-      <div class="setup-field-icon">${ICONS.clock}</div>
-      <div class="setup-field-body">
-        <div class="ps-label">Duration (min)</div>
-        <div class="duration-target col">
-          <div class="duration-target-row">
-            ${presets.map(v => `<button class="dtarget ${state.setupDuration===v?'active':''}" onclick="setSetupDuration(${v})">${v}</button>`).join('')}
-          </div>
-          ${state.setupEditingDuration
-            ? `<input id="setupCustomDurInput" class="dtarget-input full" type="text" inputmode="numeric" pattern="[0-9]*" value="${isCustomActive?state.setupDuration:''}" placeholder="#" onblur="commitSetupCustomDuration(this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
-            : `<button class="dtarget full ${isCustomActive?'active':''}" onclick="toggleSetupCustomDurationEdit()">${isCustomActive?state.setupDuration+' min':'Custom'}</button>`}
-        </div>
-      </div>
-    </div>
-
-    <div class="setup-field-card">
-      <div class="setup-field-icon">${ICONS.globe}</div>
-      <div class="setup-field-body">
-        <div class="ps-label">Location</div>
-        <div class="location-toggle setup-loc-toggle">
-          <button class="loc-btn ${state.setupLocation==='outdoor'?'active':''}" onclick="setSetupLocation('outdoor')">${ICONS.sun} Outdoor</button>
-          <button class="loc-btn ${state.setupLocation==='indoor'?'active':''}" onclick="setSetupLocation('indoor')">${ICONS.home} Indoor</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="sh" style="margin-top:28px;"><h2>Starting Point</h2></div>
-    ${setupScratchCardHtml()}
-    ${topTemplates.length ? `
-      <div class="ps-label" style="margin-top:16px;">Use a Template</div>
-      <div class="setup-tmpl-scroll">
-        ${topTemplates.map(t=>setupTemplateCardHtml(t)).join('')}
-      </div>
-      <button class="setup-viewall-btn" onclick="openTemplatePickerForSetup()"><span>View All Templates</span>${ICONS.chevronRight}</button>
-    ` : ''}
+    <div class="su-eyebrow su-startwith">Start with</div>
+    <button class="su-opt ${scratchSelected?'selected':''}" onclick="selectSetupScratch()">
+      <span class="su-opt-icon"><span class="su-dots">${PHASES.map(p=>`<span style="background:${secStyle(p.section).bg};"></span>`).join('')}</span></span>
+      <span class="su-opt-main">
+        <span class="su-opt-title">Start from Scratch</span>
+        <span class="su-opt-sub">Build your session from the six FT2 phases.</span>
+      </span>
+      ${scratchSelected ? `<span class="su-check">${ICONS.check}</span>` : ''}
+    </button>
+    <button class="su-opt su-opt-row ${tmpl?'selected':''}" onclick="openTemplatePickerForSetup()">
+      <span class="su-opt-icon">${ICONS.doc}</span>
+      <span class="su-opt-main">
+        <span class="su-opt-title">Choose a Template</span>
+        <span class="su-opt-sub">${tmpl ? `Using: ${escHtml(tmpl.name)}` : 'Start with an existing session template.'}</span>
+      </span>
+      ${tmpl ? `<span class="su-check">${ICONS.check}</span>` : `<span class="su-opt-chev">${ICONS.chevronRight}</span>`}
+    </button>
   </div>`;
 }
 
