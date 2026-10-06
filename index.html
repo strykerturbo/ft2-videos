@@ -1814,6 +1814,91 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hfc-link svg{width:13px;height:13px;}
 .home-empty-recent{background:var(--bg-surface);border:1px dashed var(--line);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
 
+/* ---------- Home (hm-*) -- loud-to-quiet: Start New Session, Continue Session, Quick Start,
+   Recent Sessions, Featured Exercise, Club Feed. Fixed pastel/--cone surfaces carry fixed dark text
+   (never var(--ink), which flips white in dark mode) -- same rule the other pastel components use. */
+.hm-page{padding-top:12px;padding-bottom:8px;}
+.hm-greet{margin:0 0 14px;}
+.hm-greet h1{font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:21px;line-height:1.15;letter-spacing:-0.01em;color:var(--ink);margin:0;}
+.hm-greet-sub{font-size:var(--fs-base);color:var(--ink-soft);margin-top:3px;}
+.hm-start{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:var(--cone);color:#0B0F1A;border:none;border-radius:16px;padding:18px 18px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.12);
+}
+.hm-start:active{transform:scale(0.99);}
+.hm-start-plus{width:42px;height:42px;border-radius:50%;background:#0B0F1A;color:var(--cone);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hm-start-plus svg{width:20px;height:20px;}
+.hm-start-title{flex:1;font-family:'Inter',sans-serif;font-weight:800;font-size:19px;letter-spacing:-0.01em;}
+.hm-start-chev{display:flex;flex-shrink:0;}
+.hm-start-chev svg{width:20px;height:20px;}
+.hm-continue{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:10px;
+  background:var(--bg-surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;
+}
+.hm-continue:active{background:var(--chalk-dim);}
+.hm-continue-icon{width:42px;height:42px;border-radius:12px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hm-continue-icon svg{width:20px;height:20px;}
+.hm-continue-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.hm-continue-title{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
+.hm-continue-name{font-size:var(--fs-base);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hm-continue-meta{font-size:var(--fs-sm);color:var(--ink-soft);}
+.hm-chev{display:flex;flex-shrink:0;color:var(--ink-soft);}
+.hm-chev svg{width:16px;height:16px;}
+
+.hm-section{margin-top:24px;}
+.hm-sh{display:flex;align-items:center;justify-content:space-between;}
+.hm-sh h2{font-family:'Inter',sans-serif;font-size:var(--fs-base);font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink);margin:0;}
+.hm-sh-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin:1px 0 10px;}
+.hm-sh + .hm-list,.hm-sh + .hm-feat,.hm-sh + .home-empty-recent{margin-top:8px;}
+
+/* Quick Start -- intentionally inert teasers (no handlers, no toast): dashed edge + badge read as
+   "planned", not "broken". */
+.hm-qs-list{display:flex;flex-direction:column;gap:8px;}
+.hm-qs{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--bg-surface);cursor:default;}
+.hm-qs-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0F172A;}
+.hm-qs-icon svg{width:19px;height:19px;}
+.hm-qs-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.hm-qs-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.hm-qs-title{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.hm-qs-desc{font-size:var(--fs-sm);color:var(--ink-soft);}
+.hm-soon{font-size:10px;font-weight:800;letter-spacing:0.03em;padding:3px 8px;border-radius:999px;background:var(--chalk-dim);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;}
+
+/* Recent Sessions -- one grouped list with hairline dividers, not a stack of separate cards */
+.hm-list{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.hm-sess{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
+.hm-sess + .hm-sess{border-top:1px solid var(--line);}
+.hm-sess:active{background:var(--chalk-dim);}
+.hm-sess-thumb{width:38px;height:38px;border-radius:10px;background:var(--pitch);color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hm-sess-thumb svg{width:18px;height:18px;}
+.hm-sess-thumb img.icon-ball-img{width:18px;height:18px;display:block;}
+.hm-sess-body{flex:1;min-width:0;}
+.hm-sess-name{font-size:var(--fs-md);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hm-sess-meta{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;}
+
+/* Featured Exercise -- one compact discovery row */
+.hm-feat{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;}
+.hm-feat:active{background:var(--chalk-dim);}
+.hm-feat-thumb{width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;}
+.hm-feat-thumb svg{width:22px;height:22px;}
+.hm-feat-thumb img,.hm-feat-thumb video{width:100%;height:100%;object-fit:cover;}
+.hm-feat-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.hm-feat-name{font-size:var(--fs-md);font-weight:700;color:var(--ink);line-height:1.25;}
+.hm-feat-tags{font-size:var(--fs-sm);color:var(--ink-soft);}
+.hm-feat-meta{font-size:var(--fs-sm);font-weight:700;color:var(--turf);}
+
+/* Club Feed -- quiet row at the bottom; expands in place to show the club's (real) links */
+.hm-feed-head{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;padding:10px 12px;}
+.hm-feed-head:active{background:var(--chalk-dim);}
+.hm-feed-icon{width:34px;height:34px;border-radius:10px;background:var(--chalk-dim);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hm-feed-icon svg{width:17px;height:17px;}
+.hm-feed-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+.hm-feed-title{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
+.hm-feed-sub{font-size:var(--fs-sm);color:var(--ink-soft);}
+.hm-feed-chev{transition:transform .15s;}
+.hm-feed-head.open .hm-feed-chev{transform:rotate(90deg);}
+.hm-feed-head + .feed-item{margin-top:10px;}
+
 /* ---------- Workflow navigation (Session Setup -> Build Session -> Session Review, plus Find
    Exercises / Exercise Detail nested under Build Session) ----------
    The back link is deliberately plain text, not a bordered pill -- it must read as subordinate
@@ -8463,6 +8548,7 @@ const state = {
   qsAgeGroup: 'U9 – U12',         // Screen 3 Section 3
   qsDuration: 60,                 // Screen 3 Section 4
   qsGenerating: false,            // true while the placeholder "Building Your Session..." overlay shows
+  homeFeedOpen: false,            // whether Home's Club Feed row is expanded to show the club's links
 };
 
 function setState(patch){ Object.assign(state, patch); render(); }
@@ -9033,126 +9119,90 @@ function renderSettings(){
 
 
 /* ============ HOME ============ */
+/* ============ HOME ============
+   Hierarchy, loudest to quietest: Start New Session -> Continue Session (only when a draft exists)
+   -> Quick Start (teasers, deliberately inert) -> Recent Sessions -> Featured Exercise -> Club Feed.
+   Quick Start's three cards are non-interactive "Coming Soon!" placeholders -- no tap handlers, no
+   toasts, nothing implying they work. The Quick Start screens themselves (renderQuickStart*) still
+   exist in the codebase but nothing on Home links to them for now. */
+function homeGreeting(){
+  const h = new Date().getHours();
+  return (h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening') + ', Coach';
+}
+function toggleHomeFeed(){ state.homeFeedOpen = !state.homeFeedOpen; render(); }
+function homeSessionRowHtml(s){
+  const isOwner = s.createdBy === state.coachName;
+  const when = new Date(s.createdAt || Date.now()).toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+  return `
+  <div class="hm-sess" role="button" tabindex="0" onclick="openSessionDetail('${escJsAttr(s.id)}')">
+    <div class="hm-sess-thumb">${ICONS.ball}</div>
+    <div class="hm-sess-body">
+      <div class="hm-sess-name">${escHtml(s.name)}</div>
+      <div class="hm-sess-meta">${escHtml(when)} &middot; ${s.totalMin} min</div>
+    </div>
+    ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}" aria-label="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
+    <span class="hm-chev">${ICONS.chevronRight}</span>
+  </div>`;
+}
 function renderHome(){
-  const totalEx = EXERCISES.length;
-  const savedCount = state.savedSessions.length;
-  const {count: draftCount, total: draftMin} = currentTotalMinutes();
+  const {count: draftCount} = currentTotalMinutes();
   const hasDraft = draftCount > 0;
   const featured = featuredExercise();
   const recent = myRecentSessions(3);
 
-  const continueSessionHtml = () => {
-    const pct = state.targetDuration ? Math.min(100, Math.round((draftMin/state.targetDuration)*100)) : 0;
-    const locLabel = state.practiceLocation==='indoor' ? 'Indoor' : state.practiceLocation==='outdoor' ? 'Outdoor' : '';
-    return `
-    <button class="home-continue-card" onclick="nav('build')">
-      <div class="hcc-icon">${ICONS.doc}</div>
-      <div class="hcc-body">
-        <div class="eyebrow">Continue Session</div>
-        <div class="hcc-title">${escHtml(state.sessionName.trim() || 'Untitled session')}</div>
-        <div class="hcc-meta">${draftCount} exercise${draftCount===1?'':'s'} &middot; ${draftMin} min${state.targetDuration?` of ${state.targetDuration}`:''}${locLabel?` &middot; ${locLabel}`:''}</div>
-        ${state.targetDuration ? `<div class="hcc-progress-row"><div class="progress-track" style="height:6px;"><div class="progress-fill" style="width:${pct}%;"></div></div><span class="hcc-pct">${pct}% complete</span></div>` : ''}
-      </div>
-      <span class="hcc-chevron-btn">${ICONS.chevronRight}</span>
-    </button>`;
-  };
+  const continueHtml = hasDraft ? `
+    <button class="hm-continue" onclick="nav('build')">
+      <span class="hm-continue-icon">${ICONS.doc}</span>
+      <span class="hm-continue-body">
+        <span class="hm-continue-title">Continue Session</span>
+        <span class="hm-continue-name">${escHtml(state.sessionName.trim() || 'Untitled session')}</span>
+        <span class="hm-continue-meta">${escHtml(formatPracticeDateShort(state.practiceDate))} &middot; ${state.targetDuration} min</span>
+      </span>
+      <span class="hm-chev">${ICONS.chevronRight}</span>
+    </button>` : '';
 
-  const featuredExerciseHtml = (ex) => {
+  const qsCard = (bg, icon, title, desc) => `
+    <div class="hm-qs" aria-disabled="true">
+      <span class="hm-qs-icon" style="background:${bg};">${icon}</span>
+      <span class="hm-qs-body">
+        <span class="hm-qs-top"><span class="hm-qs-title">${title}</span><span class="hm-soon">Coming Soon!</span></span>
+        <span class="hm-qs-desc">${desc}</span>
+      </span>
+    </div>`;
+
+  const recentHtml = recent.length
+    ? `<div class="hm-list">${recent.map(homeSessionRowHtml).join('')}</div>`
+    : `<div class="home-empty-recent">
+         <div class="hcc-meta">No saved sessions yet</div>
+         <button class="see-all" style="padding:0;" onclick="requestBuildNewSession()">Create your first session ${ICONS.chevronRight}</button>
+       </div>`;
+
+  const featuredHtml = featured ? (() => {
+    const ex = featured;
     const st = secStyle(ex.section);
     const iconColor = st.textOn==='dark' ? 'var(--pitch-dark)' : 'white';
     const fallback = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${st.bg};color:${iconColor};">${st.icon}</div>`;
     const thumb = ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;', false, fallback) : fallback;
     const tags = allTagsFor(ex).slice(0,3);
     return `
-    <div class="sh" style="margin-top:28px;"><h2>Featured Exercise</h2><button class="see-all" onclick="nav('exercises', {pickingPhase:null, sectionFilter:null, quickFilterValue:null})">View All ${ICONS.chevronRight}</button></div>
-    <button class="home-featured-card" onclick="openDetailFromHome('${escJsAttr(ex.id)}')">
-      <div class="hfc-top">
-        <div class="hfc-icon">${thumb}</div>
-        <div class="hfc-body">
-          <div class="hfc-meta">${escHtml(ex.section)} &middot; ${ex.duration} min</div>
-          <div class="hfc-name">${escHtml(ex.name)}</div>
-          ${tags.length ? `<div class="hfc-tags">${tags.map(t=>`<span>${escHtml(t)}</span>`).join('')}</div>` : ''}
-        </div>
-      </div>
-      ${ex.description ? `<div class="hfc-desc">${escHtml(ex.description)}</div>` : ''}
-      <div class="hfc-link">View Exercise ${ICONS.chevronRight}</div>
+    <button class="hm-feat" onclick="openDetailFromHome('${escJsAttr(ex.id)}')">
+      <span class="hm-feat-thumb">${thumb}</span>
+      <span class="hm-feat-body">
+        <span class="hm-feat-name">${escHtml(ex.name)}</span>
+        ${tags.length ? `<span class="hm-feat-tags">${tags.map(escHtml).join(' &middot; ')}</span>` : ''}
+        ${ex.duration ? `<span class="hm-feat-meta">${ex.duration} min</span>` : ''}
+      </span>
+      <span class="hm-chev">${ICONS.chevronRight}</span>
     </button>`;
-  };
+  })() : '';
 
-  const recentSessionsHtml = () => {
-    if(recent.length){
-      return `
-      <div class="sh" style="margin-top:28px;"><h2>Recent Sessions</h2><button class="see-all" onclick="nav('sessions')">See all</button></div>
-      ${recent.map(sessionRowHtml).join('')}`;
-    }
-    return `
-    <div class="sh" style="margin-top:28px;"><h2>Recent Sessions</h2></div>
-    <div class="home-empty-recent">
-      <div class="hcc-meta">No saved sessions yet</div>
-      <button class="see-all" style="padding:0;" onclick="requestBuildNewSession()">Create your first session ${ICONS.chevronRight}</button>
-    </div>`;
-  };
-
-  return `
-  <div class="section-pad">
-    <div class="home-hero">
-      <div class="home-hero-eyebrow">Coach Home</div>
-      <h1>Ready to coach?</h1>
-      <div class="home-hero-sub">Build a great session in a few taps.</div>
-      <button class="home-hero-cta" onclick="requestBuildNewSession()">
-        <span class="hhc-plus">${ICONS.plus}</span>
-        <span>Start New Session</span>
-        <span class="hhc-chev">${ICONS.chevronRight}</span>
-      </button>
-    </div>
-    ${state.dataSource === 'offline' ? `<div class="sync-banner" style="margin-top:16px;">${ICONS.image}<span>Couldn't reach your live exercise sheet just now — showing the last saved copy on this device. New videos, diagrams, or edits from the sheet won't appear until this reconnects. Try closing and reopening the app, or check your connection.</span></div>` : ''}
-    ${state.hasIdCollision ? `<div class="sync-banner" style="margin-top:16px;">${ICONS.image}<span>Some exercises in your sheet are missing an Exercise ID, or share one with another row. Tapping one of them may open the wrong exercise's details until the IDs are fixed — check the Exercise ID column for blanks or duplicates.</span></div>` : ''}
-
-    ${hasDraft ? continueSessionHtml() : ''}
-
-    <div class="sh" style="margin-top:22px;"><h2>Quick Access</h2></div>
-    <div class="main-actions-row">
-      <button class="mac-tile" style="background:var(--sky-dim);" onclick="nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, pickingPhase:null, sectionFilter:null, quickFilterValue:null})">
-        <div class="mact-icon">${ICONS.ballOutline}</div>
-        <div class="mact-body">
-          <div class="mact-label"><span>Explore Exercises</span></div>
-          <div class="mact-stat">${totalEx} Exercises</div>
-        </div>
-        <span class="mact-chevron">${ICONS.chevronRight}</span>
-      </button>
-      <button class="mac-tile" style="background:var(--cone-dim);" onclick="quickStartFromHome()">
-        <div class="mact-icon">${ICONS.bolt}</div>
-        <div class="mact-body">
-          <div class="mact-label"><span>Quick Start</span></div>
-          <div class="mact-stat" style="font-weight:800;letter-spacing:0.06em;">COMING SOON</div>
-        </div>
-        <span class="mact-chevron">${ICONS.chevronRight}</span>
-      </button>
-      <button class="mac-tile" style="background:var(--claret-dim);" onclick="scrollToClubFeed()">
-        <div class="mact-icon">${ICONS.user}</div>
-        <div class="mact-body">
-          <div class="mact-label"><span>Club Feed</span></div>
-          <div class="mact-stat">See what coaches are sharing</div>
-        </div>
-        <span class="mact-chevron">${ICONS.chevronRight}</span>
-      </button>
-      <button class="mac-tile" style="background:var(--mint-dim);" onclick="nav('sessions');syncSessionsFromSheet()">
-        <div class="mact-icon">${ICONS.doc}</div>
-        <div class="mact-body">
-          <div class="mact-label"><span>My Sessions</span></div>
-          <div class="mact-stat">${savedCount} Saved</div>
-        </div>
-        <span class="mact-chevron">${ICONS.chevronRight}</span>
-      </button>
-    </div>
-
-    ${featured ? featuredExerciseHtml(featured) : ''}
-
-    ${recentSessionsHtml()}
-
-    ${FEED_ITEMS.length ? `
-    <div class="sh home-feed-header" id="home-feed-anchor" style="margin-top:28px;"><h2>Club Feed</h2><a class="see-all" href="#">See all</a></div>
-    ${FEED_ITEMS.map(f => { const tag = f.url?'a':'div'; const attrs = f.url?`href="${escAttr(f.url)}" target="_blank" rel="noopener"`:''; return `
+  const feedHtml = FEED_ITEMS.length ? `
+    <button class="hm-feed-head ${state.homeFeedOpen?'open':''}" onclick="toggleHomeFeed()" aria-expanded="${state.homeFeedOpen?'true':'false'}">
+      <span class="hm-feed-icon">${ICONS.book}</span>
+      <span class="hm-feed-body"><span class="hm-feed-title">Club Feed</span><span class="hm-feed-sub">Latest updates from your club</span></span>
+      <span class="hm-chev hm-feed-chev">${ICONS.chevronRight}</span>
+    </button>
+    ${state.homeFeedOpen ? FEED_ITEMS.map(f => { const tag = f.url?'a':'div'; const attrs = f.url?`href="${escAttr(f.url)}" target="_blank" rel="noopener"`:''; return `
       <${tag} class="feed-item ${f.url?'linked':''}" ${attrs}>
         <div class="feed-thumb">${f.icon}</div>
         <div>
@@ -9161,7 +9211,47 @@ function renderHome(){
           <div class="fsub">${f.sub}</div>
         </div>
         ${f.url?`<div class="fchevron">${ICONS.chevronRight}</div>`:''}
-      </${tag}>`; }).join('')}` : ''}
+      </${tag}>`; }).join('') : ''}` : '';
+
+  return `
+  <div class="section-pad hm-page">
+    <div class="hm-greet">
+      <h1>${homeGreeting()}</h1>
+      <div class="hm-greet-sub">Ready to plan, coach and develop.</div>
+    </div>
+
+    <button class="hm-start" onclick="requestBuildNewSession()">
+      <span class="hm-start-plus">${ICONS.plus}</span>
+      <span class="hm-start-title">Start New Session</span>
+      <span class="hm-start-chev">${ICONS.chevronRight}</span>
+    </button>
+    ${continueHtml}
+
+    <section class="hm-section">
+      <div class="hm-sh"><h2>Quick Start</h2></div>
+      <div class="hm-sh-sub">Build a session in seconds.</div>
+      <div class="hm-qs-list">
+        ${qsCard('var(--sky-dim)', ICONS.clipboard, 'Pre-built Sessions', 'Use a proven template')}
+        ${qsCard('var(--cone-dim)', ICONS.sparkles, 'Custom Session', 'Set your focus and generate')}
+        ${qsCard('var(--mint-dim)', ICONS.dice, 'Surprise Me', 'Let FT2 build one for you')}
+      </div>
+    </section>
+
+    <section class="hm-section">
+      <div class="hm-sh"><h2>Recent Sessions</h2>${recent.length ? `<button class="see-all" onclick="nav('sessions');syncSessionsFromSheet()">See all</button>` : ''}</div>
+      ${recentHtml}
+    </section>
+
+    ${featured ? `
+    <section class="hm-section">
+      <div class="hm-sh"><h2>Featured Exercise</h2><button class="see-all" onclick="nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, pickingPhase:null, sectionFilter:null, quickFilterValue:null})">View All</button></div>
+      ${featuredHtml}
+    </section>` : ''}
+
+    ${feedHtml ? `<section class="hm-section">${feedHtml}</section>` : ''}
+
+    ${state.dataSource === 'offline' ? `<div class="sync-banner" style="margin-top:22px;">${ICONS.image}<span>Couldn't reach your live exercise sheet just now — showing the last saved copy on this device. New videos, diagrams, or edits from the sheet won't appear until this reconnects. Try closing and reopening the app, or check your connection.</span></div>` : ''}
+    ${state.hasIdCollision ? `<div class="sync-banner" style="margin-top:14px;">${ICONS.image}<span>Some exercises in your sheet are missing an Exercise ID, or share one with another row. Tapping one of them may open the wrong exercise's details until the IDs are fixed — check the Exercise ID column for blanks or duplicates.</span></div>` : ''}
   </div>`;
 }
 
@@ -11151,7 +11241,8 @@ function requestBuildNewSession(){
   if(count>0){ state.confirmNewSessionOpen = true; renderOverlay(); }
   else { initSetupDraft(); nav('practiceSetup'); }
 }
-// Home's "Quick Start" tile (mockup-inspired Quick Access grid) -- "build a session in seconds."
+// Entry point for the Quick Start screens -- currently NOT wired to anything: Home's Quick Start
+// section shows three inert "Coming Soon!" cards instead. Kept so re-enabling is one onclick.
 // A draft already in progress just resumes it (same destination as the Continue Session card,
 // so this never silently discards exercises already added); a genuinely empty draft skips
 // Practice Setup's form entirely and drops straight into Quick Pick for the first phase, since
@@ -11160,9 +11251,6 @@ function quickStartFromHome(){
   const {count} = currentTotalMinutes();
   if(count>0){ nav('build'); return; } // a session is already in progress -- resume it, same as before
   nav('quickStartHome');
-}
-function scrollToClubFeed(){
-  document.getElementById('home-feed-anchor')?.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function cancelNewSessionModal(){ state.confirmNewSessionOpen = false; renderOverlay(); }
 function resumeInProgressSession(){ state.confirmNewSessionOpen = false; nav('build'); }
