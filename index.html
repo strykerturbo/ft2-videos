@@ -1904,7 +1904,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    Duration and Location rows deliberately share one height. */
 .su-page{padding-top:11px;}
 .su-eyebrow{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);}
-.su-title{margin-top:6px;}
+.su-title{margin-top:0;}
 .su-title .session-name-input{
   font-family:'Sora','Inter',sans-serif;font-weight:800;font-size:23px;text-transform:none;letter-spacing:-0.02em;
   border-bottom:1px solid var(--line);padding:2px 26px 12px 0;
@@ -11660,7 +11660,7 @@ function renderPracticeSetup(){
   return `
   <div class="section-pad su-page">
     ${navBackRowHtml('Home', "nav('home')")}
-    <div class="su-eyebrow">Session Setup</div>
+    ${navPageTitleHtml('Session Setup', '', 'STEP 1 OF 3')}
     <div class="session-name-wrap setup-title-name su-title">
       <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)" aria-label="Session name">
       <span class="session-name-pencil">${ICONS.pencil}</span>
