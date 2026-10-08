@@ -9595,10 +9595,19 @@ function renderQuickStartCustom(){
 }
 
 /* ============ EXERCISES (grid + filters) ============ */
+/* While adding to a session (Find Exercises), typing in the search box looks across EVERY section --
+   not just the one being filled -- since a coach searching by name shouldn't need to know which
+   section an exercise is filed under. The section chips/tag filters still apply when the box is
+   empty. A found exercise is added to its own section's phase (targetPhaseKeyFor()), so it lands
+   where it belongs. Not applied during "Replace Exercise", which is deliberately scoped to the
+   replaced exercise's own section. */
+function searchSpansSections(){
+  return !!(state.pickingPhase && !state.replaceContext && state.search.trim());
+}
 function matchesFilters(ex){
   if(state.replaceContext && ex.id === state.replaceContext.oldId) return false; // can't "replace" with itself
   if(state.filters.bookmarkedOnly && !state.bookmarks.has(ex.id)) return false;
-  if(state.sectionFilter && ex.section !== state.sectionFilter) return false;
+  if(state.sectionFilter && !searchSpansSections() && ex.section !== state.sectionFilter) return false;
   if(state.filters.durations.size){
     const d = ex.duration || 10;
     let bucket;
@@ -9685,7 +9694,9 @@ function renderExercises(){
         <button onclick="clearBookmarkFilter()">Show all</button>
       </div>` : ''}
 
-    ${pickingLabel ? `<div class="ex-section-heading"><span class="esh-name">${escHtml(pickingLabel)}</span><span class="esh-count">${sectionTotalCount} exercise${sectionTotalCount===1?'':'s'}</span></div>` : ''}
+    ${pickingLabel ? (searchSpansSections()
+      ? `<div class="ex-section-heading"><span class="esh-name">All sections</span><span class="esh-count">searching every exercise</span></div>`
+      : `<div class="ex-section-heading"><span class="esh-name">${escHtml(pickingLabel)}</span><span class="esh-count">${sectionTotalCount} exercise${sectionTotalCount===1?'':'s'}</span></div>`) : ''}
 
     ${pickingLabel ? `
     <div class="discovery-row">
@@ -9703,7 +9714,9 @@ function renderExercises(){
     </div>
     <div class="ex-count-line-row">
       <div class="ex-count-line">
-        ${state.quickFilterValue
+        ${searchSpansSections()
+          ? `<div>${list.length} result${list.length===1?'':'s'} across all sections</div>`
+          : state.quickFilterValue
           ? `<div class="ex-count-eyebrow">${escHtml(pickingLabel).toUpperCase()} &middot; ${escHtml(state.quickFilterValue).toUpperCase()}</div><div>${list.length} exercise${list.length===1?'':'s'}</div>`
           : `<div>${list.length} ${escHtml(pickingLabel)} exercise${list.length===1?'':'s'}</div>`}
       </div>
