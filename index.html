@@ -7483,8 +7483,7 @@ function initLazyMedia(){
         if(!entry.isIntersecting) return;
         const el = entry.target;
         lazyMediaObserver.unobserve(el);
-        el.src = el.dataset.lazySrc;
-        delete el.dataset.lazySrc;
+        startLazyVideo(el);
       });
     }, {rootMargin:'300px 0px'});
   }
@@ -7493,8 +7492,16 @@ function initLazyMedia(){
   } else {
     // No IntersectionObserver support -- fail safe to loading everything rather than leaving
     // every thumbnail permanently blank.
-    pending.forEach(el => { el.src = el.dataset.lazySrc; delete el.dataset.lazySrc; });
+    pending.forEach(startLazyVideo);
   }
+}
+/* preload must flip to "metadata" BEFORE src is set: a video left at preload="none" never fetches
+   anything, so it never decodes its first frame and the thumbnail stays blank forever (confirmed
+   against a real exercise video: readyState stayed 0 / width 0 with "none", 4 / 2048 with "metadata"). */
+function startLazyVideo(el){
+  el.preload = 'metadata';
+  el.src = el.dataset.lazySrc;
+  delete el.dataset.lazySrc;
 }
 /* A Diagram URL that's set but unreachable/invalid (wrong link type -- a Google Drive share page
    or YouTube page instead of a direct file link -- a typo'd/renamed filename, or a link accidentally
@@ -9982,6 +9989,7 @@ function renderSoft(){
   const selStart = (active && typeof active.selectionStart === 'number') ? active.selectionStart : null;
   const selEnd = (active && typeof active.selectionEnd === 'number') ? active.selectionEnd : null;
   document.getElementById('content').innerHTML = screens[state.screen]();
+  initLazyMedia(); // renderSoft() is the search-as-you-type path -- the new thumbnails need arming too
   if(activeId){
     const el = document.getElementById(activeId);
     if(el){
