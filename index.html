@@ -1904,12 +1904,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    Duration and Location rows deliberately share one height. */
 .su-page{padding-top:11px;}
 .su-eyebrow{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);}
-.su-title{margin-top:0;}
-.su-title .session-name-input{
-  font-family:'Sora','Inter',sans-serif;font-weight:800;font-size:23px;text-transform:none;letter-spacing:-0.02em;
-  border-bottom:1px solid var(--line);padding:2px 26px 12px 0;
+.su-title-input{
+  width:100%;height:52px;padding:0 14px;border:1px solid var(--ink);border-radius:12px;background:transparent;
+  font-family:inherit;font-size:var(--fs-lg);font-weight:700;color:var(--ink);outline:none;
+  text-overflow:ellipsis;
 }
-.su-title .session-name-pencil{top:8px;opacity:0.7;}
+.su-title-input::placeholder{color:var(--ink-soft);font-weight:600;opacity:0.7;}
+.su-title-input:focus{box-shadow:var(--ring-focus);}
 .su-group{margin-top:2px;border-bottom:1px solid var(--line);}
 .su-row{display:flex;align-items:stretch;gap:10px;min-height:104px;padding:8px 0;}
 .su-row + .su-row{border-top:1px solid var(--line);}
@@ -11657,6 +11658,8 @@ function renderPracticeSetup(){
   const tmpl = state.setupSelectedTemplateId ? getTemplate(state.setupSelectedTemplateId) : null;
   const scratchSelected = !tmpl;
 
+  const titleCtl = `<input class="su-title-input" type="text" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)" aria-label="Session title" autocomplete="off">`;
+
   const dateCtl = `
     <label class="su-date-field">
       <span class="su-date-value">${escHtml(setupDateLabel(state.setupDate))}</span>
@@ -11682,12 +11685,8 @@ function renderPracticeSetup(){
   <div class="section-pad su-page">
     ${navBackRowHtml('Home', "nav('home')")}
     ${navPageTitleHtml('Session Setup', '', 'STEP 1 OF 3')}
-    <div class="session-name-wrap setup-title-name su-title">
-      <input class="session-name-input" placeholder="Name this practice" value="${escAttr(state.setupName)}" oninput="setSetupName(this.value)" aria-label="Session name">
-      <span class="session-name-pencil">${ICONS.pencil}</span>
-    </div>
-
     <div class="su-group">
+      ${setupRowHtml(ICONS.pencil, 'Title', titleCtl)}
       ${setupRowHtml(ICONS.calendar, 'Date', dateCtl)}
       ${setupRowHtml(ICONS.clock, 'Duration (min)', durationCtl)}
       ${setupRowHtml(ICONS.mapPin, 'Location', locationCtl)}
