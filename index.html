@@ -263,7 +263,7 @@ a{color:inherit;text-decoration:none;}
 #shell.has-workflow-cta #content{
   padding-bottom:calc(186px + env(safe-area-inset-bottom));
 }
-/* Session Review / Build Session: the last content row (Edit / Save Draft / Discard) is meant to read as one
+/* Session Setup / Session Review / Build Session: the last content row (Edit / Save Draft / Discard) is meant to read as one
    group with the Save Session button docked right below it, so at the bottom of the scroll it
    sits flush against the footer's own 12px top padding (i.e. ~12px above the button) instead of
    the usual extra clearance -- footer ~73px + nav ~82px, minus the 16px overlap with that padding. */
@@ -1902,7 +1902,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 /* ---------- Session Setup (su-*) -- a quiet settings list, not a stack of form cards: big centered mint
    icon tiles on the left, one control per row on the right, selected states in deep navy. Date,
    Duration and Location rows deliberately share one height. */
-.su-page{padding-top:11px;}
+.su-page{padding-top:8px;}
+.su-page .nav-page-title{margin-bottom:6px;}
 .su-eyebrow{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);}
 .su-title-input{
   width:100%;height:52px;padding:0 14px;border:1px solid var(--ink);border-radius:12px;background:transparent;
@@ -1912,12 +1913,12 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .su-title-input::placeholder{color:var(--ink-soft);font-weight:600;opacity:0.7;}
 .su-title-input:focus{box-shadow:var(--ring-focus);}
 .su-group{margin-top:2px;border-bottom:1px solid var(--line);}
-.su-row{display:flex;align-items:stretch;gap:10px;min-height:104px;padding:8px 0;}
+.su-row{display:flex;align-items:stretch;gap:10px;min-height:76px;padding:4px 0;}
 .su-row + .su-row{border-top:1px solid var(--line);}
-.su-lead{width:88px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-right:1px solid var(--line);}
-.su-icon{width:58px;height:58px;border-radius:15px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;}
-.su-icon svg{width:27px;height:27px;}
-.su-lab{font-size:10px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-soft);text-align:center;line-height:1.2;}
+.su-lead{width:88px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-right:1px solid var(--line);}
+.su-icon{width:50px;height:50px;border-radius:13px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;}
+.su-icon svg{width:24px;height:24px;}
+.su-lab{font-size:9px;font-weight:800;letter-spacing:0.03em;white-space:nowrap;text-transform:uppercase;color:var(--ink-soft);text-align:center;line-height:1.2;}
 .su-ctl{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
 .su-date-field{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;height:52px;padding:0 14px;border:1px solid var(--ink);border-radius:12px;cursor:pointer;}
 .su-date-value{font-size:var(--fs-lg);font-weight:700;color:var(--ink);}
@@ -1935,26 +1936,38 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 :root[data-theme="dark"] .su-seg-btn.active{border-color:#64748B;}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .su-seg-btn.active{border-color:#64748B;} }
 .su-seg-input{text-align:center;font-size:var(--fs-input);color:var(--ink);background:var(--bg-main);border-color:var(--ink);outline:none;}
-.su-startwith{margin-top:20px;margin-bottom:10px;}
+.su-startwith{margin-top:12px;margin-bottom:8px;}
 .su-opt{
   position:relative;display:flex;align-items:center;gap:10px;width:100%;text-align:left;
-  background:transparent;border:1px solid var(--line);border-radius:14px;padding:10px 12px 10px 10px;margin-top:10px;
+  background:transparent;border:1px solid var(--line);border-radius:14px;padding:7px 12px 7px 8px;margin-top:8px;
 }
 .su-startwith + .su-opt{margin-top:0;}
-.su-opt.selected{border:1.5px solid var(--ink);padding:9.5px 11.5px 9.5px 9.5px;}
+.su-opt.selected{border:1.5px solid var(--ink);padding:6.5px 11.5px 6.5px 7.5px;}
 .su-opt-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
 .su-dots{display:flex;gap:3px;}
-.su-dots span{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.su-opt-title{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-lg);color:var(--ink);}
+.su-dots span{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.su-opt-title{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-md);color:var(--ink);}
 .su-opt-sub{font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.35;letter-spacing:-0.005em;}
-.su-opt-icon{width:56px;height:48px;border-radius:12px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.su-opt-icon svg{width:22px;height:22px;}
+.su-opt-icon{width:50px;height:40px;border-radius:11px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.su-opt-icon svg{width:20px;height:20px;}
 .su-opt-chev{display:flex;color:var(--ink-soft);flex-shrink:0;}
 .su-opt-chev svg{width:16px;height:16px;}
 .su-check{width:22px;height:22px;border-radius:50%;background:var(--pitch);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 :root[data-theme="dark"] .su-check{background:#fff;color:#0B0F1A;}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .su-check{background:#fff;color:#0B0F1A;} }
 .su-check svg{width:13px;height:13px;}
+/* Shorter phones: squeeze Session Setup further so it still fits one screen. Controls stay >=44px. */
+@media (max-height:800px){
+  .su-row{min-height:64px;}
+  .su-icon{width:42px;height:42px;border-radius:11px;}
+  .su-icon svg{width:21px;height:21px;}
+  .su-date-field,.su-title-input,.su-seg-btn{height:46px;}
+  .su-startwith{margin-top:8px;margin-bottom:6px;}
+}
+@media (max-height:720px){
+  .su-opt-sub{display:none;}
+  .su-page .nav-back-link{min-height:40px;padding-top:10px;padding-bottom:10px;}
+}
 
 /* ---------- Workflow navigation (Session Setup -> Build Session -> Session Review, plus Find
    Exercises / Exercise Detail nested under Build Session) ----------
@@ -12161,7 +12174,7 @@ function render(){
   const footerHtml = workflowFooterHtml();
   document.getElementById('workflowFooter').innerHTML = footerHtml;
   document.getElementById('shell').classList.toggle('has-workflow-cta', !!footerHtml);
-  document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'build'));
+  document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'build' || state.screen === 'practiceSetup'));
   renderOverlay();
   scheduleSaveAppStateToStorage();
 }
