@@ -328,6 +328,15 @@ rather than letting it get rediscovered next session.
   *new* still-thumbnail call site should keep going through `mediaTagHtml()` rather than hand-
   rolling its own `<video>` tag, or it'll silently bypass this lazy-loading and reintroduce the
   same crash as the exercise library grows.
+- **Exercise-card thumbnails are pre-made pictures, not live video frames (2026-10).** Showing a
+  video's first frame meant downloading and decoding part of a 5-15 MB video (all of them have the
+  index at the end of the file, and the link goes through a github.com -> raw.githubusercontent.com
+  redirect), which took 1-6 seconds per card. `mediaTagHtml()` now first shows `thumbs/<video file
+  name>.jpg` (480px, ~8 KB, served from GitHub Pages) and only falls back to the lazy first-frame
+  `<video>` if that picture 404s (`thumbFailed()`). **Every new exercise video needs a matching
+  `thumbs/<same name>.jpg`** or it goes back to the slow path; Claude can generate them (draw
+  frame 0.1s to a 480px canvas in the browser pane, save as JPEG ~0.78). Also: a `<video>` left at
+  `preload="none"` never loads a frame -- flip to `metadata` before setting `src`.
 
 ## Where things live
 

@@ -2211,7 +2211,10 @@ input.section-title-input:focus{border-color:var(--turf);}
 
 /* Video thumbnails everywhere except the Detail page: shows the clip's first frame only (no
    playback), with a small play badge so it still reads as "tap to watch", not a broken image. */
-.media-still-wrap{position:relative;overflow:hidden;}
+.media-still-wrap{position:relative;overflow:hidden;background:linear-gradient(100deg,var(--bg-surface) 30%,var(--line) 50%,var(--bg-surface) 70%);background-size:200% 100%;animation:thumbShimmer 1.4s linear infinite;}
+.media-still-wrap.is-loaded{animation:none;background:var(--bg-surface);}
+@keyframes thumbShimmer{from{background-position:100% 0;}to{background-position:-100% 0;}}
+@media (prefers-reduced-motion: reduce){ .media-still-wrap{animation:none;} }
 .media-still-wrap video{pointer-events:none;}
 .media-play-badge{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -7451,6 +7454,28 @@ function exById(id){
 function isVideoUrl(url){
   return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url) || url.startsWith('data:video/');
 }
+/* A video's pre-made thumbnail lives at thumbs/<video file name without extension>.jpg next to
+   index.html (e.g. .../4vs2.mp4 -> thumbs/4vs2.jpg). Returns '' when there's no usable file name. */
+function thumbUrlFor(url){
+  if(!url || url.startsWith('data:')) return '';
+  try{
+    const file = decodeURIComponent(url.split('#')[0].split('?')[0].split('/').pop());
+    const base = file.replace(/\.[^.]+$/, '');
+    return base ? 'thumbs/' + encodeURIComponent(base) + '.jpg' : '';
+  }catch(e){ return ''; }
+}
+/* No pre-made thumbnail for this video (new exercise whose .jpg hasn't been uploaded yet, or the
+   file is missing): drop the picture and let the hidden <video> take over via the lazy path. */
+function thumbFailed(img){
+  const wrap = img.parentNode;
+  const v = wrap && wrap.querySelector('video[data-fallback-src]');
+  img.remove();
+  if(!v) return;
+  v.dataset.lazySrc = v.dataset.fallbackSrc;
+  delete v.dataset.fallbackSrc;
+  v.style.display = 'block';
+  initLazyMedia();
+}
 let mediaFallbackSeq = 0;
 const mediaFallbackHtml = {};
 function mediaTagHtml(url, altText, extraStyle, autoplay, fallbackHtml){
@@ -7470,10 +7495,21 @@ function mediaTagHtml(url, altText, extraStyle, autoplay, fallbackHtml){
       return `<video src="${escAttr(url)}" autoplay muted loop playsinline style="${style}" onerror="mediaLoadFailed(this,'${fid}')"></video>`;
     }
     // Plain first-frame still, no play badge overlay -- reads as a normal photo thumbnail.
-    // No real src yet -- data-lazy-src only. initLazyMedia() (called after every render()) hands
-    // it a real src once the card is actually near the viewport; see the comment there for why.
+    // Fast path: a small pre-made picture (thumbs/<video name>.jpg, ~10 KB) shown right away, so
+    // nothing has to download or decode a multi-MB video just to draw a thumbnail. The <video> stays
+    // hidden and idle unless that picture is missing (thumbFailed), in which case it falls back to
+    // the old lazy first-frame path via data-lazy-src -- initLazyMedia() hands that a real src once
+    // the card is actually near the viewport; see the comment there for why.
+    const thumb = thumbUrlFor(url);
+    const vidAttrs = `muted playsinline preload="none" onloadedmetadata="this.currentTime=0.1" onloadeddata="this.parentNode.classList.add('is-loaded')" onerror="mediaLoadFailed(this,'${fid}')"`;
+    if(thumb){
+      return `<div class="media-still-wrap" style="${style}">
+      <img src="${escAttr(thumb)}" alt="" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;" onload="this.parentNode.classList.add('is-loaded')" onerror="thumbFailed(this)">
+      <video data-fallback-src="${escAttr(url)}#t=0.1" ${vidAttrs} style="width:100%;height:100%;object-fit:cover;display:none;"></video>
+    </div>`;
+    }
     return `<div class="media-still-wrap" style="${style}">
-      <video data-lazy-src="${escAttr(url)}#t=0.1" muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;display:block;" onloadedmetadata="this.currentTime=0.1" onerror="mediaLoadFailed(this,'${fid}')"></video>
+      <video data-lazy-src="${escAttr(url)}#t=0.1" ${vidAttrs} style="width:100%;height:100%;object-fit:cover;display:block;"></video>
     </div>`;
   }
   return `<img src="${escAttr(url)}" alt="${escAttr(altText||'')}" style="${style}" onerror="mediaLoadFailed(this,'${fid}')">`;
