@@ -8631,8 +8631,8 @@ const state = {
   editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
   confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
   confirmDeleteSessionId: null,  // id of the saved session pending delete confirmation (sheet)
-  confirmDuplicateSessionId: null, // id of the saved session pending the "discard current draft &
-                                    // duplicate" guard modal -- see requestDuplicateSession()
+  confirmDuplicateSessionId: null, // id of the saved session pending the "Make a copy?" confirm
+                                    // (also warns if a draft would be discarded) -- see requestDuplicateSession()
   templatePickerOpen: false,      // Build page: "Load a template" sheet open/closed
   editingSessionDetail: false,    // whether the saved Session Detail page's name/duration are editable right now
   enabledPhaseKeys: new Set(PHASES.map(p => p.key)), // which standard phases show as boxes on the Build page -- tailored by the applied template
@@ -10119,13 +10119,14 @@ function renderOverlay(){
     </div>`;
   }
   if(state.confirmDuplicateSessionId){
+    const dupSrc = state.savedSessions.find(x=>x.id===state.confirmDuplicateSessionId);
     html += `
     <div class="ios-alert-backdrop" onclick="cancelDuplicateSessionModal()">
       <div class="ios-alert" onclick="event.stopPropagation()">
-        <h3>You have a session in progress</h3>
-        <p>Duplicating this session will discard your current draft.</p>
+        <h3>Make a copy of this session?</h3>
+        <p>${dupSrc ? `This creates a new editable draft from "${escHtml(dupSrc.name)}". The original stays as it is.` : 'This creates a new editable draft. The original stays as it is.'}${currentTotalMinutes().count > 0 ? ' Your session in progress will be discarded.' : ''}</p>
         <div class="ios-alert-btns">
-          <button class="ios-alert-btn danger" onclick="confirmDuplicateSession()">Discard draft &amp; duplicate</button>
+          <button class="ios-alert-btn ${currentTotalMinutes().count > 0 ? 'danger' : 'primary'}" onclick="confirmDuplicateSession()">${currentTotalMinutes().count > 0 ? 'Discard draft &amp; make copy' : 'Make a copy'}</button>
           <button class="ios-alert-btn" onclick="cancelDuplicateSessionModal()">Cancel</button>
         </div>
       </div>
@@ -11401,20 +11402,21 @@ function startNewSessionDiscardingDraft(){
   initSetupDraft();
   nav('practiceSetup');
 }
-/* "Duplicate Session": guarded the same way as Build New Session above (a draft in progress must
-   be explicitly discarded first, via its own 2-button modal -- see renderOverlay()), then seeds a
+/* "Duplicate Session": always confirmed first ("Make a copy of this session?" -- see renderOverlay(),
+   which also warns when a draft in progress would be discarded), then seeds a
    brand-new, unsaved draft from a saved session's snapshot. The original saved session is only
    ever read here, never mutated -- and since the eventual completeSession() save always mints its
    own fresh id/timestamp regardless of what seeded the draft, nothing special is needed for that. */
 function requestDuplicateSession(id){
-  if(currentTotalMinutes().count > 0){ state.confirmDuplicateSessionId = id; renderOverlay(); }
-  else duplicateSessionToBuilder(id);
+  // Always asks first; the same dialog also warns when a draft in progress would be discarded.
+  state.confirmDuplicateSessionId = id;
+  renderOverlay();
 }
 function cancelDuplicateSessionModal(){ state.confirmDuplicateSessionId = null; renderOverlay(); }
 function confirmDuplicateSession(){
   const id = state.confirmDuplicateSessionId;
   state.confirmDuplicateSessionId = null;
-  resetBuilderDraft();
+  if(currentTotalMinutes().count > 0) resetBuilderDraft();
   duplicateSessionToBuilder(id);
 }
 function duplicateSessionToBuilder(id){
@@ -11940,11 +11942,11 @@ function renderSessionDetail(){
       <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')">${ICONS.back}</button>
       <div style="display:flex;align-items:center;gap:8px;">
         ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
-        <button class="dh-icon-btn" onclick="requestDuplicateSession('${escJsAttr(s.id)}')" title="Duplicate this session into a new editable draft">${ICONS.copy}</button>
         ${isOwner ? `<button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="${editing?'Done editing':'Edit session details'}">${editing?ICONS.check:ICONS.pencil}</button>` : ''}
         ${isOwner
           ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${escJsAttr(s.id)}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
           : `<div class="session-state-tag saved" style="position:static;">${ICONS.user} By ${escHtml(s.createdBy)}</div>`}
+        <button class="dh-icon-btn" onclick="requestDuplicateSession('${escJsAttr(s.id)}')" title="Make a copy of this session" aria-label="Make a copy of this session">${ICONS.copy}</button>
       </div>
     </div>
     <div class="dpill" style="margin-top:14px;">${ICONS.soccerBallPhoto} Saved Session</div>
