@@ -7443,6 +7443,33 @@ function exById(id){
   if(state.draftExercise && state.draftExercise.id === id) return state.draftExercise;
   return EXERCISES.find(e => e.id === id);
 }
+/* A saved session remembers each exercise as {id, name, ...} from the moment it was saved. The
+   Exercise IDs in the Google Sheet are not guaranteed to stay put (rows renumbered or reshuffled
+   later, so e.g. EX082 can go from "6v6 Half field game" to a completely different drill) -- so
+   looking a saved entry up by id alone can open the WRONG exercise. This resolves a saved entry
+   to today's library exercise by checking the id only when its name still agrees, then falling
+   back to the exercise with the same name (ignoring case/punctuation/spacing), then to the id's
+   exercise only if its name is a close match (a small rename or typo fix). Returns undefined when
+   nothing trustworthy matches -- better to say "no longer in the library" than open a random drill. */
+function normExName(n){ return String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+function exNameTokens(n){ return new Set(String(n||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)); }
+function exNameSimilarity(a, b){
+  const A = exNameTokens(a), B = exNameTokens(b);
+  if(!A.size || !B.size) return 0;
+  let shared = 0; A.forEach(t => { if(B.has(t)) shared++; });
+  return shared / (A.size + B.size - shared);
+}
+function resolveSavedExercise(entry){
+  if(!entry) return undefined;
+  const byId = exById(entry.id);
+  if(!entry.name) return byId;
+  const want = normExName(entry.name);
+  if(byId && normExName(byId.name) === want) return byId;
+  const sameName = EXERCISES.filter(e => normExName(e.name) === want);
+  if(sameName.length) return (entry.section && sameName.find(e => e.section === entry.section)) || sameName[0];
+  if(byId && exNameSimilarity(byId.name, entry.name) >= 0.6) return byId;
+  return undefined;
+}
 /* Renders an exercise's media as the right tag: <video> for MP4/WebM/MOV exports (e.g. from
    tactical-board.com), <img> for GIF/PNG/JPEG/etc. extraStyle sizes the element/wrapper.
    autoplay (default true) controls playback: the Detail page passes true so a coach sees the
@@ -7688,7 +7715,7 @@ function savedSessionTrainingItems(s){
     // Sessions saved before this flag existed fall back to the same content-based heuristic so
     // they still get a best-effort profile via a live exById() lookup instead of showing nothing.
     const hasSnapshot = e.hasScoreSnapshot === true || TRAINING_DIMENSIONS.some(d => typeof e[d.key] === 'number');
-    const scores = hasSnapshot ? e : exById(e.id);
+    const scores = hasSnapshot ? e : resolveSavedExercise(e);
     items.push({duration: e.duration, scores});
   }));
   return items;
@@ -10283,7 +10310,14 @@ function renderOverlay(){
 function openDetail(id){ nav('detail', {detailId:id, fromHome:false}); }
 function openDetailFromHome(id){ nav('detail', {detailId:id, fromHome:true, fromBuild:false, fromReview:false, fromSavedSession:false}); }
 function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false, fromSavedSession:false, fromHome:false}); }
-function openDetailFromSavedSession(id, sessionId){ nav('detail', {detailId:id, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, fromHome:false}); }
+function openDetailFromSavedSession(id, sessionId, savedName){
+  const sess = state.savedSessions.find(x=>x.id===sessionId);
+  let entry = null;
+  if(sess) sess.phases.forEach(p => p.exercises.forEach(e => { if(!entry && e.id===id && (savedName===undefined || e.name===savedName)) entry = e; }));
+  const ex = resolveSavedExercise(entry || {id, name: savedName});
+  if(!ex){ showToast('That exercise is no longer in the library'); return; }
+  id = ex.id;
+  nav('detail', {detailId:id, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, fromHome:false}); }
 // Tapping an exercise already added to a Building Session phase -- distinct from fromBuild (which
 // means "came from the Explore Exercises picker" and returns there via backFromDetail()'s
 // fallthrough); this returns straight to the Build page itself.
@@ -11424,13 +11458,17 @@ function duplicateSessionToBuilder(id){
   if(!src) return;
   state.pickingPhase = null; // never carry over a "current phase" highlight from whatever the coach was doing before -- self-contained regardless of whether a guard-modal reset already ran
   const enabledKeys = new Set();
+  // Resolve each saved exercise to today's library entry (see resolveSavedExercise) -- copying the
+  // saved ids straight across could pull in the wrong drills if the Sheet's ids have moved.
+  let leftOut = 0;
+  const resolveIds = (list) => list.map(e => resolveSavedExercise(e)).filter((ex, i) => { if(!ex) leftOut++; return !!ex; }).map(ex => ex.id);
   (src.phases||[]).forEach((entry, i) => {
     const p = entry.section ? PHASES.find(p=>p.section===entry.section) : null;
     if(p){
-      state.phaseData[p.key] = entry.exercises.map(e=>e.id);
+      state.phaseData[p.key] = resolveIds(entry.exercises);
       enabledKeys.add(p.key);
     } else {
-      state.extraSections.push({key: 'extra'+Date.now()+i, label: entry.label, exercises: entry.exercises.map(e=>e.id)});
+      state.extraSections.push({key: 'extra'+Date.now()+i, label: entry.label, exercises: resolveIds(entry.exercises)});
     }
   });
   // Standard phases the source session didn't use at all stay enabled but empty, same as any
@@ -11441,7 +11479,7 @@ function duplicateSessionToBuilder(id){
   state.practiceLocation = src.location || state.practiceLocation;
   state.sessionName = `${src.name} — Copy`;
   nav('build');
-  showToast(`Duplicated "${src.name}" — edit and save when ready`);
+  showToast(leftOut ? `Copied "${src.name}" — ${leftOut} exercise${leftOut>1?'s':''} no longer in the library left out` : `Duplicated "${src.name}" — edit and save when ready`);
 }
 function togglePhaseCollapsed(key){
   if(state.collapsedPhases.has(key)) state.collapsedPhases.delete(key); else state.collapsedPhases.add(key);
@@ -11802,13 +11840,13 @@ function recomputeSavedSessionStats(s){
 // session draft (state.phaseData/extraSections) -- a saved session's exercises are frozen
 // snapshot objects, not just ids, so these mutate s.phases directly instead of routing through
 // addToPhase/removeFromPhase.
-function removeExerciseFromSavedSession(sessionId, exerciseId){
+function removeExerciseFromSavedSession(sessionId, exerciseId, savedName){
   const s = state.savedSessions.find(s=>s.id===sessionId);
   if(!s) return;
   let removedName = '';
   s.phases.forEach(p => {
-    const idx = p.exercises.findIndex(e=>e.id===exerciseId);
-    if(idx!==-1){ removedName = p.exercises[idx].name; p.exercises.splice(idx,1); }
+    const idx = p.exercises.findIndex(e=>e.id===exerciseId && (savedName===undefined || e.name===savedName));
+    if(idx!==-1 && !removedName){ removedName = p.exercises[idx].name; p.exercises.splice(idx,1); }
   });
   s.phases = s.phases.filter(p => p.exercises.length);
   recomputeSavedSessionStats(s);
@@ -11819,7 +11857,7 @@ function addExerciseToSavedSession(sessionId, exerciseId){
   const s = state.savedSessions.find(s=>s.id===sessionId);
   const ex = exById(exerciseId);
   if(!s || !ex) return;
-  if(s.phases.some(p => p.exercises.some(e=>e.id===exerciseId))){ showToast(`"${ex.name}" is already in this session`); return; }
+  if(isExerciseInSavedSession(sessionId, exerciseId)){ showToast(`"${ex.name}" is already in this session`); return; }
   const phaseObj = PHASES.find(p=>p.section===ex.section);
   let target = s.phases.find(p => p.section === ex.section);
   if(!target){
@@ -11834,7 +11872,7 @@ function addExerciseToSavedSession(sessionId, exerciseId){
 }
 function isExerciseInSavedSession(sessionId, exerciseId){
   const s = state.savedSessions.find(s=>s.id===sessionId);
-  return !!(s && s.phases.some(p => p.exercises.some(e=>e.id===exerciseId)));
+  return !!(s && s.phases.some(p => p.exercises.some(e => { const r = resolveSavedExercise(e); return r && r.id===exerciseId; })));
 }
 // Enter "add an exercise to this saved session" mode -- browses the exercise library scoped to
 // nothing in particular (unlike the guided Build flow's pickForPhase, a saved session's phase
@@ -11997,7 +12035,7 @@ function renderSessionDetail(){
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
             <div class="phase-exlist">
-              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}','${escJsAttr(e.name)}')" style="cursor:pointer;">${peiThumbHtml(resolveSavedExercise(e))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}','${escJsAttr(e.name)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
             ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>
@@ -12008,7 +12046,7 @@ function renderSessionDetail(){
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${p.label}</div><div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div></div>
             <div class="phase-exlist">
-              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}')" style="cursor:pointer;">${peiThumbHtml(exById(e.id))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}','${escJsAttr(e.name)}')" style="cursor:pointer;">${peiThumbHtml(resolveSavedExercise(e))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}','${escJsAttr(e.name)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
             </div>
             ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>
