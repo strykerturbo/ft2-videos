@@ -7049,6 +7049,7 @@ async function syncExercisesFromSheet(){
   // collide with something newly added to the sheet.
   EXERCISES.push(...state.localExercises, ...fresh);
   state.hasIdCollision = dedupeExerciseIds(EXERCISES);
+  reconcileExerciseIds();
   render();
   showToast(`Synced with your live exercise sheet (${usedSource})`);
 }
@@ -7115,6 +7116,7 @@ async function syncSessionsFromSheet(){
     state.savedSessions.forEach(s => { if(!seenIds.has(String(s.id))) merged.push(s); }); // local-only, never yet synced (e.g. saved while offline)
     state.savedSessions = merged;
     state.sessionsSyncSource = 'live';
+    reconcileExerciseIds();
     render();
     retryPendingSessionPushes();
   } catch(err){
@@ -7458,6 +7460,73 @@ function exNameSimilarity(a, b){
   if(!A.size || !B.size) return 0;
   let shared = 0; A.forEach(t => { if(B.has(t)) shared++; });
   return shared / (A.size + B.size - shared);
+}
+/* Exercise IDs in the Sheet may get renumbered at any time, so everything this device remembers by
+   id is re-pointed after each successful live sync:
+   - A snapshot of "id -> name" from the previous sync is kept in localStorage. Any id whose
+     exercise has since changed (same name, new id) is remapped in this device's bookmarks, the
+     in-progress draft (phases, extra sections, review order, replace/detail context).
+   - The signed-in coach's own saved sessions are "healed": each saved exercise's id (and, for a
+     small rename, its name) is updated to today's library entry, and the session is pushed back to
+     the Sheet so every device and every other coach sees the right exercises too. Only done once
+     both the exercise library and the sessions list are live, so a stale or offline copy can never
+     "heal" anything wrongly or overwrite newer edits from another device.
+   Anything that can't be matched confidently by name is left alone rather than guessed. */
+const EX_INDEX_STORAGE_KEY = 'ft2_exercise_index_v1';
+function reconcileExerciseIds(){
+  if(state.dataSource !== 'live') return;
+  const localIds = new Set(state.localExercises.map(e => e.id));
+  const libraryNow = EXERCISES.filter(e => !localIds.has(e.id));
+  const nameToId = new Map();
+  libraryNow.forEach(e => { const k = normExName(e.name); nameToId.set(k, nameToId.has(k) ? null : e.id); });
+  let prev = null;
+  try{ prev = JSON.parse(localStorage.getItem(EX_INDEX_STORAGE_KEY) || 'null'); }catch(e){ prev = null; }
+  const remap = new Map();
+  if(prev && typeof prev === 'object'){
+    const curById = new Map(libraryNow.map(e => [e.id, e]));
+    Object.keys(prev).forEach(oldId => {
+      const oldName = prev[oldId];
+      const cur = curById.get(oldId);
+      if(cur && normExName(cur.name) === normExName(oldName)) return;   // still the same exercise
+      const newId = nameToId.get(normExName(oldName));
+      if(newId && newId !== oldId) remap.set(oldId, newId);
+    });
+  }
+  if(remap.size){
+    const rm = id => remap.has(id) ? remap.get(id) : id;
+    state.bookmarks = new Set([...state.bookmarks].map(rm));
+    PHASES.forEach(p => { state.phaseData[p.key] = (state.phaseData[p.key] || []).map(rm); });
+    state.extraSections.forEach(sec => { sec.exercises = (sec.exercises || []).map(rm); });
+    Object.keys(state.reviewGroupOrder || {}).forEach(k => {
+      if(Array.isArray(state.reviewGroupOrder[k])) state.reviewGroupOrder[k] = state.reviewGroupOrder[k].map(rm);
+    });
+    if(state.replaceContext && state.replaceContext.oldId) state.replaceContext.oldId = rm(state.replaceContext.oldId);
+    if(state.detailId) state.detailId = rm(state.detailId);
+  }
+  try{
+    const snap = {};
+    libraryNow.forEach(e => { snap[e.id] = e.name; });
+    localStorage.setItem(EX_INDEX_STORAGE_KEY, JSON.stringify(snap));
+  }catch(e){ /* storage unavailable -- remapping just won't have a baseline next time */ }
+
+  // Heal this coach's own saved sessions (needs a live sessions list too -- see above).
+  if(state.sessionsSyncSource !== 'live') return;
+  const healed = [];
+  state.savedSessions.forEach(sess => {
+    if(sess.createdBy !== state.coachName) return;
+    let changed = false;
+    (sess.phases || []).forEach(p => (p.exercises || []).forEach(e => {
+      const r = resolveSavedExercise(e);
+      if(!r) return;
+      if(r.id !== e.id){ e.id = r.id; changed = true; }
+      if(r.name !== e.name && normExName(r.name) !== normExName(e.name)){ e.name = r.name; changed = true; }
+    }));
+    if(changed) healed.push(sess);
+  });
+  if(healed.length){
+    // Staggered, one at a time -- the Apps Script endpoint can 404 under a burst of requests.
+    (async () => { for(const sess of healed){ await pushSessionToSheet(sess); await new Promise(r => setTimeout(r, 1200)); } })();
+  }
 }
 function resolveSavedExercise(entry){
   if(!entry) return undefined;

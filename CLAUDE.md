@@ -337,6 +337,17 @@ rather than letting it get rediscovered next session.
   `thumbs/<same name>.jpg`** or it goes back to the slow path; Claude can generate them (draw
   frame 0.1s to a 480px canvas in the browser pane, save as JPEG ~0.78). Also: a `<video>` left at
   `preload="none"` never loads a frame -- flip to `metadata` before setting `src`.
+- **Exercise IDs in the Sheet get renumbered by the coach, on purpose and repeatedly (2026-10).**
+  Never treat an Exercise ID as permanent. Saved sessions store `{id, name}` per exercise and
+  look it up through `resolveSavedExercise()` (id only if the name still agrees, else by
+  normalized name, else a close-name id match, else "no longer in the library" -- never a blind
+  `exById(entry.id)`). After every successful live sync `reconcileExerciseIds()` remaps this
+  device's bookmarks and in-progress draft using an `id -> name` snapshot kept in localStorage
+  (`ft2_exercise_index_v1`), and heals the signed-in coach's own saved sessions in place (pushing
+  them back to the Sheet, one at a time). It only runs when both the exercise library and the
+  sessions list are live. Known limit: renaming an exercise AND renumbering it before any device
+  syncs in between can't be matched (nothing links old to new), and ambiguous duplicate names are
+  skipped on purpose. Any new feature that stores exercise ids must go through these.
 
 ## Where things live
 
