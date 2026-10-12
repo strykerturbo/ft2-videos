@@ -2195,70 +2195,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .cs-carry-focus{font-size:var(--fs-lg);font-weight:800;color:var(--ink);line-height:1.2;}
 .cs-carry-change{min-height:44px;padding:0 4px 0 10px;background:none;border:none;font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);}
 .cs-soon{margin-top:16px;padding:14px;border:1px dashed var(--line);border-radius:12px;font-size:var(--fs-base);color:var(--ink-soft);line-height:1.45;}
-/* Custom Session: proposed-session screen */
-.obj-group-label{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);margin:14px 0 8px;}
-.obj-group-label:first-of-type{margin-top:0;}
-.obj-blurb{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--line);font-size:var(--fs-base);color:var(--ink-soft);line-height:1.45;}
-.obj-blurb strong{color:var(--ink);}
-.obj-concepts{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
-.hm-qs-live{width:100%;text-align:left;border-style:solid;cursor:pointer;}
-.rp-hero{padding:14px 16px;border-radius:var(--radius-card);background:var(--bg-surface);border:1px solid var(--line);}
-.rp-obj{font-family:'Poppins',sans-serif;font-weight:800;font-size:var(--fs-xl);color:var(--ink);line-height:1.2;}
-.rp-blurb{font-size:var(--fs-base);color:var(--ink-soft);margin-top:4px;line-height:1.4;}
-.rp-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
-.rp-meta span{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);background:var(--chalk-dim);border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
-.rp-how-btn{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:var(--fs-md);font-weight:700;text-align:left;}
-.rp-how-btn > span:first-child{flex:1;}
-.rp-i{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ink-soft);color:var(--ink-soft);font-style:italic;font-weight:700;font-size:12px;font-family:Georgia,'Times New Roman',serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.rp-how-chev{display:flex;color:var(--ink-soft);transition:transform .15s;}
-.rp-how-chev svg{width:16px;height:16px;}
-.rp-how-chev.open{transform:rotate(180deg);}
-.rp-how-panel{margin-top:8px;padding:14px 16px 6px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--line);}
-.rp-how-title{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;}
-.rp-step{display:flex;gap:12px;}
-.rp-step-rail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
-.rp-step-num{width:24px;height:24px;border-radius:50%;background:var(--pitch);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-:root[data-theme="dark"] .rp-step-num{background:#fff;color:#0B0F1A;}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .rp-step-num{background:#fff;color:#0B0F1A;} }
-.rp-step-line{flex:1;width:2px;background:var(--line);margin:3px 0;min-height:12px;}
-.rp-step-body{padding-bottom:14px;min-width:0;}
-.rp-step-title{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
-.rp-step-text{font-size:var(--fs-md);font-weight:700;color:var(--ink);margin-top:1px;line-height:1.35;}
-.rp-step-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;}
-.rp-headsup{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--cone-dim);color:var(--pitch-dark);border:1px solid var(--cone);}
-.rp-headsup-title{font-size:var(--fs-sm);font-weight:800;margin-bottom:4px;}
-.rp-headsup ul{margin:0;padding-left:18px;font-size:var(--fs-base);line-height:1.4;}
-.rp-phase{margin-top:18px;}
-.rp-phase-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
-.rp-phase-dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex-shrink:0;}
-.rp-phase-text{flex:1;min-width:0;}
-.rp-phase-title{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-md);font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:0.03em;}
-.rp-phase-min{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);text-transform:none;letter-spacing:0;}
-.rp-phase-note{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;line-height:1.35;}
-.rp-ex{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);margin-bottom:8px;}
-.rp-ex-row{display:flex;align-items:center;gap:10px;}
-.rp-ex-thumb{width:52px;height:40px;border-radius:8px;overflow:hidden;flex-shrink:0;}
-.rp-ex-thumb .pei-thumb{width:52px;height:40px;}
-.rp-ex-name{flex:1;min-width:0;font-size:var(--fs-md);font-weight:700;color:var(--ink);line-height:1.25;}
-.rp-ex-dur{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);flex-shrink:0;}
-.rp-ex-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;}
-.rp-badge{font-size:11px;font-weight:800;letter-spacing:0.02em;padding:4px 9px;border-radius:999px;white-space:nowrap;}
-.rp-badge-strong{background:var(--turf-dim);color:#0F766E;}
-.rp-badge-good{background:var(--sky-dim);color:#1E3A8A;}
-.rp-badge-fair{background:var(--cone-dim);color:#7a4a10;}
-.rp-why-btn{display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:-10px -6px -10px 0;padding:0 6px 0 10px;background:none;border:none;font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);}
-.rp-why-chev{display:flex;transition:transform .15s;}
-.rp-why-chev svg{width:14px;height:14px;}
-.rp-why-chev.open{transform:rotate(180deg);}
-.rp-why{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--chalk-dim);font-size:var(--fs-base);color:var(--ink);line-height:1.45;}
-.rp-why-label{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px;}
-.rp-ex-empty{padding:12px;border:1px dashed var(--line);border-radius:12px;font-size:var(--fs-base);color:var(--ink-soft);}
-.rp-card{margin-top:22px;padding:14px 16px;border-radius:var(--radius-card);background:var(--bg-surface);border:1px solid var(--line);}
-.rp-card-title{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
-.rp-card-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin:2px 0 8px;}
-.rp-card .tprof-dot.on{background:var(--turf);}
-.rp-card .tprof-dot{width:10px;height:10px;}
-.rp-footnote{margin:16px 2px 4px;font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.45;text-align:center;}
+.cs-review-focus{font-size:var(--fs-md);font-weight:700;color:var(--ink);margin-top:6px;}
+.cs-review-label{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-right:4px;}
+.cs-review-setup{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;line-height:1.4;}
 .gen-steps{list-style:none;margin:22px 0 0;padding:0;}
 .gen-step{position:relative;display:flex;gap:14px;padding-bottom:22px;}
 .gen-step:last-child{padding-bottom:0;}
@@ -8736,7 +8675,7 @@ function backFromDetail(){
     renderOverlay();
     return;
   }
-  if(state.fromReview){ nav('review'); return; }
+  if(state.fromReview){ nav(state.fromCustomReview ? 'customSessionReview' : 'review'); return; }
   if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
   if(state.fromHome){ nav('home', {fromHome:false}); return; }
   if(state.fromBuildList){ nav('build', {fromBuildList:false}); return; }
@@ -8772,6 +8711,7 @@ const state = {
   detailId: null,
   fromBuild: false,           // came from build-a-session "add exercise" flow
   fromReview: false,          // came from the unsaved Session Review screen's exercise list
+  fromCustomReview: false,    // ...and that review was Custom Session's Step 4 (so Back returns there, not to the normal Review)
   fromSavedSession: false,    // came from a SAVED practice's detail screen (viewing or adding)
   fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
   fromHome: false,            // came from Home's Featured Exercise card -- backFromDetail() returns to Home, not the Explore Exercises fallback
@@ -8879,11 +8819,10 @@ const state = {
   csAgeGroup: null,               // Step 2: 'U8'..'U12', defaults to U10
   csSessionStyle: null,           // Step 2: 'technical' | 'balanced' | 'game_based', defaults to balanced
   qsPrimaryFocus: null,           // Custom Session: optional extra emphasis -- 'Technical'|'Tactical'|'Physical'|'Mental'|null
-  qsProposal: null,               // Step 4: the generated session being reviewed (never saved by itself)
+  csReviewCfg: null,              // Step 4: the Step 2 choices the draft below was generated from (shown in the review header)
+  csDraftGenerated: false,        // true while the live draft is the one Custom Session generated (so regenerating doesn't ask before replacing it)
   customGeneration: {status:'idle', currentStage:0, completedStages:[], startedAt:null, completedAt:null, generatedSession:null, error:null},   // Step 3: progress of the current generation run
-  rpHowOpen: false,               // proposed-session screen: "How FT2 built this session" panel expanded
-  rpWhyOpen: new Set(),           // proposed-session screen: exercise ids whose "Why?" is expanded
-  confirmBuildProposalOpen: false,// "replace your session in progress?" guard before building a proposal
+  confirmGenerateOpen: false,     // "replace your session in progress?" guard before Custom Session generates over a different draft
   qsTags: new Set(),              // Screen 3 Section 2 -- up to 3
   qsAgeGroup: 'U9 – U12',         // Screen 3 Section 3
   qsDuration: 60,                 // Screen 3 Section 4
@@ -8974,7 +8913,7 @@ function activeNavKey(){
   const sc = state.screen;
   if(sc === 'home') return 'home';
   if(sc === 'settings') return 'settings';
-  if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','proposedSession'].includes(sc)) return 'sessions';
+  if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','customSessionReview'].includes(sc)) return 'sessions';
   if(sc === 'exercises') return state.pickingPhase ? 'sessions' : 'exercises';
   if(sc === 'detail'){
     return ((state.fromBuild && state.pickingPhase) || state.fromBuildList || state.fromReview || state.fromSavedSession) ? 'sessions' : null;
@@ -10531,10 +10470,7 @@ function workflowFooterHtml(){
   if(state.screen === 'customSessionSetup' && csFocusArea(state.csObjectiveId, state.csFocusAreaId)){
     return navNextCtaHtml('Generate Session', 'csGoToGenerate()');
   }
-  if(state.screen === 'proposedSession' && state.qsProposal){
-    return `<button class="btn btn-primary" onclick="requestBuildProposedSession()"><span>Build This Session</span>${ICONS.chevronRight}</button>`;
-  }
-  if(state.screen === 'review' && currentTotalMinutes().count > 0){
+  if((state.screen === 'review' || state.screen === 'customSessionReview') && currentTotalMinutes().count > 0){
     // No CTA at all for the count===0 empty-review state -- that screen already shows its own
     // "Build a Session" redirect as regular content, and there's nothing to save yet.
     return `<button class="btn btn-primary" onclick="completeSession()">Save Session</button>`;
@@ -10580,39 +10516,6 @@ function navToCustomSessionWithFocus(key){
     if(focus.setTag) state.qsTags = new Set([focus.setTag]);
   }
   nav('quickStartCustom');
-}
-function toggleRpHow(){ state.rpHowOpen = !state.rpHowOpen; render(); }
-function toggleRpWhy(id){
-  if(state.rpWhyOpen.has(id)) state.rpWhyOpen.delete(id); else state.rpWhyOpen.add(id);
-  render();
-}
-// A draft already in progress is never silently replaced -- same guard idea as Build New Session.
-function requestBuildProposedSession(){
-  if(!state.qsProposal) return;
-  if(currentTotalMinutes().count > 0){ state.confirmBuildProposalOpen = true; renderOverlay(); }
-  else buildProposedSession();
-}
-function cancelBuildProposalModal(){ state.confirmBuildProposalOpen = false; renderOverlay(); }
-/* Hands the proposal to the normal Build Session screen as an ordinary, fully editable draft --
-   from here the coach can replace, remove, add, reorder, retime or move anything, exactly like a
-   session they built by hand. */
-function buildProposedSession(){
-  const p = state.qsProposal;
-  state.confirmBuildProposalOpen = false;
-  if(!p) return;
-  resetBuilderDraft();
-  PHASES.forEach(ph => { state.phaseData[ph.key] = []; });
-  p.phases.forEach(entry => {
-    state.phaseData[entry.phase.key] = entry.items.map(i => i.ex.id);
-    if(entry.items.length) state.enabledPhaseKeys.add(entry.phase.key);
-  });
-  state.targetDuration = p.cfg.duration;
-  if(p.cfg.location === 'indoor' || p.cfg.location === 'outdoor') state.practiceLocation = p.cfg.location;   // "Either" keeps the app's current default
-  state.sessionName = p.cfg.title;
-  if(p.cfg.date) state.practiceDate = p.cfg.date;
-  state.qsProposal = null;
-  nav('build');
-  showToast('Session ready — edit anything you like');
 }
 function renderQuickStartHome(){
   return `
@@ -10827,7 +10730,29 @@ function csGoToGenerate(){
   csInitSetup();
   const cfg = customSessionConfig();       // blank title falls back to the auto title
   state.csTitle = cfg.title;
+  // Step 4 is a Session Review of the live draft, so generating replaces whatever draft is there --
+  // ask first unless that draft is simply the previous Custom Session result.
+  if(currentTotalMinutes().count > 0 && !state.csDraftGenerated){ state.confirmGenerateOpen = true; renderOverlay(); return; }
   runCustomGeneration();
+}
+function cancelGenerateModal(){ state.confirmGenerateOpen = false; renderOverlay(); }
+function confirmGenerate(){ state.confirmGenerateOpen = false; renderOverlay(); runCustomGeneration(); }
+/* Loads a generated session into the live draft so Step 4 can be the normal Session Review of it
+   (same rows, remove/reorder, time breakdown, profile and Save Session). Nothing is saved yet. */
+function applyGeneratedSessionToDraft(session){
+  resetBuilderDraft();
+  PHASES.forEach(ph => { state.phaseData[ph.key] = []; });
+  session.phases.forEach(entry => {
+    state.phaseData[entry.phase.key] = entry.items.map(i => i.ex.id);
+    if(entry.items.length) state.enabledPhaseKeys.add(entry.phase.key);
+  });
+  const cfg = session.cfg;
+  state.targetDuration = cfg.duration;
+  if(cfg.location === 'indoor' || cfg.location === 'outdoor') state.practiceLocation = cfg.location;   // "Either" keeps the app's current default
+  state.sessionName = cfg.title;
+  if(cfg.date) state.practiceDate = cfg.date;
+  state.csReviewCfg = {...cfg};
+  state.csDraftGenerated = true;
 }
 
 /* ---- Step 3: the Generating Session screen runs the engine's five real stages (see GEN_STAGES) one at a
@@ -10849,7 +10774,6 @@ async function runCustomGeneration(){
   const cfg = customSessionConfig();
   const gen = state.customGeneration = {...customGenIdle(), status:'generating', currentStage:1, startedAt:Date.now()};
   state.customSessionStep = 3;
-  state.qsProposal = null;
   nav('customSessionGenerating');
   const alive = () => run === customGenRun && state.screen === 'customSessionGenerating';
   const sliceMs = GEN_MIN_DISPLAY_MS / GEN_STAGES.length;   // each stage stays visible long enough to read when the engine is fast
@@ -10875,11 +10799,9 @@ async function runCustomGeneration(){
     gen.status = 'complete';
     gen.completedAt = Date.now();
     gen.generatedSession = g.session;
-    state.qsProposal = g.session;               // Step 4 only ever opens with a finished session
-    state.rpHowOpen = false;
-    state.rpWhyOpen = new Set();
+    applyGeneratedSessionToDraft(g.session);    // Step 4 only ever opens with a finished session already loaded
     state.customSessionStep = 4;
-    nav('proposedSession');
+    nav('customSessionReview');
   }catch(err){
     if(run !== customGenRun) return;
     gen.status = 'error';
@@ -11000,81 +10922,6 @@ function renderCustomSessionGenerating(){
       <div class="gen-know-title">Did you know?</div>
       <div class="gen-know-text">FT2 uses a rules-based recommendation engine to create a balanced, progressive session based on your coaching objective, age group, session style, and development needs.</div>
     </div>
-  </div>`;
-}
-
-const REC_LABEL_TEXT = {Strong:'Strong match', Good:'Good fit', Fair:'Best available'};
-function renderProposedSession(){
-  const p = state.qsProposal;
-  if(!p) return renderQuickStartCustom();
-  const exCount = p.phases.reduce((a,ph)=>a+ph.items.length, 0);
-  const warns = p.checks.filter(c => !c.ok);
-  const steps = p.explanation;
-  const howHtml = state.rpHowOpen ? `
-    <div class="rp-how-panel">
-      <div class="rp-how-title">How FT2 built this session</div>
-      ${steps.map((st,i) => `
-      <div class="rp-step">
-        <div class="rp-step-rail"><span class="rp-step-num">${i+1}</span>${i<steps.length-1?'<span class="rp-step-line"></span>':''}</div>
-        <div class="rp-step-body">
-          <div class="rp-step-title">${escHtml(st.title)}</div>
-          <div class="rp-step-text">${escHtml(st.body)}</div>
-          ${st.sub ? `<div class="rp-step-sub">${escHtml(st.sub)}</div>` : ''}
-        </div>
-      </div>`).join('')}
-    </div>` : '';
-  const phasesHtml = p.phases.map(ph => {
-    const st = secStyle(ph.phase.section);
-    const body = ph.items.length ? ph.items.map(i => {
-      const open = state.rpWhyOpen.has(i.ex.id);
-      return `
-      <div class="rp-ex">
-        <div class="rp-ex-row">
-          <div class="rp-ex-thumb">${peiThumbHtml(i.ex)}</div>
-          <div class="rp-ex-name">${escHtml(i.ex.name)}</div>
-          <div class="rp-ex-dur">${i.ex.duration||10}m</div>
-        </div>
-        <div class="rp-ex-meta">
-          <span class="rp-badge rp-badge-${i.label.toLowerCase()}">${REC_LABEL_TEXT[i.label]}</span>
-          <button class="rp-why-btn" aria-expanded="${open}" onclick="toggleRpWhy('${escJsAttr(i.ex.id)}')">Why?${open?'':''}<span class="rp-why-chev ${open?'open':''}">${ICONS.chevronDown}</span></button>
-        </div>
-        ${open ? `<div class="rp-why"><div class="rp-why-label">Why FT2 recommended this</div>${escHtml(i.why)}</div>` : ''}
-      </div>`;
-    }).join('') : `<div class="rp-ex-empty">No exercise in your library fits this phase for these settings.</div>`;
-    return `
-    <div class="rp-phase">
-      <div class="rp-phase-head">
-        <span class="rp-phase-dot" style="background:${st.bg};"></span>
-        <div class="rp-phase-text">
-          <div class="rp-phase-title">${escHtml(ph.phase.label)}<span class="rp-phase-min">${ph.items.length ? ph.totalMin : ph.minutes} min</span></div>
-          <div class="rp-phase-note">${escHtml(ph.note)}</div>
-        </div>
-      </div>
-      ${body}
-    </div>`;
-  }).join('');
-  const profileHtml = p.profile.map(d => trainingProfileRowHtml({...d, score: d.score === null ? null : Math.round(d.score*10)/10})).join('');
-  return `
-  <div class="section-pad rp-page">
-    ${navBackRowHtml('Session Setup', 'csBackToStep2()')}
-    ${navPageTitleHtml('Your Session', '', 'STEP 4 OF 4')}
-    <div class="rp-hero">
-      <div class="rp-obj">${escHtml(p.label)}</div>
-      ${p.label.trim() !== `${p.objectiveLabel} - ${p.focusLabel}` ? `<div class="rp-blurb">${escHtml(p.objectiveLabel)} &middot; ${escHtml(p.focusLabel)}</div>` : ''}
-      <div class="rp-meta"><span>${p.totalMin} min of activities</span><span>${p.ctx.duration} min session</span><span>${escHtml(p.ctx.ageGroup)}</span><span>${escHtml((CS_LOCATIONS.find(l => l[0] === p.ctx.location) || [])[1] || '')}</span><span>${escHtml((CS_STYLES.find(st => st[0] === p.ctx.sessionStyle) || [])[1] || '')}</span><span>${exCount} exercises</span></div>
-    </div>
-    <button class="rp-how-btn" aria-expanded="${state.rpHowOpen}" onclick="toggleRpHow()">
-      <span>How FT2 built this session</span><span class="rp-i" aria-hidden="true">i</span><span class="rp-how-chev ${state.rpHowOpen?'open':''}">${ICONS.chevronDown}</span>
-    </button>
-    ${howHtml}
-    ${warns.length ? `<div class="rp-headsup"><div class="rp-headsup-title">Worth a look</div><ul>${warns.map(w => `<li>${escHtml(w.text)}</li>`).join('')}</ul></div>` : ''}
-    ${phasesHtml}
-    <div class="rp-card">
-      <div class="rp-card-title">Training Profile</div>
-      <div class="rp-card-sub">What this session trains, based on the exercises selected</div>
-      ${profileHtml}
-    </div>
-    <div class="rp-footnote">Activities fill ${p.totalMin} of your ${p.ctx.duration} minutes, leaving ${p.ctx.duration - p.totalMin} for water breaks and transitions.<br>This is a starting point &mdash; you can change any exercise, order, time or phase on the next screen.</div>
   </div>`;
 }
 
@@ -11552,15 +11399,15 @@ function renderOverlay(){
       </div>
     </div>`;
   }
-  if(state.confirmBuildProposalOpen){
+  if(state.confirmGenerateOpen){
     html += `
-    <div class="ios-alert-backdrop" onclick="cancelBuildProposalModal()">
+    <div class="ios-alert-backdrop" onclick="cancelGenerateModal()">
       <div class="ios-alert" onclick="event.stopPropagation()">
         <h3>Replace your session in progress?</h3>
-        <p>Building this session will replace the session you're working on.</p>
+        <p>Generating a new session will replace the session you're working on.</p>
         <div class="ios-alert-btns">
-          <button class="ios-alert-btn danger" onclick="buildProposedSession()">Replace &amp; build</button>
-          <button class="ios-alert-btn" onclick="cancelBuildProposalModal()">Cancel</button>
+          <button class="ios-alert-btn danger" onclick="confirmGenerate()">Replace &amp; generate</button>
+          <button class="ios-alert-btn" onclick="cancelGenerateModal()">Cancel</button>
         </div>
       </div>
     </div>`;
@@ -11716,7 +11563,7 @@ function renderOverlay(){
 /* ============ EXERCISE DETAIL ============ */
 function openDetail(id){ nav('detail', {detailId:id, fromHome:false}); }
 function openDetailFromHome(id){ nav('detail', {detailId:id, fromHome:true, fromBuild:false, fromReview:false, fromSavedSession:false}); }
-function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromBuild:false, fromSavedSession:false, fromHome:false}); }
+function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromCustomReview:state.screen === 'customSessionReview', fromBuild:false, fromSavedSession:false, fromHome:false}); }
 function openDetailFromSavedSession(id, sessionId, savedName){
   const sess = state.savedSessions.find(x=>x.id===sessionId);
   let entry = null;
@@ -12775,6 +12622,7 @@ function completeSession(){
   state.practiceDate = todayISODate();
   state.activeTemplateId = null;
   state.showReviewPrompt = false;
+  state.csDraftGenerated = false;
   showToast('Session saved!');
   nav('home');
   pushSessionToSheet(newSession);
@@ -12836,6 +12684,7 @@ function resetBuilderDraft(){
   state.activeTemplateId = null;
   state.pickingPhase = null; // don't let an old session's "current phase" highlight bleed into a new one
   state.showReviewPrompt = false;
+  state.csDraftGenerated = false;
 }
 function startNewSessionDiscardingDraft(){
   resetBuilderDraft();
@@ -12933,14 +12782,34 @@ function reviewPhaseGroups(){
     return {...group, items, mins};
   });
 }
-function renderReview(){
+/* The review header for a Custom Session result: title, the focus it was built around, and the setup details. */
+function customReviewHeaderHtml(){
+  const cfg = state.csReviewCfg;
+  if(!cfg) return '';
+  const o = csObjective(cfg.objective), f = csFocusArea(cfg.objective, cfg.focusArea);
+  const loc = (CS_LOCATIONS.find(l => l[0] === cfg.location) || [])[1];
+  const style = (CS_STYLES.find(st => st[0] === cfg.sessionStyle) || [])[1];
+  return `
+    <div class="cs-review-focus">${o && f ? `<span class="cs-review-label">Focus</span> ${escHtml(o.title)} &middot; ${escHtml(f.title)}` : ''}</div>
+    <div class="cs-review-setup">${[escHtml(formatPracticeDateShort(cfg.date)), `${cfg.duration} min session`, escHtml(loc||''), escHtml(cfg.ageGroup), escHtml(style||'')].filter(Boolean).join(' &middot; ')}</div>`;
+}
+/* custom = true is Step 4 of the Custom Session workflow: the very same Session Review, with its own step label, back link and header. */
+function renderReview(custom){
   const {total, count} = currentTotalMinutes();
   const groups = reviewPhaseGroups();
   const usedExtras = state.extraSections.filter(s => s.exercises.length);
   const practiceProfile = practiceTrainingProfile(currentPracticeTrainingItems());
 
   if(count===0){
-    return `
+    return custom ? `
+    <div class="section-pad">
+      ${navBackRowHtml('Session Setup', 'csBackToStep2()')}
+      <div class="empty-state">
+        ${ICONS.empty}
+        <p>No exercises in this session.<br>Generate it again to get a new suggestion.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="csGoToGenerate()">Generate Session</button>
+    </div>` : `
     <div class="section-pad">
       ${navBackRowHtml('Build Session', "nav('build')")}
       <div class="empty-state">
@@ -12950,16 +12819,20 @@ function renderReview(){
       <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="nav('build')">Build a Session</button>
     </div>`;
   }
+  const locationLabel = custom && state.csReviewCfg
+    ? ((CS_LOCATIONS.find(l => l[0] === state.csReviewCfg.location) || [])[1] || 'Outdoor')
+    : (state.practiceLocation==='indoor'?'Indoor':'Outdoor');
 
   return `
   <div class="section-pad">
-    ${navBackRowHtml('Build Session', "nav('build')")}
-    ${navPageTitleHtml('Session Review', '', 'STEP 3 OF 3')}
+    ${custom ? navBackRowHtml('Session Setup', 'csBackToStep2()') : navBackRowHtml('Build Session', "nav('build')")}
+    ${navPageTitleHtml('Session Review', '', custom ? 'STEP 4 OF 4' : 'STEP 3 OF 3')}
     <div style="margin-top:10px;">
       <div class="eyebrow">${state.sessionName.trim() ? escHtml(state.sessionName) : 'New Training Session'} (unsaved)</div>
+      ${custom ? customReviewHeaderHtml() : ''}
     </div>
     <div class="review-stats-row">
-      <div class="review-total-mini">${total} total minutes &middot; ${count} exercises &middot; ${state.practiceLocation==='indoor'?'Indoor':'Outdoor'}</div>
+      <div class="review-total-mini">${total} total minutes &middot; ${count} exercises &middot; ${locationLabel}</div>
       <button class="review-session-toggle" onclick="toggleSplitExpanded()">
         <span>Time Breakdown</span>
         <span class="tp-chevron ${state.splitExpanded?'open':''}">${ICONS.chevronRight}</span>
@@ -13523,6 +13396,9 @@ function saveAppStateToStorage(){
       viewingSessionId: state.viewingSessionId,
       fromBuild: state.fromBuild,
       fromReview: state.fromReview,
+      fromCustomReview: state.fromCustomReview,
+      csReviewCfg: state.csReviewCfg,
+      csDraftGenerated: state.csDraftGenerated,
       fromSavedSession: state.fromSavedSession,
       fromSavedSessionId: state.fromSavedSessionId,
       editingSavedSessionId: state.editingSavedSessionId,
@@ -13555,10 +13431,11 @@ function loadAppStateFromStorage(){
     if(typeof snap.activeTemplateId === 'string' || snap.activeTemplateId === null) state.activeTemplateId = snap.activeTemplateId ?? null;
     if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
     if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
+    if(snap.csReviewCfg && typeof snap.csReviewCfg === 'object'){ state.csReviewCfg = snap.csReviewCfg; state.csDraftGenerated = !!snap.csDraftGenerated; }
     if(csFocusArea(snap.csObjectiveId, snap.csFocusAreaId)){
       state.csObjectiveId = snap.csObjectiveId;
       state.csFocusAreaId = snap.csFocusAreaId;
-      state.customSessionStep = (snap.customSessionStep === 2 || snap.customSessionStep === 3 || snap.customSessionStep === 4) ? 2 : 1;
+      state.customSessionStep = (snap.customSessionStep === 2 || snap.customSessionStep === 3) ? 2 : (snap.customSessionStep === 4 ? 4 : 1);
       if(typeof snap.csTitle === 'string') state.csTitle = snap.csTitle;
       state.csTitleEdited = !!snap.csTitleEdited;
       if(typeof snap.csDate === 'string') state.csDate = snap.csDate;
@@ -13615,13 +13492,15 @@ function loadAppStateFromStorage(){
       state.viewingSessionId = snap.viewingSessionId ?? null;
       state.fromBuild = !!snap.fromBuild;
       state.fromReview = !!snap.fromReview;
+      state.fromCustomReview = !!snap.fromCustomReview;
       state.fromSavedSessionId = snap.fromSavedSessionId ?? null;
       state.fromSavedSession = !!snap.fromSavedSession && state.savedSessions.some(s => s.id === state.fromSavedSessionId);
       state.editingSavedSessionId = (snap.editingSavedSessionId && state.savedSessions.some(s => s.id === snap.editingSavedSessionId)) ? snap.editingSavedSessionId : null;
       if(snap.reviewGroupOrder && typeof snap.reviewGroupOrder === 'object') state.reviewGroupOrder = snap.reviewGroupOrder;
       if(restoredScreen === 'detail' && !exById(state.detailId)) restoredScreen = 'home';
       // Step 3/4 only make sense mid-run; a reload lands back on Session Setup with every choice kept.
-      if(restoredScreen === 'customSessionGenerating' || restoredScreen === 'proposedSession') restoredScreen = 'customSessionSetup';
+      if(restoredScreen === 'customSessionGenerating') restoredScreen = 'customSessionSetup';
+      if(restoredScreen === 'customSessionReview' && !(state.csReviewCfg && currentTotalMinutes().count > 0)) restoredScreen = 'customSessionSetup';
       if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
       // A reload mid-"replace an exercise" used to silently drop the replace context while still
       // landing back on what looked like the same picker screen -- tapping an exercise there then
@@ -13655,7 +13534,7 @@ const screens = {
   quickStartCustom: renderQuickStartCustom,
   customSessionSetup: renderCustomSessionSetup,
   customSessionGenerating: renderCustomSessionGenerating,
-  proposedSession: renderProposedSession,
+  customSessionReview: () => renderReview(true),
 };
 
 function render(){
@@ -13679,7 +13558,7 @@ function render(){
   const footerHtml = workflowFooterHtml();
   document.getElementById('workflowFooter').innerHTML = footerHtml;
   document.getElementById('shell').classList.toggle('has-workflow-cta', !!footerHtml);
-  document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'build' || state.screen === 'practiceSetup'));
+  document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'customSessionReview' || state.screen === 'build' || state.screen === 'practiceSetup'));
   renderOverlay();
   scheduleSaveAppStateToStorage();
 }

@@ -351,8 +351,11 @@ rather than letting it get rediscovered next session.
 - **Custom Session is a rules-based recommendation engine, not AI (2026-10).** Home > Custom Session is
   a 4-step workflow of its own: 1 What to work on (`quickStartCustom`, `PRACTICE_OBJECTIVES`: 5
   categories x focus areas) > 2 Session Setup (`customSessionSetup`; `cs*` state, read via
-  `customSessionConfig()`) > 3 Generating (`customSessionGenerating`) > 4 Your Session
-  (`proposedSession`) > "Build This Session" into the normal Build screen as an ordinary draft.
+  `customSessionConfig()`) > 3 Generating (`customSessionGenerating`) > 4 Session Review
+  (`customSessionReview` = the normal `renderReview(true)` over the live draft: generation loads the
+  result into the draft via `applyGeneratedSessionToDraft()`, asking first if a different draft is in
+  progress) > Save Session. The engine still produces per-exercise "why" text and a 5-step
+  explanation (`item.why`, `session.explanation`) that Step 4 does not currently show.
   It must never touch Start New Session's Setup/Build/Review. All engine logic is one block in
   `index.html` ("SESSION RECOMMENDATION ENGINE"), pure logic with no DOM: `OBJECTIVE_RULES` is the
   rule *library* (soccer ideas: tags, training dimensions + score ranges + weights, formats, phase
