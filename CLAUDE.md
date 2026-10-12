@@ -348,40 +348,46 @@ rather than letting it get rediscovered next session.
   sessions list are live. Known limit: renaming an exercise AND renumbering it before any device
   syncs in between can't be matched (nothing links old to new), and ambiguous duplicate names are
   skipped on purpose. Any new feature that stores exercise ids must go through these.
-- **Custom Session is a rules-based recommendation engine, not AI (2026-10).** Home > Custom Session is
-  a 4-step workflow of its own: 1 What to work on (`quickStartCustom`, `PRACTICE_OBJECTIVES`: 5
-  categories x focus areas) > 2 Session Setup (`customSessionSetup`; `cs*` state, read via
-  `customSessionConfig()`) > 3 Generating (`customSessionGenerating`) > 4 Session Review
-  (`customSessionReview` = the normal `renderReview(true)` over the live draft: generation loads the
-  result into the draft via `applyGeneratedSessionToDraft()`, asking first if a different draft is in
-  progress) > Save Session. The engine still produces per-exercise "why" text and a 5-step
-  explanation (`item.why`, `session.explanation`) that Step 4 does not currently show.
-  It must never touch Start New Session's Setup/Build/Review. All engine logic is one block in
-  `index.html` ("SESSION RECOMMENDATION ENGINE"), pure logic with no DOM: `OBJECTIVE_RULES` is the
-  rule *library* (soccer ideas: tags, training dimensions + score ranges + weights, formats, phase
-  notes); `CATEGORY_RULE_BASES` + `FOCUS_AREA_RULES` assemble a profile for each Step 1 category and
-  focus area from it (adding a focus area = one line); `REC_STYLES` (technical/balanced/game-based
-  re-weights formats/dimensions and the phase time split), `REC_AGE_BANDS` (U8-U12 -> game size, plus the
-  difficulty band used ONLY for exercises whose Sheet "Age Group" cell is blank -- otherwise the Sheet's
-  `Age Group` column, parsed by `parseAgeGroups()` into `ex.ageGroups`, decides via `recAgeFit()`; a phase
-  with <4 age-suitable exercises falls back to its others, scored down and flagged), `REC_WEIGHTS` (every scoring knob). The five generation stages the coach watches in
-  Step 3 are the real engine stages `GEN_STAGES` = understand (`mapObjectiveToMetadata`), find
-  candidates, score/rank (`scoreExerciseForSession`), build (`allocatePhaseMinutes`,
-  `selectExercisesForPhase`, `chooseSessionPlan`), finalize (swap too-hard/repeated exercises,
-  `checkRecommendedSession`, explanations); `generateCustomSession(cfg)` runs them back to back.
-  `runCustomGeneration()` runs them one at a time with repaints between, keeps Step 3 on screen at
-  least 1s (`GEN_MIN_DISPLAY_MS`), and never opens Step 4 until a session exists; failures show Try
-  Again with the Step 1/2 choices intact. It only READS existing exercise fields (4 scores, 6 tag
-  fields, section, duration, difficulty, location) and reuses `practiceTrainingProfile()` -- never add
-  a second scoring system or exercise store. Deterministic (ties break on name) -- never add
-  randomness. Exercises have no age field, hence the difficulty bands. Tags in the rules must be real
-  Valid Values from the Sheet (there is no "Rondo" format value today). A future AI layer should sit
-  in front (free text -> objective + focus area + context) and leave this engine as the source of truth.
-  **Time rule (coach's call):** a generated session never fills the whole time -- 10-15 min are left
-  free for breaks (`REC_TIME_BUFFER`; 75 min -> 60-65 of activities); when a short session can't fit
-  every phase the lowest-priority one is left out and says so. **Athletic rule (coach's call):**
-  Athletic is pinned to ~25% of planned activity time, always within 20-30% (`REC_ATHLETIC_SHARE`);
-  Athletic exercises are only 5 or 10 min, so shares move in coarse steps.
+- **Custom Session is a rules-based recommendation engine, not AI (Engine V1, 2026-10).** Home > Custom Session
+  is a 4-step workflow of its own: 1 What to work on (`quickStartCustom`: just the 8 repository Focus Areas, `FOCUS_AREAS`, one tap each) > 2 Session
+  Setup (`customSessionSetup`; `cs*` state, read via `customSessionConfig()`) > 3 Generating
+  (`customSessionGenerating`) > 4 Session Review (`customSessionReview` = the normal `renderReview(true)` over
+  the live draft) > Save Session. It must never touch Start New Session's Setup/Build/Review. Generation loads
+  the result into the draft via `applyGeneratedSessionToDraft()` (asking first if a different or since-edited
+  draft is in progress -- `csDraftUntouched()` compares a fingerprint). The generated draft carries its own
+  per-phase plan (`csPlannedByPhase`, read by `sectionPlannedMinutes()`), the generator's warnings
+  (`csReviewNotes`, "Worth a look") and its explanation (`csReviewExplain`, "How FT2 built this session"); the
+  notes and explanation show only while the draft is still as generated.
+  **Engine** = one pure-logic block in `index.html` ("RECOMMENDATION ENGINE V1"). Config objects at its top hold
+  every tunable: `RECOMMENDATION_WEIGHTS` (focusArea 30, technical 10, tactical 15, physical 5, cognitive 10,
+  age 10, difficulty 5, sessionStyle 5, phase 5, location 3, variety 2), `REC_FOCUS_METADATA` (the 8
+  controlled Focus Areas -> strong/supporting tags; a Step 1 choice IS one of these, no translation layer),
+  `REC_STYLE_RULES`,
+  `REC_PHASE_FIT`, `REC_AGE_POINTS`, `REC_SIMILARITY_PENALTIES`. Flow = `GEN_STAGES`: understand
+  (`mapFocusAreaToMetadata`) > find candidates > score/rank (`scoreExerciseForObjective`, `rankExercisesForObjective`)
+  > build (`assembleRecommendedSession`: `allocatePhaseMinutes`, `selectExercisesForPhase`, `chooseSessionPlan`,
+  variety sweeps via `calculateSimilarity`) > finalize (`validateGeneratedSession`, `repairGeneratedSession`,
+  `explainExerciseRecommendation`, `explainSessionRecommendation`); `generateCustomSession(cfg)` runs them all.
+  `runCustomGeneration()` runs them one at a time with repaints between, keeps Step 3 up at least 1s, never opens
+  Step 4 before a valid session exists, and shows Try Again on failure. **Shuffle** (Step 4) re-runs the engine
+  with the next shuffle seed (`cfg.shuffleSeed`, `REC_SHUFFLE_JITTER`): a small repeatable nudge to every
+  exercise's rank so near-equal choices reorder -- same seed, same session; seed 0 (a fresh Generate) is the
+  baseline; it asks first if the coach has edited the draft and keeps their session title. It only READS repository fields (Focus
+  Areas, the four tag families + 0-5 scores, Section, Difficulty, Age Group, Duration, Location) -- never edit
+  or invent exercise metadata; blank / "None" values count as missing. The Sheet spells "Spacial Awareness";
+  tags are compared after normalizing that to "spatial". Deterministic (ties break on name) -- never add
+  randomness. Age is a ranking signal (listed 10 / between listed ages 8 / blank 7 / one outside 4 / further
+  0), not a filter; location incompatibility IS a hard filter.
+  **Standing coach rules the engine enforces:** (1) an exercise only ever goes in the phase whose Sheet
+  `Section` it carries -- ranking, selection, repair swaps and draft placement are all per-section (a swap
+  that ignored this once put ~45% of sessions' exercises in the wrong phase); (2) 10-15 min of a session stay
+  free for breaks (`REC_TIME_BUFFER`; 75 min -> 60-65 of activities), and a short session that can't fit every
+  phase leaves the lowest-priority one out and says so; (3) Athletic stays 20-30% of planned activity time,
+  pinned near 25% (`REC_ATHLETIC_SHARE`). The FT2 progression Activate > Develop > Apply > Scrimmage maps onto
+  the six Sections as Warmup+Athletic / Duels+Rondos / SSGs / Scrimmage (`REC_PROGRESSION`); Review's own
+  3-group display is unchanged. The bundled offline fallback data has no Focus Areas column, so offline the
+  Focus Area component is 0 and ranking falls back to tags only. A future AI layer should sit in front (free
+  text -> objective + Focus Area + context) and leave this engine as the source of truth.
 
 ## Where things live
 
