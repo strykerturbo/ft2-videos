@@ -361,8 +361,10 @@ rather than letting it get rediscovered next session.
   rule *library* (soccer ideas: tags, training dimensions + score ranges + weights, formats, phase
   notes); `CATEGORY_RULE_BASES` + `FOCUS_AREA_RULES` assemble a profile for each Step 1 category and
   focus area from it (adding a focus area = one line); `REC_STYLES` (technical/balanced/game-based
-  re-weights formats/dimensions and the phase time split), `REC_AGE_BANDS` (U8-U12 -> difficulty band
-  + game size), `REC_WEIGHTS` (every scoring knob). The five generation stages the coach watches in
+  re-weights formats/dimensions and the phase time split), `REC_AGE_BANDS` (U8-U12 -> game size, plus the
+  difficulty band used ONLY for exercises whose Sheet "Age Group" cell is blank -- otherwise the Sheet's
+  `Age Group` column, parsed by `parseAgeGroups()` into `ex.ageGroups`, decides via `recAgeFit()`; a phase
+  with <4 age-suitable exercises falls back to its others, scored down and flagged), `REC_WEIGHTS` (every scoring knob). The five generation stages the coach watches in
   Step 3 are the real engine stages `GEN_STAGES` = understand (`mapObjectiveToMetadata`), find
   candidates, score/rank (`scoreExerciseForSession`), build (`allocatePhaseMinutes`,
   `selectExercisesForPhase`, `chooseSessionPlan`), finalize (swap too-hard/repeated exercises,

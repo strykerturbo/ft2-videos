@@ -6921,6 +6921,7 @@ function dedupeExerciseIds(list){
   return hadIssue;
 }
 function normalizeExerciseRecord(e){
+  if(!Array.isArray(e.ageGroups)) e.ageGroups = [];
   if(e.mediaUrl===undefined) e.mediaUrl=null;
   if(e.videoUrl===undefined) e.videoUrl=null;
   if(e.mediaUrl && !looksLikeMediaUrl(e.mediaUrl)) e.mediaUrl=null;
@@ -6973,6 +6974,23 @@ function splitTags(v){
   // vocabulary itself contains a comma or semicolon, so splitting on either is safe.
   return String(v).split(/[;,]/).map(s=>s.trim()).filter(Boolean);
 }
+/* The Sheet's "Age Group" column lists which age groups an exercise suits, e.g. "U8, U9, U10" (also
+   accepts a range like "U8-U12" or "All"). Returns ['U8','U9',...]; empty when the cell is blank --
+   the generator then falls back to the exercise's Difficulty. */
+function parseAgeGroups(v){
+  if(v === null || v === undefined) return [];
+  const out = new Set();
+  String(v).split(/[;,]/).forEach(tok => {
+    const t = tok.trim().toUpperCase();
+    if(!t) return;
+    if(/^(ALL|ANY)/.test(t)){ for(let n = 5; n <= 19; n++) out.add('U' + n); return; }
+    const r = /^U?(\d{1,2})\s*[-–—]\s*U?(\d{1,2})$/.exec(t);
+    if(r){ for(let n = +r[1]; n <= +r[2]; n++) out.add('U' + n); return; }
+    const m = /^U?(\d{1,2})$/.exec(t);
+    if(m) out.add('U' + m[1]);
+  });
+  return [...out];
+}
 function csvRowToExercise(row){
   const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
   return {
@@ -6981,6 +6999,7 @@ function csvRowToExercise(row){
     section: (row['Section']||'').trim(),
     category: row['Category']?.trim() || null,
     difficulty: parseDifficultyField(row['Difficulty']),
+    ageGroups: parseAgeGroups(row['Age Group']),
     duration: num(row['Duration (min)']),
     setup: row['Setup']?.trim() || null,
     description: row['Description']?.trim() || null,
@@ -7016,6 +7035,7 @@ function jsonRowToExercise(row){
     section: str(row['Section']),
     category: str(row['Category']) || null,
     difficulty: parseDifficultyField(row['Difficulty']),
+    ageGroups: parseAgeGroups(row['Age Group']),
     duration: num(row['Duration (min)']),
     setup: str(row['Setup']) || null,
     description: str(row['Description']) || null,
@@ -9637,7 +9657,8 @@ const REC_WEIGHTS = {
   avoidDim:8,                          // a dimension the objective doesn't want dominating
   ageIn:4, ageBelow:1, ageAbovePerLevel:6, ageAboveCap:12,
   objectiveShare:0.35,                 // how much of the final score is fit to the main objective (the rest is the focus area)
-  ageInPts:4, ageBelowPts:1, ageAbovePerLevelPts:8, ageAboveCapPts:16, ageFormatPts:6,   // age fit, on the final 0-100 scale
+  ageInPts:4, ageBelowPts:1, ageAbovePerLevelPts:8, ageAboveCapPts:16, ageFormatPts:6,   // age fit from Difficulty (used when the Sheet's Age Group is blank), on the final 0-100 scale
+  ageListedPts:4, ageNotListedPts:25,                                                      // age fit from the Sheet's Age Group column
   styleFormatPts:5, styleDimPts:4, styleEngPts:2, styleCapPts:12,                         // session-style fit, on the final 0-100 scale
   strongAt:75, goodAt:50,              // match labels: Strong >= 75, Good >= 50, otherwise Fair
 };
@@ -10085,12 +10106,24 @@ function scoreExerciseForObjective(ex, rules, ctx){
   const label = score >= W.strongAt ? 'Strong' : score >= W.goodAt ? 'Good' : 'Fair';
   return {score, label, details:d};
 }
-/* Age fit on the final 0-100 scale: difficulty inside the age group's band, and game size. */
+/* Does this exercise suit the age group? The Sheet's "Age Group" column is the source of truth when
+   an exercise has one; otherwise it falls back to the exercise's Difficulty against the age band
+   (tol = how many difficulty levels above the band still count). */
+function recAgeFit(ex, ageGroup, tol){
+  if(Array.isArray(ex.ageGroups) && ex.ageGroups.length) return ex.ageGroups.includes(ageGroup);
+  const band = REC_AGE_BANDS[ageGroup];
+  return !(band && typeof ex.difficulty === 'number' && ex.difficulty > band.ideal[1] + (tol || 0));
+}
+/* Age fit on the final 0-100 scale: the Sheet's Age Group list (or, when blank, difficulty against the age band), plus game size. */
 function recAgeAdjustment(ex, ageGroup){
   const W = REC_WEIGHTS, band = REC_AGE_BANDS[ageGroup];
   if(!band) return {adj:0, info:null};
   let adj = 0, info = null;
-  if(typeof ex.difficulty === 'number'){
+  if(Array.isArray(ex.ageGroups) && ex.ageGroups.length){
+    const ok = ex.ageGroups.includes(ageGroup);
+    adj += ok ? W.ageListedPts : -W.ageNotListedPts;
+    info = {listed:true, status: ok ? 'listed' : 'notListed'};
+  } else if(typeof ex.difficulty === 'number'){
     const [lo, hi] = band.ideal;
     if(ex.difficulty > hi){ adj -= Math.min((ex.difficulty - hi)*W.ageAbovePerLevelPts, W.ageAboveCapPts); info = {diff:ex.difficulty, status:'above'}; }
     else if(ex.difficulty < lo){ adj += W.ageBelowPts; info = {diff:ex.difficulty, status:'below'}; }
@@ -10129,23 +10162,27 @@ function scoreExerciseForSession(ex, plan, phaseKey){
   const label = score >= W.strongAt ? 'Strong' : score >= W.goodAt ? 'Good' : 'Fair';
   return {score, label, details:{...f.details, objectiveScore:c.score, focusScore:f.score, age:age.info, style:st.notes}};
 }
-/* Eligible exercises (known phase section, suits the location, not far beyond the age group), each
-   marked relevant when it carries tags the objective or focus area is about. */
+/* Eligible exercises: a known phase section, suits the location, and suits the age group (the Sheet's
+   Age Group column, else difficulty). Each is marked relevant when it carries tags the objective or focus
+   area is about. A phase with too few age-suitable exercises falls back to its other exercises (they are
+   scored down and flagged), so the session is never left with a hole -- the limitation is shown to the coach. */
 function recFindCandidates(plan){
   const sections = new Set(PHASES.map(p => p.section));
-  const cfg = plan.cfg, band = REC_AGE_BANDS[cfg.ageGroup];
-  const eligible = EXERCISES
+  const cfg = plan.cfg;
+  const base = EXERCISES
     .filter(ex => sections.has(ex.section))
-    .filter(ex => !(cfg.location === 'outdoor' && ex.location === 'indoor') && !(cfg.location === 'indoor' && ex.location === 'outdoor'))
-    .filter(ex => !(band && typeof ex.difficulty === 'number' && ex.difficulty > band.ideal[1] + 1));
+    .filter(ex => !(cfg.location === 'outdoor' && ex.location === 'indoor') && !(cfg.location === 'indoor' && ex.location === 'outdoor'));
   const relevant = ex => recTagHits(ex, plan.meta.focusRules.primary).length + recTagHits(ex, plan.meta.focusRules.secondary).length + recTagHits(ex, plan.meta.categoryRules.primary).length > 0;
-  const pool = eligible.map(ex => ({ex, relevant:relevant(ex)}));
-  // every phase keeps a workable pool even when few of its exercises carry the objective's tags
+  let pool = [];
   PHASES.forEach(ph => {
-    const inPhase = pool.filter(c => c.ex.section === ph.section);
-    if(inPhase.filter(c => c.relevant).length < 8) inPhase.forEach(c => { c.keep = true; });
+    const inPhase = base.filter(ex => ex.section === ph.section);
+    const ageOk = inPhase.filter(ex => recAgeFit(ex, cfg.ageGroup, 1));
+    const chosen = (ageOk.length >= 4 ? ageOk : inPhase).map(ex => ({ex, relevant:relevant(ex)}));
+    // every phase keeps a workable pool even when few of its exercises carry the objective's tags
+    if(chosen.filter(c => c.relevant).length < 8) chosen.forEach(c => { c.keep = true; });
+    pool = pool.concat(chosen.filter(c => c.relevant || c.keep));
   });
-  return pool.filter(c => c.relevant || c.keep);
+  return pool;
 }
 /* Candidates scored for one phase, best match first; ties break on name so the same request always gives the same session. */
 function rankExercisesForPhase(candidates, plan, phaseKey){
@@ -10283,7 +10320,8 @@ function explainExerciseRecommendation(ex, plan, scoreInfo){
   let s = `${lead} because it ${recJoinAnd(parts)}.`;
   const style = REC_STYLES[plan.cfg.sessionStyle];
   if(style && plan.cfg.sessionStyle !== 'balanced' && d.style && d.style.length) s += ` It also suits a ${style.label.toLowerCase()} session.`;
-  if(d.age && d.age.status === 'above') s += ` It may be a stretch for ${plan.cfg.ageGroup}.`;
+  if(d.age && d.age.status === 'listed') s += ` It's listed for ${plan.cfg.ageGroup}.`;
+  if(d.age && (d.age.status === 'above' || d.age.status === 'notListed')) s += ` It isn't listed for ${plan.cfg.ageGroup}, so check it suits your players.`;
   return s;
 }
 /* The five-step "how FT2 built this" story shown to the coach (plain language, no formulas). */
@@ -10315,9 +10353,8 @@ function checkRecommendedSession(session, plan){
   const lo = Math.max(5, plan.cfg.duration - REC_TIME_BUFFER.max), hi = plan.cfg.duration - REC_TIME_BUFFER.min;
   checks.push({key:'duration', ok: session.totalMin >= lo && session.totalMin <= hi,
     text:`The activities add up to ${session.totalMin} min; aim for ${lo}–${hi} so a ${plan.cfg.duration}-min session still has room for breaks.`});
-  const band = REC_AGE_BANDS[plan.cfg.ageGroup];
-  const hard = band ? items.filter(i => typeof i.ex.difficulty === 'number' && i.ex.difficulty > band.ideal[1]).length : 0;
-  checks.push({key:'age', ok: hard === 0, text:`${hard} exercise${hard>1?'s':''} may be a stretch for ${plan.cfg.ageGroup}.`});
+  const hard = items.filter(i => !recAgeFit(i.ex, plan.cfg.ageGroup, 0)).length;
+  checks.push({key:'age', ok: hard === 0, text:`${hard} exercise${hard>1?'s':''} ${hard>1?'aren\'t':'isn\'t'} listed for ${plan.cfg.ageGroup} in your library — it was the best available fit.`});
   const repeated = recRepeatedFormats(items);
   checks.push({key:'variety', ok: !repeated.length, text:`Several exercises use the same format (${repeated.join(', ')}) — you may want more variety.`});
   const avgDiff = ids => { const xs = session.phases.filter(p => ids.includes(p.phase.key)).flatMap(p => p.items).map(i => i.ex.difficulty).filter(v => typeof v === 'number'); return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null; };
@@ -10393,7 +10430,7 @@ function genBuildSession(g){
 }
 // 5. Finalize: replace exercises that are too hard for the age group or repeat a format, then validate and explain.
 function genFinalizeSession(g){
-  const {plan, session} = g, band = REC_AGE_BANDS[plan.cfg.ageGroup];
+  const {plan, session} = g;
   const used = new Set(session.phases.flatMap(p => p.items.map(i => i.ex.id)));
   const swap = (entry, item, ok) => {
     const alt = (g.ranked[entry.phase.key] || []).find(r => !used.has(r.ex.id) && (r.ex.duration||10) === (item.ex.duration||10) && r.score >= item.score - 30 && ok(r.ex));
@@ -10403,7 +10440,7 @@ function genFinalizeSession(g){
     return true;
   };
   session.phases.forEach(entry => entry.items.forEach(item => {
-    if(band && typeof item.ex.difficulty === 'number' && item.ex.difficulty > band.ideal[1]) swap(entry, item, ex => typeof ex.difficulty !== 'number' || ex.difficulty <= band.ideal[1]);
+    if(!recAgeFit(item.ex, plan.cfg.ageGroup, 0)) swap(entry, item, ex => recAgeFit(ex, plan.cfg.ageGroup, 0));
   }));
   for(let guard = 0; guard < 4; guard++){
     const repeated = recRepeatedFormats(session.phases.flatMap(p => p.items));
