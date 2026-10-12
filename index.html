@@ -2172,6 +2172,110 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 @keyframes qs-pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.12);opacity:0.75;}}
 .qs-generating-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl);text-transform:uppercase;}
 .qs-generating-sub{font-size:var(--fs-sm);opacity:0.7;margin-top:6px;}
+/* Custom Session generator -- Step 1 (what to work on) */
+.cs-list{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.cs-cat{background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);overflow:hidden;}
+.cs-cat.open{border-color:var(--turf);}
+.cs-cat-head{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:12px 14px;text-align:left;background:transparent;border:none;}
+.cs-cat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0F172A;}
+.cs-cat-icon svg{width:22px;height:22px;}
+.cs-cat-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.cs-cat-title{font-family:'Poppins',sans-serif;font-weight:800;font-size:var(--fs-md);letter-spacing:0.02em;text-transform:uppercase;color:var(--ink);line-height:1.2;}
+.cs-cat-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.3;}
+.cs-cat-picked{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);font-weight:700;color:#0F766E;margin-top:2px;}
+.cs-cat-picked svg{width:12px;height:12px;flex-shrink:0;}
+:root[data-theme="dark"] .cs-cat-picked{color:var(--turf);}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .cs-cat-picked{color:var(--turf);} }
+.cs-chev{display:flex;color:var(--ink-soft);flex-shrink:0;transition:transform .15s;}
+.cs-chev svg{width:18px;height:18px;}
+.cs-chev.open{transform:rotate(90deg);}
+.cs-focus-list{display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px;border-top:1px solid var(--line);}
+.cs-focus{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:6px 12px 6px 8px;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;color:var(--ink);}
+.cs-focus-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0F172A;}
+.cs-focus-icon svg{width:17px;height:17px;}
+.cs-focus-name{flex:1;min-width:0;font-size:var(--fs-md);font-weight:700;line-height:1.25;}
+.cs-focus.selected{background:var(--pitch);border-color:var(--pitch);color:#fff;}
+:root[data-theme="dark"] .cs-focus.selected{border-color:#64748B;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .cs-focus.selected{border-color:#64748B;} }
+.cs-check{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--pitch);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+:root[data-theme="dark"] .cs-check{color:#0B0F1A;}
+.cs-check svg{width:13px;height:13px;}
+.cs-page .su-lab{white-space:normal;}
+.cs-seg .su-seg-btn{height:auto;min-height:52px;padding:6px 3px;white-space:normal;text-align:center;line-height:1.15;font-size:var(--fs-base);}
+.cs-seg-style .su-seg-btn{font-size:var(--fs-sm);padding:6px 2px;}
+.cs-gen-card{margin-top:16px;padding:22px 16px;border-radius:var(--radius-card);background:var(--pitch);color:#fff;text-align:center;}
+.cs-gen-card .qs-generating-icon{margin-bottom:12px;}
+.cs-gen-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl);text-transform:uppercase;line-height:1.2;}
+.cs-gen-meta{justify-content:center;margin-top:12px;}
+.cs-gen-meta span{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.18);color:#fff;}
+.cs-carry{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--bg-surface);}
+.cs-carry-focus{font-size:var(--fs-lg);font-weight:800;color:var(--ink);line-height:1.2;}
+.cs-carry-change{min-height:44px;padding:0 4px 0 10px;background:none;border:none;font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);}
+.cs-soon{margin-top:16px;padding:14px;border:1px dashed var(--line);border-radius:12px;font-size:var(--fs-base);color:var(--ink-soft);line-height:1.45;}
+/* Custom Session: proposed-session screen */
+.obj-group-label{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);margin:14px 0 8px;}
+.obj-group-label:first-of-type{margin-top:0;}
+.obj-blurb{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--line);font-size:var(--fs-base);color:var(--ink-soft);line-height:1.45;}
+.obj-blurb strong{color:var(--ink);}
+.obj-concepts{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.hm-qs-live{width:100%;text-align:left;border-style:solid;cursor:pointer;}
+.rp-hero{padding:14px 16px;border-radius:var(--radius-card);background:var(--bg-surface);border:1px solid var(--line);}
+.rp-obj{font-family:'Poppins',sans-serif;font-weight:800;font-size:var(--fs-xl);color:var(--ink);line-height:1.2;}
+.rp-blurb{font-size:var(--fs-base);color:var(--ink-soft);margin-top:4px;line-height:1.4;}
+.rp-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.rp-meta span{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);background:var(--chalk-dim);border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
+.rp-how-btn{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:var(--fs-md);font-weight:700;text-align:left;}
+.rp-how-btn > span:first-child{flex:1;}
+.rp-i{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ink-soft);color:var(--ink-soft);font-style:italic;font-weight:700;font-size:12px;font-family:Georgia,'Times New Roman',serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rp-how-chev{display:flex;color:var(--ink-soft);transition:transform .15s;}
+.rp-how-chev svg{width:16px;height:16px;}
+.rp-how-chev.open{transform:rotate(180deg);}
+.rp-how-panel{margin-top:8px;padding:14px 16px 6px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--line);}
+.rp-how-title{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;}
+.rp-step{display:flex;gap:12px;}
+.rp-step-rail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.rp-step-num{width:24px;height:24px;border-radius:50%;background:var(--pitch);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+:root[data-theme="dark"] .rp-step-num{background:#fff;color:#0B0F1A;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .rp-step-num{background:#fff;color:#0B0F1A;} }
+.rp-step-line{flex:1;width:2px;background:var(--line);margin:3px 0;min-height:12px;}
+.rp-step-body{padding-bottom:14px;min-width:0;}
+.rp-step-title{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
+.rp-step-text{font-size:var(--fs-md);font-weight:700;color:var(--ink);margin-top:1px;line-height:1.35;}
+.rp-step-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;}
+.rp-headsup{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--cone-dim);color:var(--pitch-dark);border:1px solid var(--cone);}
+.rp-headsup-title{font-size:var(--fs-sm);font-weight:800;margin-bottom:4px;}
+.rp-headsup ul{margin:0;padding-left:18px;font-size:var(--fs-base);line-height:1.4;}
+.rp-phase{margin-top:18px;}
+.rp-phase-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+.rp-phase-dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+.rp-phase-text{flex:1;min-width:0;}
+.rp-phase-title{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-md);font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:0.03em;}
+.rp-phase-min{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);text-transform:none;letter-spacing:0;}
+.rp-phase-note{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;line-height:1.35;}
+.rp-ex{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);margin-bottom:8px;}
+.rp-ex-row{display:flex;align-items:center;gap:10px;}
+.rp-ex-thumb{width:52px;height:40px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.rp-ex-thumb .pei-thumb{width:52px;height:40px;}
+.rp-ex-name{flex:1;min-width:0;font-size:var(--fs-md);font-weight:700;color:var(--ink);line-height:1.25;}
+.rp-ex-dur{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);flex-shrink:0;}
+.rp-ex-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;}
+.rp-badge{font-size:11px;font-weight:800;letter-spacing:0.02em;padding:4px 9px;border-radius:999px;white-space:nowrap;}
+.rp-badge-strong{background:var(--turf-dim);color:#0F766E;}
+.rp-badge-good{background:var(--sky-dim);color:#1E3A8A;}
+.rp-badge-fair{background:var(--cone-dim);color:#7a4a10;}
+.rp-why-btn{display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:-10px -6px -10px 0;padding:0 6px 0 10px;background:none;border:none;font-size:var(--fs-base);font-weight:700;color:var(--ink-soft);}
+.rp-why-chev{display:flex;transition:transform .15s;}
+.rp-why-chev svg{width:14px;height:14px;}
+.rp-why-chev.open{transform:rotate(180deg);}
+.rp-why{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--chalk-dim);font-size:var(--fs-base);color:var(--ink);line-height:1.45;}
+.rp-why-label{font-size:var(--fs-xs);font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px;}
+.rp-ex-empty{padding:12px;border:1px dashed var(--line);border-radius:12px;font-size:var(--fs-base);color:var(--ink-soft);}
+.rp-card{margin-top:22px;padding:14px 16px;border-radius:var(--radius-card);background:var(--bg-surface);border:1px solid var(--line);}
+.rp-card-title{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
+.rp-card-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin:2px 0 8px;}
+.rp-card .tprof-dot.on{background:var(--turf);}
+.rp-card .tprof-dot{width:10px;height:10px;}
+.rp-footnote{margin:16px 2px 4px;font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.45;text-align:center;}
 .home-feed-header h2{font-size:var(--fs-base);opacity:0.75;}
 
 /* ---------- editable fields ---------- */
@@ -6781,6 +6885,8 @@ const ICONS = {
   swords: `<svg viewBox="0 0 24 24" fill="none"><text x="12" y="16.5" text-anchor="middle" font-family="'Inter',Arial,sans-serif" font-weight="800" font-size="12.5" letter-spacing="-0.5" fill="currentColor" transform="rotate(-14 12 12)">VS</text></svg>`,
   circleArrows: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="2.3"/><path d="M5.4 5.4l3 3M8.4 5.4l-3 3"/><path d="M18.6 5.4l-3 3M15.6 5.4l3 3"/><path d="M5.4 18.6l3-3M8.4 18.6l-3-3"/><path d="M18.6 18.6l-3-3M15.6 18.6l3-3"/></svg>`,
   grid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></g></svg>`,
+  arrowRight: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></g></svg>`,
+  shield: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5.5c0 4.2 2.8 7.6 7 9.5 4.2-1.9 7-5.3 7-9.5V6l-7-3Z"/></g></svg>`,
   target: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2"/></g></svg>`,
   trophy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4"/><path d="M12 15v3"/><path d="M9 21h6l-2-3h-2l-2 3Z"/></g></svg>`,
   // Self-colored 1024x1024 circular gradient icons from the FT2 Icon Set v2 pack -- not wired
@@ -8753,7 +8859,24 @@ const state = {
   // ---- Quick Start (3-screen shell) ----
   quickStartInfoOpen: false,      // Screen 1's "i" info panel toggle, same pattern as Quick Pick/Balance's
   qsPracticeFilter: 'all',        // Screen 2's dimension filter tab: 'all'|'Technical'|'Tactical'|'Physical'|'Mental'
-  qsPrimaryFocus: 'Technical',    // Screen 3 Section 1 -- single-select, Technical by default per spec
+  customSessionStep: 1,           // Custom Session generator (its own 4-step workflow, separate from Start New Session): 1 What to work on, 2 Session Setup, 3 Generating, 4 Your Session
+  csObjectiveId: null,            // Step 1: the selected main objective (PRACTICE_OBJECTIVES id) -- the parent of the chosen focus area
+  csFocusAreaId: null,            // Step 1: the selected focus area (a PRACTICE_OBJECTIVES[].focusAreas id)
+  csExpandedId: null,             // Step 1 UI only: the one main objective currently expanded
+  csTitle: '',                    // Step 2: session title (auto-built from objective + focus area until the coach edits it)
+  csTitleEdited: false,           // true once the coach has typed their own title -- then a changed focus area no longer rewrites it
+  csDate: null,                   // Step 2: practice date (ISO yyyy-mm-dd), defaults to today
+  csDuration: null,               // Step 2: 60 | 75 | 90
+  csLocation: null,               // Step 2: 'outdoor' | 'indoor' | 'either'
+  csAgeGroup: null,               // Step 2: 'U8'..'U12', defaults to U10
+  csSessionStyle: null,           // Step 2: 'technical' | 'balanced' | 'game_based', defaults to balanced
+  qsObjective: null,              // Custom Session: the coach's soccer objective (an OBJECTIVE_RULES key) -- the primary input
+  qsPrimaryFocus: null,           // Custom Session: optional extra emphasis -- 'Technical'|'Tactical'|'Physical'|'Mental'|null
+  qsLocation: null,               // Custom Session: 'outdoor'|'indoor'; null = follow the practice default (practiceLocation)
+  qsProposal: null,               // the assembled recommendation shown on the proposed-session screen (never saved by itself)
+  rpHowOpen: false,               // proposed-session screen: "How FT2 built this session" panel expanded
+  rpWhyOpen: new Set(),           // proposed-session screen: exercise ids whose "Why?" is expanded
+  confirmBuildProposalOpen: false,// "replace your session in progress?" guard before building a proposal
   qsTags: new Set(),              // Screen 3 Section 2 -- up to 3
   qsAgeGroup: 'U9 – U12',         // Screen 3 Section 3
   qsDuration: 60,                 // Screen 3 Section 4
@@ -8845,7 +8968,7 @@ function activeNavKey(){
   const sc = state.screen;
   if(sc === 'home') return 'home';
   if(sc === 'settings') return 'settings';
-  if(['practiceSetup','build','review','sessions','sessionDetail'].includes(sc)) return 'sessions';
+  if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','proposedSession'].includes(sc)) return 'sessions';
   if(sc === 'exercises') return state.pickingPhase ? 'sessions' : 'exercises';
   if(sc === 'detail'){
     return ((state.fromBuild && state.pickingPhase) || state.fromBuildList || state.fromReview || state.fromSavedSession) ? 'sessions' : null;
@@ -9442,7 +9565,14 @@ function renderHome(){
       <div class="hm-sh-sub">Build a session in seconds.</div>
       <div class="hm-qs-list">
         ${qsCard('var(--sky-dim)', ICONS.clipboard, 'Pre-built Sessions', 'Use a proven template')}
-        ${qsCard('var(--cone-dim)', ICONS.sparkles, 'Custom Session', 'Set your focus and generate')}
+        <button class="hm-qs hm-qs-live" onclick="startCustomSession()">
+          <span class="hm-qs-icon" style="background:var(--cone-dim);">${ICONS.sparkles}</span>
+          <span class="hm-qs-body">
+            <span class="hm-qs-top"><span class="hm-qs-title">Custom Session</span></span>
+            <span class="hm-qs-desc">Pick an objective and FT2 builds it</span>
+          </span>
+          <span class="hm-chev">${ICONS.chevronRight}</span>
+        </button>
         ${qsCard('var(--mint-dim)', ICONS.dice, 'Surprise Me', 'Let FT2 build one for you')}
       </div>
     </section>
@@ -9535,6 +9665,635 @@ const QUICKSTART_TAGS = ['1v1s','2v2s','Rondos','Shooting','Passing','Possession
 const QS_AGE_GROUPS = ['U6 – U8','U9 – U12','U13 – U15','U16+'];
 const QS_DURATIONS = [45,60,75,90];
 
+/* ============ SESSION RECOMMENDATION ENGINE (rules-based, 2026-10) ============
+   Coach objective -> mapped metadata -> rank exercises -> distribute across FT2 phases ->
+   assemble -> explain -> coach edits. Deterministic and inspectable: no randomness, no AI, no
+   second exercise database and no second scoring system -- it only READS the fields every
+   exercise already has (technical/tactical/physical/cognitive scores 0-5, the six tag
+   categories, section, duration, difficulty, location) and the existing practiceTrainingProfile()
+   for the resulting Training Profile. Pure logic only: nothing in this block touches the DOM or
+   `state` apart from reading the coach's existing phase preferences (enabled phases, default
+   split), so the rules can be tuned later without touching any screen. A future AI layer would
+   sit IN FRONT of this (turning a coach's free-text intent into an objective id + context) and
+   leave the rules below as the source of truth. */
+
+// tag-field shorthand used by the rules below -> the real exercise field
+const REC_TAG_FIELDS = {tech:'technicalTags', tact:'tacticalTags', fmt:'formatTags', phys:'physicalTags', cog:'cognitiveTags', eng:'engagementTags'};
+// training-dimension shorthand -> the real score field (see TRAINING_DIMENSION_DEFS)
+const REC_DIMS = {technical:{key:'technicalScore', label:'Technical'}, tactical:{key:'tacticalScore', label:'Tactical'}, physical:{key:'physicalScore', label:'Physical'}, cognitive:{key:'cognitiveScore', label:'Cognitive'}};
+// The Quick Start "extra emphasis" chips use the coach's wording (Mental) -- this maps to the dimension.
+const REC_EMPHASIS_TO_DIM = {Technical:'technical', Tactical:'tactical', Physical:'physical', Mental:'cognitive'};
+
+// Every knob of the scoring lives here, so tuning the engine is a one-place edit.
+const REC_WEIGHTS = {
+  primaryTag:12, primaryCap:36,        // tags that ARE the objective
+  secondaryTag:5, secondaryCap:15,     // related tags
+  dimPerWeight:10,                     // x the objective's weight for that training dimension
+  formatHit:8, formatCap:16,           // preferred game formats
+  phaseBoostTag:6, phaseBoostCap:12,   // extra tags the objective wants in this particular phase
+  negativeTag:10, negativeCap:30,      // tags that work against the objective
+  avoidDim:8,                          // a dimension the objective doesn't want dominating
+  ageIn:4, ageBelow:1, ageAbovePerLevel:6, ageAboveCap:12,
+  emphasisDim:6, emphasisDimOk:3, extraTag:5, extraTagCap:10,
+  strongAt:75, goodAt:50,              // match labels: Strong >= 75, Good >= 50, otherwise Fair
+};
+// Practice rule: planned activities never fill the whole session. 10-15 minutes are left free for water
+// breaks, transitions and the natural ebb and flow of a real practice (a 75-min session gets 60-65 min of
+// activities). The engine aims for the short end (duration - min) and accepts down to (duration - max).
+const REC_TIME_BUFFER = {min:10, max:15};
+// Practice rule: Athletic work averages about a quarter of a generated session and always stays between
+// 20% and 30% of the planned activity time. The other phases share the remaining 75% in the same
+// proportions as the coach's own default split (Settings).
+const REC_ATHLETIC_SHARE = {min:0.20, ideal:0.25, max:0.30};
+// Age group -> the exercise difficulty band (1-5) that suits it. Exercises carry difficulty, not an age.
+const REC_AGE_BANDS = {'U6 – U8':{ideal:[1,2]}, 'U9 – U12':{ideal:[1,3]}, 'U13 – U15':{ideal:[2,4]}, 'U16+':{ideal:[3,5]}};
+// Quick Start's optional chips -> what they mean in exercise metadata (extra, light nudges).
+const REC_EXTRA_TAG_RULES = {
+  '1v1s':{fmt:['1v1']}, '2v2s':{fmt:['2v2']}, 'Rondos':{fmt:['Rondo','3v1','4v1','4v2','5v2','6v3'], sections:['Rondos']},
+  'Shooting':{tech:['Shooting','Finishing']}, 'Passing':{tech:['Passing']}, 'Possession':{tact:['Possession']},
+  'Transition':{tact:['Transition']}, 'Defending':{tact:['Defending']}, 'Small Sided Games':{fmt:['SSG'], sections:['SSGs']},
+  'End Zone':{nameHas:['end zone','end-zone','endzone']}, 'Agility':{phys:['Agility']}, 'Speed':{phys:['Speed']},
+  'Team Play':{fmt:['Team']}, 'Fun / Competitive':{eng:['Team Competition','Individual Competition','Challenge','Tag Game','Scoring']},
+  'Team Dynamics':{cog:['Communication']},
+};
+// Default coaching role of each phase -- an objective can override any of these in its own `phases`.
+const REC_PHASE_ROLES = {
+  warmup:'Get players moving and tuned in to the topic',
+  athletic:'Prepare the body and sharpen the movement the topic needs',
+  duels:'Introduce the topic in direct 1v1 and 2v2 competition',
+  rondos:'Repeat the topic in a controlled possession setting',
+  ssg:'Apply the topic in small, realistic games',
+  scrimmage:'Let players recognize and use the topic in free play',
+};
+
+const OBJECTIVE_GROUPS = [
+  {label:'With the ball', ids:['possession','buildout','switching','pressure','combination']},
+  {label:'Attacking', ids:['chances','finishing','attack1v1','counter','transitions']},
+  {label:'Defending', ids:['defendTeam','pressing','defend1v1','defendTransition']},
+  {label:'Player development', ids:['decision','ballMastery']},
+];
+/* One entry per coaching objective:
+   concepts    -- soccer ideas shown to the coach ("we matched exercises to ...")
+   primary     -- tags that ARE the objective;  secondary -- related tags (by field shorthand)
+   dims        -- preferred training dimensions: range [min,max] on the 0-5 score, weight 1-3
+   formats     -- preferred game formats (format tags)
+   negative    -- tags that work against it;  avoidDims -- a dimension that shouldn't dominate
+   phases      -- per phase: note (what that phase does for this objective) + optional boost tags */
+const OBJECTIVE_RULES = {
+  possession:{label:'Keeping Possession', blurb:'Keep the ball under pressure and keep it moving.',
+    concepts:['Possession','Passing','Support play','Awareness'],
+    primary:{tact:['Possession','Support','Movement'], tech:['Passing','Receiving']},
+    secondary:{tact:['Creating Space','Combination'], tech:['First Touch'], cog:['Awareness','Scanning']},
+    dims:{tactical:{range:[4,5],w:3}, technical:{range:[3,5],w:2}, cognitive:{range:[3,5],w:1}},
+    formats:['Rondo','3v1','4v1','4v2','5v2','6v3','4v4','3v3'],
+    negative:{tech:['Shooting','Finishing','Juggling'], fmt:['Individual']},
+    avoidDims:{physical:{min:4}},
+    phases:{
+      warmup:{note:'Passing and receiving rhythm, heads up', boost:{tech:['Passing','Receiving','First Touch']}},
+      athletic:{note:'Quick feet and body shape to receive on the move', boost:{phys:['Agility','Coordination']}},
+      duels:{note:'Protect the ball and win it back in tight spaces'},
+      rondos:{note:'Keep the ball with good angles and support under pressure'},
+      ssg:{note:'Keep possession in a small game with a real opponent'},
+      scrimmage:{note:'Recognize when to keep the ball in free play'}}},
+  buildout:{label:'Building Out', blurb:'Play out from the back past the first line of pressure.',
+    concepts:['Breaking lines','Passing','Support play','Scanning'],
+    primary:{tact:['Breaking Lines','Support','Possession','Creating Space'], tech:['Passing','Receiving']},
+    secondary:{tact:['Combination','Movement'], tech:['First Touch'], cog:['Scanning','Decision Making','Communication']},
+    dims:{tactical:{range:[4,5],w:3}, technical:{range:[3,5],w:2}, cognitive:{range:[3,5],w:2}},
+    formats:['6v6','5v5','7v7','4v4','SSG','Team','6v3','4v2'],
+    negative:{tech:['Finishing','Juggling'], fmt:['1v1','Individual']},
+    avoidDims:{physical:{min:4}},
+    phases:{
+      warmup:{note:'Receive, turn and pass out of tight spaces', boost:{tech:['Receiving','Passing'], cog:['Scanning']}},
+      athletic:{note:'Footwork and body shape to receive under pressure', boost:{phys:['Agility','Balance']}},
+      duels:{note:'Beat the first presser one-on-one'},
+      rondos:{note:'Find the free player and play through the middle'},
+      ssg:{note:'Play out against pressure with goals to aim for'},
+      scrimmage:{note:'Build from the goalkeeper in a full game'}}},
+  switching:{label:'Switching the Ball', blurb:'Change the point of attack to find space on the far side.',
+    concepts:['Possession','Passing','Decision-making','Tactical play'],
+    primary:{tact:['Possession','Creating Space','Support'], tech:['Passing'], cog:['Scanning','Awareness','Decision Making']},
+    secondary:{tact:['Movement','Combination'], tech:['Receiving','First Touch'], cog:['Perception']},
+    dims:{tactical:{range:[4,5],w:3}, cognitive:{range:[3,5],w:2}, technical:{range:[3,5],w:1}},
+    formats:['Rondo','4v2','5v2','6v3','4v4','5v5','6v6','SSG','Team'],
+    negative:{tech:['Shooting','Finishing','Juggling'], fmt:['1v1','Individual']},
+    avoidDims:{physical:{min:4}},
+    phases:{
+      warmup:{note:'Scanning, movement and receiving with the body open', boost:{cog:['Scanning'], tech:['Passing','Receiving']}},
+      athletic:{note:'Footwork and body shape to receive and turn', boost:{phys:['Agility','Coordination']}},
+      duels:{note:'Recognize pressure and find the next pass'},
+      rondos:{note:'Move the ball away from pressure and change the point of attack'},
+      ssg:{note:'Apply switching against a real opponent'},
+      scrimmage:{note:'Recognize and use the switch in free play'}}},
+  pressure:{label:'Playing Through Pressure', blurb:'Stay calm on the ball and play out of tight spaces.',
+    concepts:['Receiving under pressure','Decision-making','Combination play','Awareness'],
+    primary:{tact:['Breaking Lines','Combination','Support','Possession'], tech:['Receiving','First Touch','Passing'], cog:['Decision Making','Perception','Awareness']},
+    secondary:{tact:['Movement','Creating Space'], cog:['Scanning'], tech:['Shielding']},
+    dims:{tactical:{range:[4,5],w:3}, cognitive:{range:[4,5],w:2}, technical:{range:[3,5],w:2}},
+    formats:['4v2','5v2','3v2','6v3','4v4','5v5','SSG','Rondo'],
+    negative:{fmt:['Individual'], tech:['Juggling']},
+    avoidDims:{physical:{min:4}},
+    phases:{
+      warmup:{note:'First touch away from pressure', boost:{tech:['First Touch','Receiving']}},
+      athletic:{note:'Sharp footwork to create time on the ball', boost:{phys:['Agility','Reaction']}},
+      duels:{note:'Win the one-on-one when the pressure arrives'},
+      rondos:{note:'Pass and move with defenders closing down'},
+      ssg:{note:'Play through pressure in a small game'},
+      scrimmage:{note:'Stay composed under pressure in a full game'}}},
+  combination:{label:'Combination Play', blurb:'Pass-and-move patterns, give-and-goes and third-man runs.',
+    concepts:['Passing','Movement off the ball','Support play','Quick touches'],
+    primary:{tact:['Combination','Support','Movement','Creating Space','Breaking Lines'], tech:['Passing','Receiving','First Touch']},
+    secondary:{tact:['Attacking','Possession'], cog:['Awareness','Decision Making']},
+    dims:{technical:{range:[4,5],w:3}, tactical:{range:[4,5],w:2}, cognitive:{range:[3,5],w:1}},
+    formats:['2v1','2v2','3v1','3v2','3v3','Rondo','4v2'],
+    negative:{tech:['Juggling'], fmt:['Individual']},
+    avoidDims:{physical:{min:4}},
+    phases:{
+      warmup:{note:'Pass and follow with sharp first touches', boost:{tech:['Passing','First Touch']}},
+      athletic:{note:'Coordination and rhythm for quick one-twos', boost:{phys:['Coordination','Agility']}},
+      duels:{note:'Beat a defender with a quick combination'},
+      rondos:{note:'Pass-and-move patterns in tight spaces'},
+      ssg:{note:'Use combinations to get through a real defense'},
+      scrimmage:{note:'Spot and play the combination in free play'}}},
+  chances:{label:'Creating Chances', blurb:'Get players into good attacking positions and shots.',
+    concepts:['Attacking movement','Passing in the final third','Combination play','Scoring'],
+    primary:{tact:['Attacking','Combination','Breaking Lines','Creating Space'], tech:['Passing','Finishing']},
+    secondary:{tact:['Movement','Support'], tech:['Shooting','Receiving'], eng:['Scoring'], cog:['Decision Making','Problem Solving']},
+    dims:{tactical:{range:[4,5],w:3}, technical:{range:[3,5],w:2}, cognitive:{range:[3,5],w:1}},
+    formats:['2v1','3v2','2v2','3v3','4v4','SSG'],
+    negative:{tact:['Defending','Recovery'], fmt:['Individual']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Passing and finishing touches to get started', boost:{tech:['Passing','Finishing','First Touch']}},
+      athletic:{note:'Explosive first steps to get into the box', boost:{phys:['Acceleration/Deceleration','Speed']}},
+      duels:{note:'Get past a defender to create a shot'},
+      rondos:{note:'Quick combinations to open up space'},
+      ssg:{note:'Create and finish chances in a small game'},
+      scrimmage:{note:'Create chances in free play with goals'}}},
+  finishing:{label:'Finishing', blurb:'Score more from the chances players get.',
+    concepts:['Shooting technique','First touch to shoot','Composure','Scoring'],
+    primary:{tech:['Finishing','Shooting','First Touch','Volley'], eng:['Scoring']},
+    secondary:{tact:['Attacking','Creating Space'], tech:['Receiving','Dribbling'], cog:['Decision Making']},
+    dims:{technical:{range:[4,5],w:3}, tactical:{range:[2,5],w:1}, physical:{range:[2,4],w:1}},
+    formats:['1v1','2v1','3v2','2v2','SSG'],
+    negative:{tech:['Juggling'], tact:['Defending']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Striking the ball with good technique', boost:{tech:['Shooting','Finishing','Volley']}},
+      athletic:{note:'Explosive movement before the shot', boost:{phys:['Acceleration/Deceleration','Coordination']}},
+      duels:{note:'Finish quickly under pressure from a defender'},
+      rondos:{note:'Keep the ball, then play to a finisher'},
+      ssg:{note:'Finish in game-like moments'},
+      scrimmage:{note:'Finish chances in a full game'}}},
+  attack1v1:{label:'Attacking 1v1s', blurb:'Take on defenders with confidence.',
+    concepts:['Dribbling','Changing speed and direction','Beating a defender','Confidence'],
+    primary:{tech:['Dribbling','Ball Mastery','Shielding'], tact:['Attacking'], eng:['Individual Competition']},
+    secondary:{phys:['Agility','Balance','Acceleration/Deceleration'], tact:['Creating Space'], tech:['First Touch']},
+    dims:{technical:{range:[4,5],w:3}, physical:{range:[3,5],w:1}, tactical:{range:[2,4],w:1}},
+    formats:['1v1','2v1','2v2','Individual'],
+    negative:{fmt:['Rondo','Team'], tact:['Possession']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Close control and confidence on the ball', boost:{tech:['Dribbling','Ball Mastery']}},
+      athletic:{note:'Quick feet and change of speed', boost:{phys:['Agility','Acceleration/Deceleration']}},
+      duels:{note:'Take on a defender one-on-one'},
+      rondos:{note:'Dribble out of pressure in tight spaces'},
+      ssg:{note:'Use 1v1 moves in small games'},
+      scrimmage:{note:'Take defenders on in free play'}}},
+  counter:{label:'Counterattacking', blurb:'Win the ball and attack quickly while the defense is open.',
+    concepts:['Quick transitions','Running with the ball','Forward passing','Finishing'],
+    primary:{tact:['Transition','Attacking','Breaking Lines','Movement'], phys:['Speed','Acceleration/Deceleration']},
+    secondary:{tech:['Passing','Dribbling','Finishing'], cog:['Decision Making','Awareness']},
+    dims:{tactical:{range:[4,5],w:3}, physical:{range:[3,5],w:2}, technical:{range:[3,5],w:1}},
+    formats:['3v2','2v1','4v4','5v5','6v6','SSG'],
+    negative:{tech:['Juggling'], fmt:['Individual']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Fast first touches and forward passes', boost:{tech:['Passing','First Touch']}},
+      athletic:{note:'Speed and acceleration to break forward', boost:{phys:['Speed','Acceleration/Deceleration']}},
+      duels:{note:'Win it and go: attack space in one-on-ones'},
+      rondos:{note:'Win the ball and play forward quickly'},
+      ssg:{note:'Counter in numbers-up and numbers-down games'},
+      scrimmage:{note:'Spot and use the counter in a full game'}}},
+  transitions:{label:'Quick Transitions', blurb:'Switch instantly between attacking and defending.',
+    concepts:['Reacting to turnovers','Regaining shape','Awareness','Speed of play'],
+    primary:{tact:['Transition','Recovery','Attacking','Defending'], cog:['Reaction','Awareness','Decision Making']},
+    secondary:{phys:['Acceleration/Deceleration','Reaction','Speed'], cog:['Perception'], tact:['Movement']},
+    dims:{tactical:{range:[4,5],w:3}, cognitive:{range:[3,5],w:2}, physical:{range:[3,5],w:1}},
+    formats:['4v4','3v3','5v5','2v2','3v2','2v1','SSG'],
+    negative:{fmt:['Individual'], tech:['Juggling']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Heads up and ready to react', boost:{cog:['Reaction','Awareness']}},
+      athletic:{note:'Reaction and change of direction', boost:{phys:['Reaction','Acceleration/Deceleration']}},
+      duels:{note:'React the moment possession changes'},
+      rondos:{note:'Win it, then switch roles at once'},
+      ssg:{note:'Transition both ways in a small game'},
+      scrimmage:{note:'Switch fast in a full game'}}},
+  defendTeam:{label:'Defending as a Team', blurb:'Stay compact, communicate and defend together.',
+    concepts:['Team shape','Communication','Support play','Recovery runs'],
+    primary:{tact:['Defending','Recovery','Support'], cog:['Communication','Awareness']},
+    secondary:{tact:['Transition','Movement'], cog:['Decision Making','Scanning'], phys:['Endurance']},
+    dims:{tactical:{range:[4,5],w:3}, cognitive:{range:[3,5],w:2}, physical:{range:[2,4],w:1}},
+    formats:['4v4','5v5','6v6','7v7','Team','SSG'],
+    negative:{tech:['Finishing','Juggling'], fmt:['Individual']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Get organized and talking', boost:{cog:['Communication']}},
+      athletic:{note:'Movement to close space and recover', boost:{phys:['Agility','Endurance']}},
+      duels:{note:'Defend the one-on-one with a teammate behind'},
+      rondos:{note:'Defend in a group to win the ball'},
+      ssg:{note:'Defend as a unit in a small game'},
+      scrimmage:{note:'Hold shape and defend together in a full game'}}},
+  pressing:{label:'Pressing', blurb:'Win the ball back high, together and quickly.',
+    concepts:['Closing down','Pressing triggers','Communication','Work rate'],
+    primary:{tact:['Defending','Transition','Recovery','Movement'], cog:['Reaction','Communication','Awareness']},
+    secondary:{phys:['Acceleration/Deceleration','Speed','Endurance','Reaction'], cog:['Perception']},
+    dims:{tactical:{range:[4,5],w:3}, physical:{range:[3,5],w:2}, cognitive:{range:[3,5],w:2}},
+    formats:['4v2','5v2','6v3','4v4','5v5','SSG','Rondo'],
+    negative:{tech:['Juggling'], fmt:['Individual']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Get active and alert', boost:{cog:['Reaction'], phys:['Reaction']}},
+      athletic:{note:'Short, sharp sprints to close space', boost:{phys:['Acceleration/Deceleration','Speed']}},
+      duels:{note:'Close down and win the ball one-on-one'},
+      rondos:{note:'Press as a group to win it in the rondo'},
+      ssg:{note:'Press and win the ball in a small game'},
+      scrimmage:{note:'Press together in a full game'}}},
+  defend1v1:{label:'Defending 1v1', blurb:'Stay balanced, show the attacker one way and win the ball.',
+    concepts:['Body shape','Patience','Footwork','Reading the attacker'],
+    primary:{tact:['Defending','Recovery'], phys:['Agility','Balance','Reaction'], cog:['Reaction','Awareness']},
+    secondary:{phys:['Acceleration/Deceleration','Coordination'], eng:['Individual Competition'], cog:['Perception']},
+    dims:{tactical:{range:[3,5],w:2}, physical:{range:[3,5],w:2}, cognitive:{range:[2,5],w:1}},
+    formats:['1v1','2v1','2v2'],
+    negative:{tact:['Possession'], tech:['Shooting','Juggling'], fmt:['Rondo']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Footwork and balance to start', boost:{phys:['Agility','Balance']}},
+      athletic:{note:'Backpedal, shuffle and change direction', boost:{phys:['Agility','Reaction','Acceleration/Deceleration']}},
+      duels:{note:'Defend the attacker one-on-one'},
+      rondos:{note:'Close down and win the ball in tight spaces'},
+      ssg:{note:'Defend one-on-one moments inside a game'},
+      scrimmage:{note:'Defend your player in a full game'}}},
+  defendTransition:{label:'Defending in Transition', blurb:'React instantly after losing the ball and get back into shape.',
+    concepts:['Immediate reaction','Recovery runs','Delaying the attack','Team shape'],
+    primary:{tact:['Transition','Recovery','Defending'], cog:['Reaction','Awareness','Decision Making']},
+    secondary:{phys:['Acceleration/Deceleration','Speed','Reaction'], cog:['Communication']},
+    dims:{tactical:{range:[4,5],w:3}, physical:{range:[3,5],w:2}, cognitive:{range:[3,5],w:2}},
+    formats:['3v2','4v4','5v5','2v1','SSG','2v2'],
+    negative:{tech:['Finishing','Juggling'], fmt:['Individual']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Heads up and ready to react', boost:{cog:['Reaction','Awareness']}},
+      athletic:{note:'Recovery sprints and quick direction changes', boost:{phys:['Speed','Acceleration/Deceleration']}},
+      duels:{note:'Delay and recover after losing the ball'},
+      rondos:{note:'Lose it, react and win it back at once'},
+      ssg:{note:'Recover and defend after turnovers in a small game'},
+      scrimmage:{note:'Recover your shape in a full game'}}},
+  decision:{label:'Decision Making', blurb:'See the game earlier and choose the right action.',
+    concepts:['Scanning','Reading the game','Choosing the right pass','Problem solving'],
+    primary:{cog:['Decision Making','Problem Solving','Awareness','Perception','Scanning'], tact:['Scanning']},
+    secondary:{tact:['Movement','Creating Space','Support'], tech:['Passing']},
+    dims:{cognitive:{range:[4,5],w:3}, tactical:{range:[3,5],w:2}, technical:{range:[2,4],w:1}},
+    formats:['SSG','3v3','4v4','2v2','4v2','5v2'],
+    negative:{fmt:['Individual'], tech:['Juggling']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Scan and react to what you see', boost:{cog:['Scanning','Awareness']}},
+      athletic:{note:'React and decide on the move', boost:{cog:['Reaction'], phys:['Reaction']}},
+      duels:{note:'Choose how to beat or stop the opponent'},
+      rondos:{note:'Read the pressure and choose the next pass'},
+      ssg:{note:'Make decisions at game speed in a small game'},
+      scrimmage:{note:'Trust the decisions in free play'}}},
+  ballMastery:{label:'Ball Mastery', blurb:'Build close control and comfort on the ball.',
+    concepts:['Close control','Dribbling','First touch','Coordination'],
+    primary:{tech:['Ball Mastery','Dribbling','Juggling','First Touch','Receiving'], phys:['Coordination','Balance']},
+    secondary:{phys:['Agility'], eng:['Individual Competition','Time Challenge']},
+    dims:{technical:{range:[4,5],w:3}, physical:{range:[2,4],w:1}},
+    formats:['Individual','1v1'],
+    negative:{tact:['Defending','Recovery'], fmt:['Team']},
+    avoidDims:{},
+    phases:{
+      warmup:{note:'Lots of touches to get comfortable', boost:{tech:['Ball Mastery','Juggling','Dribbling']}},
+      athletic:{note:'Coordination and quick feet with the ball', boost:{phys:['Coordination','Agility','Balance']}},
+      duels:{note:'Use close control to beat an opponent'},
+      rondos:{note:'First touch and control under light pressure'},
+      ssg:{note:'Use close control in small games'},
+      scrimmage:{note:'Show off the skills in free play'}}},
+};
+
+function mapObjectiveToMetadata(objectiveId){
+  const r = OBJECTIVE_RULES[objectiveId];
+  return r ? {id:objectiveId, ...r} : null;
+}
+function recTagHits(ex, map){
+  const hits = [];
+  Object.keys(map || {}).forEach(k => {
+    const have = ex[REC_TAG_FIELDS[k]] || [];
+    map[k].forEach(t => { if(have.includes(t) && !hits.includes(t)) hits.push(t); });
+  });
+  return hits;
+}
+function recExtraTagMatches(ex, tagLabel){
+  const rule = REC_EXTRA_TAG_RULES[tagLabel];
+  if(!rule) return false;
+  if(recTagHits(ex, rule).length) return true;
+  if(rule.sections && rule.sections.includes(ex.section)) return true;
+  if(rule.nameHas){ const n = String(ex.name||'').toLowerCase(); if(rule.nameHas.some(s => n.includes(s))) return true; }
+  return false;
+}
+/* The most a perfect exercise could score under these rules -- used to express every score as 0-100. */
+function recMaxRaw(rules){
+  const W = REC_WEIGHTS;
+  const count = m => Object.keys(m||{}).reduce((a,k)=>a+m[k].length, 0);
+  let max = Math.min(count(rules.primary)*W.primaryTag, W.primaryCap) + Math.min(count(rules.secondary)*W.secondaryTag, W.secondaryCap);
+  Object.keys(rules.dims||{}).forEach(k => { max += W.dimPerWeight * rules.dims[k].w; });
+  max += Math.min((rules.formats||[]).length*W.formatHit, W.formatCap) + W.ageIn;
+  return max || 1;
+}
+/* How well one exercise fits an objective: a 0-100 score plus the exact reasons behind it. */
+function scoreExerciseForObjective(ex, rules, ctx){
+  const W = REC_WEIGHTS;
+  ctx = ctx || {};
+  const d = {primary:[], secondary:[], dims:[], formats:[], phaseBoost:[], negative:[], avoidDims:[], age:null, emphasis:null, extraTags:[]};
+  let raw = 0;
+
+  d.primary = recTagHits(ex, rules.primary);
+  raw += Math.min(d.primary.length*W.primaryTag, W.primaryCap);
+  d.secondary = recTagHits(ex, rules.secondary).filter(t => !d.primary.includes(t));
+  raw += Math.min(d.secondary.length*W.secondaryTag, W.secondaryCap);
+
+  Object.keys(rules.dims||{}).forEach(k => {
+    const cfg = rules.dims[k];
+    const val = clampScore(ex[REC_DIMS[k].key]);
+    if(val === null) return;
+    const [lo, hi] = cfg.range;
+    const fit = (val >= lo && val <= hi) ? 1 : (val < lo ? 0.8*(val/lo) : 0.9);
+    raw += W.dimPerWeight * cfg.w * fit;
+    d.dims.push({dim:k, label:REC_DIMS[k].label, val, fit, w:cfg.w});
+  });
+
+  const fmtHits = (ex.formatTags || []).filter(t => (rules.formats||[]).includes(t));
+  d.formats = fmtHits;
+  raw += Math.min(fmtHits.length*W.formatHit, W.formatCap);
+
+  const boost = ctx.phaseKey && rules.phases && rules.phases[ctx.phaseKey] && rules.phases[ctx.phaseKey].boost;
+  if(boost){
+    d.phaseBoost = recTagHits(ex, boost);
+    raw += Math.min(d.phaseBoost.length*W.phaseBoostTag, W.phaseBoostCap);
+  }
+
+  d.negative = recTagHits(ex, rules.negative);
+  raw -= Math.min(d.negative.length*W.negativeTag, W.negativeCap);
+  Object.keys(rules.avoidDims||{}).forEach(k => {
+    const val = clampScore(ex[REC_DIMS[k].key]);
+    if(val !== null && val >= rules.avoidDims[k].min){ raw -= W.avoidDim; d.avoidDims.push(REC_DIMS[k].label); }
+  });
+
+  const band = REC_AGE_BANDS[ctx.ageGroup];
+  if(band && typeof ex.difficulty === 'number'){
+    const [lo, hi] = band.ideal;
+    if(ex.difficulty > hi){ raw -= Math.min((ex.difficulty-hi)*W.ageAbovePerLevel, W.ageAboveCap); d.age = {diff:ex.difficulty, status:'above'}; }
+    else if(ex.difficulty < lo){ raw += W.ageBelow; d.age = {diff:ex.difficulty, status:'below'}; }
+    else { raw += W.ageIn; d.age = {diff:ex.difficulty, status:'in'}; }
+  }
+
+  if(ctx.emphasis && REC_DIMS[ctx.emphasis]){
+    const val = clampScore(ex[REC_DIMS[ctx.emphasis].key]);
+    if(val !== null && val >= 4){ raw += W.emphasisDim; d.emphasis = REC_DIMS[ctx.emphasis].label; }
+    else if(val === 3){ raw += W.emphasisDimOk; }
+  }
+  if(ctx.tags && ctx.tags.length){
+    d.extraTags = ctx.tags.filter(t => recExtraTagMatches(ex, t));
+    raw += Math.min(d.extraTags.length*W.extraTag, W.extraTagCap);
+  }
+
+  const score = Math.max(0, Math.min(100, Math.round(raw / recMaxRaw(rules) * 100)));
+  const label = score >= W.strongAt ? 'Strong' : score >= W.goodAt ? 'Good' : 'Fair';
+  return {score, label, details:d};
+}
+/* Eligible exercises (known phase section, suits the chosen location), best match first.
+   Ties break on name so the same inputs always give the same session. */
+function rankExercisesForObjective(exercises, objectiveId, ctx){
+  const rules = mapObjectiveToMetadata(objectiveId);
+  if(!rules) return [];
+  const sections = new Set(PHASES.map(p => p.section));
+  return exercises
+    .filter(ex => sections.has(ex.section))
+    .filter(ex => !(ctx.location === 'outdoor' && ex.location === 'indoor') && !(ctx.location === 'indoor' && ex.location === 'outdoor'))
+    .map(ex => ({ex, ...scoreExerciseForObjective(ex, rules, ctx)}))
+    .sort((a,b) => b.score - a.score || String(a.ex.name).localeCompare(String(b.ex.name)));
+}
+/* Minutes for each phase, in whole 5-minute blocks, from the coach's own default split (Settings),
+   every enabled phase getting at least one block when the session is long enough. */
+function allocatePhaseMinutes(duration, phases){
+  const units = Math.max(1, Math.round(duration/5));
+  let pcts = phases.map(p => sectionDefaultPcts[p.key] || 0);
+  const ai = phases.findIndex(p => p.key === 'athletic');
+  if(ai !== -1){
+    // Athletic is pinned to its target share; everyone else splits the rest by the coach's own percentages.
+    const rest = pcts.reduce((a,b,i)=>a+(i===ai?0:b),0) || 1;
+    pcts = pcts.map((v,i) => i === ai ? REC_ATHLETIC_SHARE.ideal*100 : v/rest*(100 - REC_ATHLETIC_SHARE.ideal*100));
+  }
+  const total = pcts.reduce((a,b)=>a+b,0) || 1;
+  const live = phases.map((p,i) => pcts[i] > 0);
+  const base = live.map(l => l ? 1 : 0);
+  const baseSum = base.reduce((a,b)=>a+b,0);
+  const useBase = units >= baseSum;
+  const alloc = useBase ? base.slice() : phases.map(()=>0);
+  const ideal = pcts.map(p => p/total*units);
+  let left = units - alloc.reduce((a,b)=>a+b,0);
+  const order = phases.map((p,i)=>i);
+  // hand out remaining blocks to whichever phase is furthest below its ideal share (ties: earlier phase)
+  while(left > 0){
+    let best = -1, bestGap = -Infinity;
+    order.forEach(i => { if(!live[i]) return; const gap = ideal[i] - alloc[i]; if(gap > bestGap + 1e-9){ bestGap = gap; best = i; } });
+    if(best === -1) break;
+    alloc[best]++; left--;
+  }
+  return alloc.map(u => u*5);
+}
+/* Every sensible way to fill one phase: nothing, or 1-3 of its best-ranked candidates. Each option
+   carries its total minutes and a value that rewards strong matches, stays near the phase's share of
+   the time, and avoids two near-identical formats. (Picking among these across ALL phases at once
+   is chooseSessionPlan() below, so the whole session lands inside its time window.) */
+function selectExercisesForPhase(ranked, phase, minutes){
+  const dur = r => r.ex.duration || 10;
+  // Best-ranked candidates, plus the best couple at every length, so a short session always has a
+  // short enough option to keep every phase in.
+  const inPhase = ranked.filter(r => r.ex.section === phase.section);
+  const pool = inPhase.slice(0, 8);
+  const perLen = {};
+  inPhase.forEach(r => { const d = dur(r); perLen[d] = perLen[d] || 0; if(perLen[d] < 2 && !pool.includes(r)){ pool.push(r); } if(perLen[d] < 2) perLen[d]++; });
+  const sigOf = r => (r.ex.formatTags||[]).join('|') + '/' + (r.ex.category||'');
+  // Leaving a phase empty is allowed (a short session may not have room for all six) but costs more the
+  // bigger that phase's share of a normal session is, so the game-like phases are the last to go.
+  const options = [{pick:[], sum:0, value: minutes > 0 ? -(100 + 3*(sectionDefaultPcts[phase.key]||0)) : 0}];
+  const add = pick => {
+    const sum = pick.reduce((a,r)=>a+dur(r),0);
+    let value = pick.reduce((a,r)=>a+r.score,0) - 15*Math.max(0, sum - minutes) - 5*Math.max(0, minutes - sum) - 12*(pick.length-1);
+    const sigs = pick.map(sigOf);
+    if(new Set(sigs).size < sigs.length) value -= 15;
+    // Only the best way to reach each total matters to the planner, so keep one option per total.
+    const same = options.find(o => o.sum === sum && o.pick.length);
+    if(!same) options.push({pick, sum, value});
+    else if(value > same.value + 1e-9){ same.pick = pick; same.value = value; }
+  };
+  for(let i = 0; i < pool.length; i++){
+    add([pool[i]]);
+    for(let j = i+1; j < pool.length; j++){
+      add([pool[i], pool[j]]);
+      for(let k = j+1; k < pool.length; k++) add([pool[i], pool[j], pool[k]]);
+    }
+  }
+  return options;
+}
+/* Picks one option per phase so the activities add up to between `floor` and `target` minutes (the
+   practice rule that leaves time for breaks) with the best total match. `share` ({index, min, ideal,
+   max}) additionally pins one phase -- Athletic -- to a share of the planned time. Tiny dynamic
+   program over whole minutes; ties prefer the longer plan, then the earlier option, so it is fully
+   deterministic. */
+function chooseSessionPlan(optionsPerPhase, floor, target, share){
+  const fi = share ? share.index : -1;
+  let layer = new Map([[0, {value:0, picks:[]}]]);
+  optionsPerPhase.forEach((options, pi) => {
+    if(pi === fi) return;
+    const next = new Map();
+    layer.forEach((st, total) => {
+      options.forEach((opt, oi) => {
+        const t = total + opt.sum;
+        if(t > target) return;
+        const v = st.value + opt.value;
+        const cur = next.get(t);
+        if(!cur || v > cur.value + 1e-9) next.set(t, {value:v, picks:[...st.picks, [pi, oi]]});
+      });
+    });
+    layer = next;
+  });
+  const focusOptions = fi === -1 ? [{sum:0, value:0}] : optionsPerPhase[fi];
+  let best = null;
+  focusOptions.forEach((fo, foi) => {
+    layer.forEach((st, rest) => {
+      const total = rest + fo.sum;
+      if(total > target) return;
+      let score = st.value + fo.value - (total >= floor ? 0 : 20*(floor - total));
+      if(fi !== -1){
+        const pct = total > 0 ? fo.sum/total : 0;
+        const outside = Math.max(0, share.min - pct, pct - share.max)*100;
+        score -= 40*outside + 2*Math.abs(pct - share.ideal)*100;
+      }
+      if(!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && total > best.total)){
+        best = {score, total, picks: fi === -1 ? st.picks : [...st.picks, [fi, foi]]};
+      }
+    });
+  });
+  const chosen = optionsPerPhase.map(() => 0);
+  if(best) best.picks.forEach(([pi, oi]) => { chosen[pi] = oi; });
+  return chosen;
+}
+function recJoinAnd(items){
+  if(items.length <= 1) return items.join('');
+  if(items.length === 2) return items.join(' and ');
+  return items.slice(0,-1).join(', ') + ' and ' + items[items.length-1];
+}
+/* One coach-facing sentence built from the very rules that scored this exercise. */
+function explainExerciseRecommendation(ex, rules, scoreInfo){
+  const d = scoreInfo.details;
+  const lead = scoreInfo.label === 'Strong' ? `Strong match for ${rules.label}` : scoreInfo.label === 'Good' ? `Good fit for ${rules.label}` : `Best available fit in this phase for ${rules.label}`;
+  const concepts = [...d.primary, ...d.secondary].slice(0,3).map(t => t.toLowerCase());
+  const strongDims = d.dims.filter(x => x.val >= 4 && x.fit >= 0.9).sort((a,b) => b.w - a.w || b.val - a.val).slice(0,2).map(x => `${x.label} (${x.val}/5)`);
+  const parts = [];
+  if(concepts.length) parts.push(`works on ${recJoinAnd(concepts)}`);
+  if(strongDims.length) parts.push(`strongly trains ${recJoinAnd(strongDims)}`);
+  if(d.formats.length){
+    const f = d.formats[0];
+    parts.push(f === 'Team' ? 'is a team game' : f === 'Individual' ? 'is an individual activity' : f === 'Rondo' ? 'is a rondo' : f === 'SSG' ? 'is a small-sided game' : `is played as a ${f}`);
+  }
+  if(!parts.length) return `${lead}. It has few direct links to this objective, so treat it as a placeholder you may want to swap.`;
+  let s = `${lead} because it ${recJoinAnd(parts)}.`;
+  if(d.age && d.age.status === 'above') s += ' It may be a stretch for this age group.';
+  if(d.extraTags.length) s += ` It also fits your ${recJoinAnd(d.extraTags)} focus.`;
+  return s;
+}
+/* The five-step "how FT2 built this" story shown to the coach (plain language, no formulas). */
+function explainSessionRecommendation(session, rules){
+  const used = session.phases.filter(p => p.items.length).map(p => p.phase.label);
+  const emphasis = session.ctx.emphasis ? REC_DIMS[session.ctx.emphasis].label : '';
+  return [
+    {title:'Your objective', body:rules.label, sub:rules.blurb},
+    {title:'We matched exercises to', body:rules.concepts.join(' · ')},
+    {title:'We ranked exercises', body:`Based on their training dimensions, tags, format and fit for ${session.ctx.ageGroup}${emphasis ? `, with extra weight on ${emphasis}` : ''}`},
+    {title:'We distributed them across FT2 phases', body:used.join(' → ')},
+    {title:'You make the final call', body:'Edit any exercise or phase before coaching'},
+  ];
+}
+/* Basic sanity checks on the finished session. Each returns {ok, text}; callers show only the ones that need attention. */
+function checkRecommendedSession(session, rules){
+  const checks = [];
+  const items = session.phases.flatMap(p => p.items);
+  const good = items.filter(i => i.label !== 'Fair').length;
+  checks.push({key:'relevance', ok: items.length > 0 && good/items.length >= 0.6,
+    text:`Only ${good} of ${items.length} exercises are a strong or good match for ${rules.label} — the library has limited options for it.`});
+  const empty = session.phases.filter(p => p.minutes > 0 && !p.items.length);
+  const noLib = empty.filter(p => !p.hasCandidates).map(p => p.phase.label);
+  const noRoom = empty.filter(p => p.hasCandidates).map(p => p.phase.label);
+  checks.push({key:'phases', ok: !empty.length,
+    text: [noLib.length ? `Your library has no suitable exercise for ${recJoinAnd(noLib)}.` : '', noRoom.length ? `There wasn't room for ${recJoinAnd(noRoom)} in a session this length once time is left for breaks.` : ''].filter(Boolean).join(' ')});
+  const lo = Math.max(5, session.ctx.duration - REC_TIME_BUFFER.max), hi = session.ctx.duration - REC_TIME_BUFFER.min;
+  checks.push({key:'duration', ok: session.totalMin >= lo && session.totalMin <= hi,
+    text:`The activities add up to ${session.totalMin} min; aim for ${lo}–${hi} so a ${session.ctx.duration}-min session still has room for breaks.`});
+  const band = REC_AGE_BANDS[session.ctx.ageGroup];
+  const hard = band ? items.filter(i => typeof i.ex.difficulty === 'number' && i.ex.difficulty > band.ideal[1]).length : 0;
+  checks.push({key:'age', ok: hard === 0, text:`${hard} exercise${hard>1?'s':''} may be a stretch for ${session.ctx.ageGroup}.`});
+  const sigCount = {};
+  items.forEach(i => { const f = (i.ex.formatTags||[]).find(t => t !== 'Individual' && t !== 'Team'); if(f) sigCount[f] = (sigCount[f]||0)+1; });
+  const repeated = Object.keys(sigCount).filter(f => sigCount[f] >= 4);
+  checks.push({key:'variety', ok: !repeated.length, text:`Several exercises use the same format (${repeated.join(', ')}) — you may want more variety.`});
+  const avgDiff = ids => { const xs = session.phases.filter(p => ids.includes(p.phase.key)).flatMap(p => p.items).map(i => i.ex.difficulty).filter(v => typeof v === 'number'); return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null; };
+  const early = avgDiff(['warmup','athletic']), late = avgDiff(['ssg','scrimmage']);
+  checks.push({key:'progression', ok: early === null || late === null || late >= early - 0.5,
+    text:'The later game phases are easier than the early phases — consider swapping an exercise so the session builds up.'});
+  const ath = session.phases.find(p => p.phase.key === 'athletic');
+  if(ath && session.totalMin > 0){
+    const pct = Math.round(ath.totalMin/session.totalMin*100);
+    checks.push({key:'athletic', ok: pct >= REC_ATHLETIC_SHARE.min*100 - 0.5 && pct <= REC_ATHLETIC_SHARE.max*100 + 0.5,
+      text:`Athletic work is ${pct}% of the session (aim for ${REC_ATHLETIC_SHARE.min*100}–${REC_ATHLETIC_SHARE.max*100}%).`});
+  }
+  const profile = session.profile.filter(p => p.score !== null).sort((a,b) => b.score - a.score);
+  const wanted = Object.keys(rules.dims).sort((a,b) => rules.dims[b].w - rules.dims[a].w)[0];
+  const topTwo = profile.slice(0,2).map(p => p.label);
+  checks.push({key:'profile', ok: !wanted || topTwo.includes(REC_DIMS[wanted].label),
+    text:`The Training Profile leans toward ${topTwo[0] || 'other areas'} more than ${wanted ? REC_DIMS[wanted].label : 'the objective'}.`});
+  return checks;
+}
+/* ctx: {ageGroup, duration, location, emphasis (dimension key or null), tags (Quick Start chip labels)} */
+function assembleRecommendedSession(objectiveId, ctx){
+  const rules = mapObjectiveToMetadata(objectiveId);
+  if(!rules) return null;
+  const phases = orderedPhases().filter(p => state.enabledPhaseKeys.has(p.key));
+  const target = Math.max(5, ctx.duration - REC_TIME_BUFFER.min);   // minutes of actual activities to plan
+  const floor = Math.max(5, ctx.duration - REC_TIME_BUFFER.max);    // fewest we accept before adding more
+  const minutes = allocatePhaseMinutes(target, phases);
+  const rankedByPhase = phases.map(phase => rankExercisesForObjective(EXERCISES, objectiveId, {...ctx, phaseKey:phase.key}));
+  const optionsByPhase = phases.map((phase, i) => selectExercisesForPhase(rankedByPhase[i], phase, minutes[i]));
+  const athleticIdx = phases.findIndex(p => p.key === 'athletic');
+  const chosen = chooseSessionPlan(optionsByPhase, floor, target, athleticIdx === -1 ? null : {index:athleticIdx, ...REC_ATHLETIC_SHARE});
+  const out = phases.map((phase, i) => {
+    const picks = optionsByPhase[i][chosen[i]].pick;
+    return {phase, minutes:minutes[i], hasCandidates:rankedByPhase[i].some(r => r.ex.section === phase.section), note:(rules.phases[phase.key] && rules.phases[phase.key].note) || REC_PHASE_ROLES[phase.key], items:picks.map(r => ({ex:r.ex, score:r.score, label:r.label, details:r.details}))};
+  });
+  out.forEach(p => {
+    p.items.forEach(i => { i.why = explainExerciseRecommendation(i.ex, rules, i); });
+    p.totalMin = p.items.reduce((b,i)=>b+(i.ex.duration||10),0);
+  });
+  const session = {objectiveId, label:rules.label, blurb:rules.blurb, ctx:{...ctx}, phases:out};
+  session.totalMin = out.reduce((a,p)=>a+p.totalMin,0);
+  session.profile = practiceTrainingProfile(out.flatMap(p => p.items.map(i => ({duration:i.ex.duration||10, scores:i.ex}))));
+  session.checks = checkRecommendedSession(session, rules);
+  session.explanation = explainSessionRecommendation(session, rules);
+  return session;
+}
+
 /* ============ WORKFLOW NAVIGATION (2026-10) ============
    Session Setup -> Build Session -> Session Review is the app's one primary workflow, with Find
    Exercises and Exercise Detail nested one level under Build Session (not peer stages). Every
@@ -9547,7 +10306,7 @@ function navBackRowHtml(label, onclick){
   return `<button class="nav-back-link" onclick="${onclick}">${ICONS.back}<span>Back to ${escHtml(label)}</span></button>`;
 }
 function navPageTitleHtml(title, subtitle, step){
-  return `<h1 class="nav-page-title"${step ? ` data-step="${escAttr(step)}"` : ''}>${escHtml(title)}</h1>${subtitle ? `<div class="nav-page-sub">${escHtml(subtitle)}</div>` : ''}`;
+  return `<h1 class="nav-page-title"${step ? ` data-step="${escAttr(step)}"` : ''}>${escHtml(title).replace(/\n/g, '<br>')}</h1>${subtitle ? `<div class="nav-page-sub">${escHtml(subtitle)}</div>` : ''}`;
 }
 function navNextCtaHtml(label, onclick, disabled){
   return `<button class="btn btn-primary" ${disabled?'disabled':''} onclick="${onclick}"><span>Next: ${escHtml(label)}</span>${ICONS.chevronRight}</button>`;
@@ -9565,6 +10324,15 @@ function workflowFooterHtml(){
   if(state.screen === 'build'){
     const {count} = currentTotalMinutes();
     return navNextCtaHtml('Session Review', 'goToReviewFromBuild()', count===0);
+  }
+  if(state.screen === 'quickStartCustom'){
+    return navNextCtaHtml('Session Setup', 'csGoToSetup()', !csFocusArea(state.csObjectiveId, state.csFocusAreaId));
+  }
+  if(state.screen === 'customSessionSetup' && csFocusArea(state.csObjectiveId, state.csFocusAreaId)){
+    return navNextCtaHtml('Generate Session', 'csGoToGenerate()');
+  }
+  if(state.screen === 'proposedSession' && state.qsProposal){
+    return `<button class="btn btn-primary" onclick="requestBuildProposedSession()"><span>Build This Session</span>${ICONS.chevronRight}</button>`;
   }
   if(state.screen === 'review' && currentTotalMinutes().count > 0){
     // No CTA at all for the count===0 empty-review state -- that screen already shows its own
@@ -9593,7 +10361,9 @@ function openPrebuiltPractice(id){
   // this practice's exercises pre-loaded. No practice content database exists yet.
   showToast('Opening pre-built practices is coming soon');
 }
-function setQsPrimaryFocus(key){ state.qsPrimaryFocus = key; render(); }
+function setQsObjective(id){ state.qsObjective = (state.qsObjective === id) ? null : id; render(); }
+function setQsPrimaryFocus(key){ state.qsPrimaryFocus = (state.qsPrimaryFocus === key) ? null : key; render(); }
+function setQsLocation(v){ state.qsLocation = v; render(); }
 function toggleQsTag(tag){
   if(state.qsTags.has(tag)){ state.qsTags.delete(tag); render(); return; }
   if(state.qsTags.size >= 3){ showToast('You can select up to 3 tags'); return; }
@@ -9613,14 +10383,54 @@ function navToCustomSessionWithFocus(key){
   }
   nav('quickStartCustom');
 }
-// Placeholder only -- no session-generation algorithm exists yet. Collects exactly the 4
-// parameters the real generator will eventually consume (Primary Focus, Optional Tags, Age
-// Group, Session Length) and shows a temporary "Building Your Session..." state.
+/* "Generate My Session": runs the rules-based recommendation engine (see the SESSION RECOMMENDATION
+   ENGINE block) on the coach's objective + context and shows the proposal. Nothing is saved or
+   put into the draft until the coach taps "Build This Session". */
 function qsGenerate(){
-  const params = {primaryDimension: state.qsPrimaryFocus, tags: [...state.qsTags], ageGroup: state.qsAgeGroup, duration: state.qsDuration};
-  state.qsGenerating = true;
+  if(!state.qsObjective){ showToast('Pick a coaching objective first'); return; }
+  const ctx = {
+    ageGroup: state.qsAgeGroup,
+    duration: state.qsDuration,
+    location: state.qsLocation || state.practiceLocation || 'outdoor',
+    emphasis: REC_EMPHASIS_TO_DIM[state.qsPrimaryFocus] || null,
+    tags: [...state.qsTags],
+  };
+  state.qsProposal = assembleRecommendedSession(state.qsObjective, ctx);
+  state.rpHowOpen = false;
+  state.rpWhyOpen = new Set();
+  nav('proposedSession');
+}
+function toggleRpHow(){ state.rpHowOpen = !state.rpHowOpen; render(); }
+function toggleRpWhy(id){
+  if(state.rpWhyOpen.has(id)) state.rpWhyOpen.delete(id); else state.rpWhyOpen.add(id);
   render();
-  setTimeout(()=>{ state.qsGenerating = false; showToast('Session generation is coming soon'); render(); }, 1400);
+}
+// A draft already in progress is never silently replaced -- same guard idea as Build New Session.
+function requestBuildProposedSession(){
+  if(!state.qsProposal) return;
+  if(currentTotalMinutes().count > 0){ state.confirmBuildProposalOpen = true; renderOverlay(); }
+  else buildProposedSession();
+}
+function cancelBuildProposalModal(){ state.confirmBuildProposalOpen = false; renderOverlay(); }
+/* Hands the proposal to the normal Build Session screen as an ordinary, fully editable draft --
+   from here the coach can replace, remove, add, reorder, retime or move anything, exactly like a
+   session they built by hand. */
+function buildProposedSession(){
+  const p = state.qsProposal;
+  state.confirmBuildProposalOpen = false;
+  if(!p) return;
+  resetBuilderDraft();
+  PHASES.forEach(ph => { state.phaseData[ph.key] = []; });
+  p.phases.forEach(entry => {
+    state.phaseData[entry.phase.key] = entry.items.map(i => i.ex.id);
+    if(entry.items.length) state.enabledPhaseKeys.add(entry.phase.key);
+  });
+  state.targetDuration = p.ctx.duration;
+  state.practiceLocation = p.ctx.location;
+  state.sessionName = `${p.label} Session`;
+  state.qsProposal = null;
+  nav('build');
+  showToast('Session ready — edit anything you like');
 }
 function qsSurpriseMe(){
   state.qsGenerating = true;
@@ -9700,43 +10510,328 @@ function renderQuickStartPractices(){
   </div>`;
 }
 
+/* ============ CUSTOM SESSION GENERATOR (4 steps) ============
+   Home > Build a Custom Session is its own workflow, deliberately separate from Start New Session
+   (which keeps its own Session Setup > Build > Review and is untouched by any of this):
+     1 What do you want to work on?  ->  2 Session Setup  ->  3 Generating  ->  4 Your Session
+     -> "Build This Session" hands the result to the existing Build Session as an ordinary draft.
+   It has its own step state (customSessionStep) -- never the Start New Session workflow's.
+   The route name quickStartCustom is the existing Custom Session entry point and is now Step 1. */
+const PRACTICE_OBJECTIVES = [
+  {id:'keep_ball', title:'Keep the Ball', descriptor:'Possession • passing • support', icon:'ballOutline', bg:'var(--sky-dim)', focusAreas:[
+    {id:'keep_possession', title:'Keep Possession'},
+    {id:'passing_receiving', title:'Passing & Receiving'},
+    {id:'support_ball', title:'Support the Ball'},
+    {id:'find_free_player', title:'Find the Free Player'},
+    {id:'play_out_of_pressure', title:'Play Out of Pressure'},
+    {id:'play_together', title:'Play Together'},
+    {id:'combination_play', title:'Combination Play'},
+    {id:'protect_ball', title:'Protect the Ball'},
+  ]},
+  {id:'play_forward', title:'Play Forward', descriptor:'Progression • space • switching', icon:'arrowRight', bg:'var(--mint-dim)', focusAreas:[
+    {id:'play_forward_focus', title:'Play Forward'},
+    {id:'break_lines', title:'Break Lines'},
+    {id:'play_through_pressure', title:'Play Through Pressure'},
+    {id:'play_around_pressure', title:'Play Around Pressure'},
+    {id:'attack_space', title:'Attack Space'},
+    {id:'find_forward_passes', title:'Find Forward Passes'},
+    {id:'switch_field', title:'Switch the Field'},
+    {id:'change_point_of_attack', title:'Change the Point of Attack'},
+    {id:'build_out', title:'Build Out'},
+  ]},
+  {id:'create_chances', title:'Create Chances', descriptor:'Attacking • 1v1s • finishing', icon:'target', bg:'var(--cone-dim)', focusAreas:[
+    {id:'create_chances_focus', title:'Create Chances'},
+    {id:'attack_1v1', title:'Attack 1v1'},
+    {id:'create_2v1s', title:'Create 2v1s'},
+    {id:'get_behind_defense', title:'Get Behind the Defense'},
+    {id:'combination_play_to_goal', title:'Combination Play to Goal'},
+    {id:'attack_final_third', title:'Attack the Final Third'},
+    {id:'finishing', title:'Finishing'},
+    {id:'score_goals', title:'Score Goals'},
+  ]},
+  {id:'defend_together', title:'Defend Together', descriptor:'Shape • pressure • cover', icon:'shield', bg:'var(--set-purple-dim)', focusAreas:[
+    {id:'defend_together_focus', title:'Defend Together'},
+    {id:'defend_1v1', title:'Defend 1v1'},
+    {id:'protect_goal', title:'Protect the Goal'},
+    {id:'move_together', title:'Move Together'},
+    {id:'stay_compact', title:'Stay Compact'},
+    {id:'pressure_cover', title:'Pressure & Cover'},
+    {id:'deny_passing_options', title:'Deny Passing Options'},
+    {id:'stop_penetration', title:'Stop Penetration'},
+    {id:'defend_box', title:'Defend the Box'},
+  ]},
+  {id:'win_it_back', title:'Win It Back', descriptor:'Pressing • tackling • regaining', icon:'swords', bg:'var(--claret-dim)', focusAreas:[
+    {id:'win_ball_back', title:'Win the Ball Back'},
+    {id:'press', title:'Press'},
+    {id:'pressure_ball', title:'Pressure the Ball'},
+    {id:'close_down', title:'Close Down'},
+    {id:'tackle', title:'Tackle'},
+    {id:'intercept', title:'Intercept'},
+    {id:'force_mistakes', title:'Force Mistakes'},
+    {id:'trap_opponent', title:'Trap the Opponent'},
+    {id:'counterpress', title:'Counterpress'},
+  ]},
+];
+function csObjective(id){ return PRACTICE_OBJECTIVES.find(o => o.id === id) || null; }
+function csFocusArea(objectiveId, focusId){
+  const o = csObjective(objectiveId);
+  return o ? (o.focusAreas.find(f => f.id === focusId) || null) : null;
+}
+// Entering from Home keeps any earlier in-progress choice and re-opens the objective it belongs to.
+function startCustomSession(){
+  state.customSessionStep = 1;
+  state.csExpandedId = csFocusArea(state.csObjectiveId, state.csFocusAreaId) ? state.csObjectiveId : null;
+  nav('quickStartCustom');
+}
+function csToggleObjective(id){
+  state.csExpandedId = (state.csExpandedId === id) ? null : id;   // only one objective is ever open
+  render();
+}
+function csSelectFocus(objectiveId, focusId){
+  state.csObjectiveId = objectiveId;
+  state.csFocusAreaId = focusId;
+  render();
+}
+function csGoToSetup(){
+  if(!csFocusArea(state.csObjectiveId, state.csFocusAreaId)) return;
+  csInitSetup();
+  state.customSessionStep = 2;
+  nav('customSessionSetup');   // nothing is saved here -- this is still an in-progress session
+}
+function csBackToStep1(){
+  state.customSessionStep = 1;
+  state.csExpandedId = state.csObjectiveId;
+  nav('quickStartCustom');     // Step 2's values stay exactly as they are
+}
+function csBackToStep2(){
+  state.customSessionStep = 2;
+  nav('customSessionSetup');
+}
+
+/* Step 2 (Session Setup) values live in the cs* fields -- never the Start New Session setup* fields. */
+const CS_DURATIONS = [60, 75, 90];
+const CS_LOCATIONS = [['outdoor','Outdoor'], ['indoor','Indoor'], ['either','Either']];
+const CS_AGE_GROUPS = ['U8','U9','U10','U11','U12'];
+const CS_STYLES = [['technical','More Technical'], ['balanced','Balanced'], ['game_based','More Game-Based']];
+const CS_DEFAULT_AGE = 'U10';
+function csAutoTitle(){
+  const o = csObjective(state.csObjectiveId), f = csFocusArea(state.csObjectiveId, state.csFocusAreaId);
+  return (o && f) ? `${o.title} - ${f.title}` : 'Custom Session';
+}
+// Fills any Step 2 value the coach hasn't set yet with its default; keeps the auto title current until they edit it.
+function csInitSetup(){
+  if(!state.csDate) state.csDate = todayISODate();
+  if(!CS_DURATIONS.includes(state.csDuration)) state.csDuration = CS_DURATIONS.includes(state.targetDuration) ? state.targetDuration : 75;
+  if(!CS_LOCATIONS.some(l => l[0] === state.csLocation)) state.csLocation = (state.practiceLocation === 'indoor') ? 'indoor' : 'outdoor';
+  if(!CS_AGE_GROUPS.includes(state.csAgeGroup)) state.csAgeGroup = CS_DEFAULT_AGE;
+  if(!CS_STYLES.some(st => st[0] === state.csSessionStyle)) state.csSessionStyle = 'balanced';
+  if(!state.csTitleEdited || !String(state.csTitle||'').trim()){ state.csTitle = csAutoTitle(); state.csTitleEdited = false; }
+}
+/* Everything the generator (Steps 3-4) needs, in one place. */
+function customSessionConfig(){
+  csInitSetup();
+  return {
+    objective: state.csObjectiveId,
+    focusArea: state.csFocusAreaId,
+    title: String(state.csTitle||'').trim() || csAutoTitle(),
+    date: state.csDate,
+    duration: state.csDuration,
+    location: state.csLocation,
+    ageGroup: state.csAgeGroup,
+    sessionStyle: state.csSessionStyle,
+  };
+}
+function setCsTitle(v){ state.csTitle = v; }   // no re-render while typing
+function commitCsTitle(el){
+  // No re-render here: a blur caused by tapping the bottom CTA must not swap the button out from under the tap.
+  const t = String(el.value||'').trim();
+  if(!t || t === csAutoTitle()){ state.csTitleEdited = false; state.csTitle = csAutoTitle(); el.value = state.csTitle; }
+  else { state.csTitleEdited = true; state.csTitle = t; }
+}
+function setCsDate(v){ if(v) state.csDate = v; render(); }
+function setCsDuration(v){ state.csDuration = v; render(); }
+function setCsLocation(v){ state.csLocation = v; render(); }
+function setCsAgeGroup(v){ state.csAgeGroup = v; render(); }
+function setCsSessionStyle(v){ state.csSessionStyle = v; render(); }
+function csGoToGenerate(){
+  if(!csFocusArea(state.csObjectiveId, state.csFocusAreaId)){ csBackToStep1(); return; }
+  csInitSetup();
+  const cfg = customSessionConfig();       // blank title falls back to the auto title
+  state.csTitle = cfg.title;
+  state.customSessionStep = 3;
+  nav('customSessionGenerating');          // still nothing saved -- Step 3 receives cfg via customSessionConfig()
+}
+
 function renderQuickStartCustom(){
+  const picked = csFocusArea(state.csObjectiveId, state.csFocusAreaId);
+  const cardHtml = o => {
+    const open = state.csExpandedId === o.id;
+    const hasPick = picked && state.csObjectiveId === o.id;
+    return `
+    <div class="cs-cat ${open?'open':''}">
+      <button class="cs-cat-head" aria-expanded="${open}" onclick="csToggleObjective('${escJsAttr(o.id)}')">
+        <span class="cs-cat-icon" style="background:${o.bg};">${ICONS[o.icon]}</span>
+        <span class="cs-cat-text">
+          <span class="cs-cat-title">${escHtml(o.title)}</span>
+          <span class="cs-cat-desc">${escHtml(o.descriptor)}</span>
+          ${hasPick && !open ? `<span class="cs-cat-picked">${ICONS.check}${escHtml(picked.title)}</span>` : ''}
+        </span>
+        <span class="cs-chev ${open?'open':''}" aria-hidden="true">${ICONS.chevronRight}</span>
+      </button>
+      ${open ? `<div class="cs-focus-list" role="radiogroup" aria-label="${escAttr(o.title)} focus areas">
+        ${o.focusAreas.map(f => { const on = hasPick && picked.id === f.id; return `
+        <button class="cs-focus ${on?'selected':''}" role="radio" aria-checked="${on}" onclick="csSelectFocus('${escJsAttr(o.id)}','${escJsAttr(f.id)}')">
+          <span class="cs-focus-icon" style="background:${o.bg};">${ICONS[o.icon]}</span>
+          <span class="cs-focus-name">${escHtml(f.title)}</span>
+          ${on ? `<span class="cs-check">${ICONS.check}</span>` : ''}
+        </button>`; }).join('')}
+      </div>` : ''}
+    </div>`;
+  };
   return `
-  <div class="section-pad">
-    ${qsHeaderHtml('Build a Custom Session', "nav('quickStartHome')")}
-    <div class="qs-sub">Select a focus and we'll create a new session from your exercise library.</div>
+  <div class="section-pad cs-page">
+    ${navBackRowHtml('Home', "nav('home')")}
+    ${navPageTitleHtml("What do you want\nto work on?", "Choose a main focus and then a specific area for today’s session.", 'STEP 1 OF 4')}
+    <div class="cs-list">${PRACTICE_OBJECTIVES.map(cardHtml).join('')}</div>
+  </div>`;
+}
+function csSegHtml(options, current, onclickFn, extraClass){
+  return `<div class="su-seg cs-seg ${extraClass||''}">${options.map(([v,l]) => {
+    const val = typeof v === 'number' ? v : `'${escJsAttr(v)}'`;
+    return `<button class="su-seg-btn ${current===v?'active':''}" aria-pressed="${current===v}" onclick="${onclickFn}(${val})">${escHtml(l)}</button>`;
+  }).join('')}</div>`;
+}
+function renderCustomSessionSetup(){
+  const o = csObjective(state.csObjectiveId);
+  const f = csFocusArea(state.csObjectiveId, state.csFocusAreaId);
+  if(!o || !f) return renderQuickStartCustom();
+  csInitSetup();
 
-    <div class="qs-section-label">Primary Focus</div>
-    <div class="qs-primary-grid">
-      ${QUICKSTART_PRIMARY_OPTIONS.map(o => `
-      <button class="qs-primary-card ${state.qsPrimaryFocus===o.key?'active':''}" onclick="setQsPrimaryFocus('${escJsAttr(o.key)}')">
-        <div class="qs-primary-icon">${qsDimIcon(o.key)}</div>
-        <div class="qs-primary-label">${escHtml(o.key)}</div>
-        <div class="qs-primary-desc">${escHtml(o.desc)}</div>
-      </button>`).join('')}
+  const titleCtl = `<input class="su-title-input" type="text" placeholder="Name this session" value="${escAttr(state.csTitle)}" oninput="setCsTitle(this.value)" onblur="commitCsTitle(this)" aria-label="Session title" autocomplete="off">`;
+  const dateCtl = `
+    <label class="su-date-field">
+      <span class="su-date-value">${escHtml(setupDateLabel(state.csDate))}</span>
+      <span class="su-date-chev">${ICONS.chevronRight}</span>
+      <input type="date" class="su-date-input" value="${state.csDate}" aria-label="Date" onclick="try{this.showPicker()}catch(e){}" onchange="setCsDate(this.value)">
+    </label>`;
+  return `
+  <div class="section-pad su-page cs-page">
+    ${navBackRowHtml('Intent', 'csBackToStep1()')}
+    ${navPageTitleHtml('Session Setup', 'Set the details for your session. These help FT2 find the best exercises for your needs.', 'STEP 2 OF 4')}
+    <div class="cs-carry">
+      <span class="cs-cat-icon" style="background:${o.bg};">${ICONS[o.icon]}</span>
+      <span class="cs-cat-text">
+        <span class="cs-cat-title">${escHtml(o.title)}</span>
+        <span class="cs-carry-focus">${escHtml(f.title)}</span>
+        <span class="cs-cat-desc">${escHtml(o.descriptor)}</span>
+      </span>
+      <button class="cs-carry-change" onclick="csBackToStep1()">Edit</button>
     </div>
+    <div class="su-group">
+      ${setupRowHtml(ICONS.pencil, 'Session Title', titleCtl)}
+      ${setupRowHtml(ICONS.calendar, 'Date', dateCtl)}
+      ${setupRowHtml(ICONS.clock, 'Session Duration', csSegHtml(CS_DURATIONS.map(d => [d, String(d)]), state.csDuration, 'setCsDuration'))}
+      ${setupRowHtml(ICONS.mapPin, 'Location', csSegHtml(CS_LOCATIONS, state.csLocation, 'setCsLocation'))}
+      ${setupRowHtml(ICONS.user, 'Age Group', csSegHtml(CS_AGE_GROUPS.map(a => [a, a]), state.csAgeGroup, 'setCsAgeGroup'))}
+      ${setupRowHtml(ICONS.pitch, 'Session Style', csSegHtml(CS_STYLES, state.csSessionStyle, 'setCsSessionStyle', 'cs-seg-style'))}
+    </div>
+  </div>`;
+}
+/* Step 3 (Generating Session) receives the full Step 2 configuration through customSessionConfig().
+   Running the recommendation engine from it comes in the next task; for now this shows the
+   approved "Building Your Session" card and what the generator was given, in plain words. */
+function renderCustomSessionGenerating(){
+  const o = csObjective(state.csObjectiveId);
+  const f = csFocusArea(state.csObjectiveId, state.csFocusAreaId);
+  if(!o || !f) return renderQuickStartCustom();
+  const cfg = customSessionConfig();
+  const loc = (CS_LOCATIONS.find(l => l[0] === cfg.location) || [])[1];
+  const style = (CS_STYLES.find(st => st[0] === cfg.sessionStyle) || [])[1];
+  return `
+  <div class="section-pad cs-page">
+    ${navBackRowHtml('Session Setup', 'csBackToStep2()')}
+    ${navPageTitleHtml('Building Your Session', `Finding the best exercises for ${f.title}...`, 'STEP 3 OF 4')}
+    <div class="cs-gen-card">
+      <div class="qs-generating-icon">${ICONS.sparkles}</div>
+      <div class="cs-gen-title">${escHtml(cfg.title)}</div>
+      <div class="rp-meta cs-gen-meta"><span>${escHtml(cfg.ageGroup)}</span><span>${cfg.duration} min</span><span>${escHtml(loc)}</span><span>${escHtml(style)}</span></div>
+    </div>
+    <div class="cs-soon">Session generation is coming in the next step.</div>
+  </div>`;
+}
 
-    <div class="qs-section-label">Optional Tags <span class="qs-section-hint">Select up to 3</span></div>
-    <div class="qs-tag-wrap">
-      ${QUICKSTART_TAGS.map(t => { const active = state.qsTags.has(t); return `
-      <button class="qs-tag-chip ${active?'active':''}" onclick="toggleQsTag('${escJsAttr(t)}')">${active?ICONS.check:''}<span>${escHtml(t)}</span></button>`; }).join('')}
+const REC_LABEL_TEXT = {Strong:'Strong match', Good:'Good fit', Fair:'Best available'};
+function renderProposedSession(){
+  const p = state.qsProposal;
+  if(!p) return renderQuickStartCustom();
+  const exCount = p.phases.reduce((a,ph)=>a+ph.items.length, 0);
+  const warns = p.checks.filter(c => !c.ok);
+  const steps = p.explanation;
+  const howHtml = state.rpHowOpen ? `
+    <div class="rp-how-panel">
+      <div class="rp-how-title">How FT2 built this session</div>
+      ${steps.map((st,i) => `
+      <div class="rp-step">
+        <div class="rp-step-rail"><span class="rp-step-num">${i+1}</span>${i<steps.length-1?'<span class="rp-step-line"></span>':''}</div>
+        <div class="rp-step-body">
+          <div class="rp-step-title">${escHtml(st.title)}</div>
+          <div class="rp-step-text">${escHtml(st.body)}</div>
+          ${st.sub ? `<div class="rp-step-sub">${escHtml(st.sub)}</div>` : ''}
+        </div>
+      </div>`).join('')}
+    </div>` : '';
+  const phasesHtml = p.phases.map(ph => {
+    const st = secStyle(ph.phase.section);
+    const body = ph.items.length ? ph.items.map(i => {
+      const open = state.rpWhyOpen.has(i.ex.id);
+      return `
+      <div class="rp-ex">
+        <div class="rp-ex-row">
+          <div class="rp-ex-thumb">${peiThumbHtml(i.ex)}</div>
+          <div class="rp-ex-name">${escHtml(i.ex.name)}</div>
+          <div class="rp-ex-dur">${i.ex.duration||10}m</div>
+        </div>
+        <div class="rp-ex-meta">
+          <span class="rp-badge rp-badge-${i.label.toLowerCase()}">${REC_LABEL_TEXT[i.label]}</span>
+          <button class="rp-why-btn" aria-expanded="${open}" onclick="toggleRpWhy('${escJsAttr(i.ex.id)}')">Why?${open?'':''}<span class="rp-why-chev ${open?'open':''}">${ICONS.chevronDown}</span></button>
+        </div>
+        ${open ? `<div class="rp-why"><div class="rp-why-label">Why FT2 recommended this</div>${escHtml(i.why)}</div>` : ''}
+      </div>`;
+    }).join('') : `<div class="rp-ex-empty">No exercise in your library fits this phase for these settings.</div>`;
+    return `
+    <div class="rp-phase">
+      <div class="rp-phase-head">
+        <span class="rp-phase-dot" style="background:${st.bg};"></span>
+        <div class="rp-phase-text">
+          <div class="rp-phase-title">${escHtml(ph.phase.label)}<span class="rp-phase-min">${ph.items.length ? ph.totalMin : ph.minutes} min</span></div>
+          <div class="rp-phase-note">${escHtml(ph.note)}</div>
+        </div>
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
+  const profileHtml = p.profile.map(d => trainingProfileRowHtml({...d, score: d.score === null ? null : Math.round(d.score*10)/10})).join('');
+  return `
+  <div class="section-pad rp-page">
+    ${navBackRowHtml('Custom Session', "nav('quickStartCustom')")}
+    ${navPageTitleHtml('Your Session', '')}
+    <div class="rp-hero">
+      <div class="rp-obj">${escHtml(p.label)}</div>
+      <div class="rp-blurb">${escHtml(p.blurb)}</div>
+      <div class="rp-meta"><span>${p.totalMin} min of activities</span><span>${p.ctx.duration} min session</span><span>${escHtml(p.ctx.ageGroup)}</span><span>${p.ctx.location==='indoor'?'Indoor':'Outdoor'}</span><span>${exCount} exercises</span></div>
     </div>
-
-    <div class="qs-section-label">Age Group</div>
-    <div class="qs-select-wrap">
-      <select class="qs-select" onchange="setQsAgeGroup(this.value)">
-        ${QS_AGE_GROUPS.map(g => `<option value="${escAttr(g)}" ${state.qsAgeGroup===g?'selected':''}>${escHtml(g)}</option>`).join('')}
-      </select>
-      <span class="qs-select-chevron">${ICONS.chevronRight}</span>
+    <button class="rp-how-btn" aria-expanded="${state.rpHowOpen}" onclick="toggleRpHow()">
+      <span>How FT2 built this session</span><span class="rp-i" aria-hidden="true">i</span><span class="rp-how-chev ${state.rpHowOpen?'open':''}">${ICONS.chevronDown}</span>
+    </button>
+    ${howHtml}
+    ${warns.length ? `<div class="rp-headsup"><div class="rp-headsup-title">Worth a look</div><ul>${warns.map(w => `<li>${escHtml(w.text)}</li>`).join('')}</ul></div>` : ''}
+    ${phasesHtml}
+    <div class="rp-card">
+      <div class="rp-card-title">Training Profile</div>
+      <div class="rp-card-sub">What this session trains, based on the exercises selected</div>
+      ${profileHtml}
     </div>
-
-    <div class="qs-section-label">Session Length</div>
-    <div class="qs-len-row">
-      ${QS_DURATIONS.map(d => `<button class="qs-len-btn ${state.qsDuration===d?'active':''}" onclick="setQsDuration(${d})">${d} min</button>`).join('')}
-    </div>
-  </div>
-  <div class="build-cta">
-    <button class="qs-generate-btn" onclick="qsGenerate()">${ICONS.sparkles}<span>Generate My Session</span>${ICONS.chevronRight}</button>
+    <div class="rp-footnote">Activities fill ${p.totalMin} of your ${p.ctx.duration} minutes, leaving ${p.ctx.duration - p.totalMin} for water breaks and transitions.<br>This is a starting point &mdash; you can change any exercise, order, time or phase on the next screen.</div>
   </div>`;
 }
 
@@ -10210,6 +11305,19 @@ function renderOverlay(){
           <button class="ios-alert-btn primary" onclick="resumeInProgressSession()">Resume session in progress</button>
           <button class="ios-alert-btn danger" onclick="startNewSessionDiscardingDraft()">Start new session</button>
           <button class="ios-alert-btn" onclick="cancelNewSessionModal()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(state.confirmBuildProposalOpen){
+    html += `
+    <div class="ios-alert-backdrop" onclick="cancelBuildProposalModal()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>Replace your session in progress?</h3>
+        <p>Building this session will replace the session you're working on.</p>
+        <div class="ios-alert-btns">
+          <button class="ios-alert-btn danger" onclick="buildProposedSession()">Replace &amp; build</button>
+          <button class="ios-alert-btn" onclick="cancelBuildProposalModal()">Cancel</button>
         </div>
       </div>
     </div>`;
@@ -12190,6 +13298,11 @@ function saveAppStateToStorage(){
       editingSavedSessionId: state.editingSavedSessionId,
       reviewGroupOrder: state.reviewGroupOrder,
       replaceContext: state.replaceContext,
+      customSessionStep: state.customSessionStep,
+      csObjectiveId: state.csObjectiveId,
+      csFocusAreaId: state.csFocusAreaId,
+      csTitle: state.csTitle, csTitleEdited: state.csTitleEdited, csDate: state.csDate,
+      csDuration: state.csDuration, csLocation: state.csLocation, csAgeGroup: state.csAgeGroup, csSessionStyle: state.csSessionStyle,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
   }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
@@ -12212,6 +13325,18 @@ function loadAppStateFromStorage(){
     if(typeof snap.activeTemplateId === 'string' || snap.activeTemplateId === null) state.activeTemplateId = snap.activeTemplateId ?? null;
     if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
     if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
+    if(csFocusArea(snap.csObjectiveId, snap.csFocusAreaId)){
+      state.csObjectiveId = snap.csObjectiveId;
+      state.csFocusAreaId = snap.csFocusAreaId;
+      state.customSessionStep = [2,3].includes(snap.customSessionStep) ? snap.customSessionStep : 1;
+      if(typeof snap.csTitle === 'string') state.csTitle = snap.csTitle;
+      state.csTitleEdited = !!snap.csTitleEdited;
+      if(typeof snap.csDate === 'string') state.csDate = snap.csDate;
+      state.csDuration = snap.csDuration ?? null;
+      state.csLocation = snap.csLocation ?? null;
+      state.csAgeGroup = snap.csAgeGroup ?? null;
+      state.csSessionStyle = snap.csSessionStyle ?? null;
+    }
     if(Array.isArray(snap.enabledPhaseKeys) && snap.enabledPhaseKeys.length) state.enabledPhaseKeys = new Set(snap.enabledPhaseKeys);
     if(Array.isArray(snap.phaseOrder) && snap.phaseOrder.length) state.phaseOrder = snap.phaseOrder;
     if(Array.isArray(snap.practiceTemplates)){
@@ -12296,6 +13421,9 @@ const screens = {
   quickStartHome: renderQuickStartHome,
   quickStartPractices: renderQuickStartPractices,
   quickStartCustom: renderQuickStartCustom,
+  customSessionSetup: renderCustomSessionSetup,
+  customSessionGenerating: renderCustomSessionGenerating,
+  proposedSession: renderProposedSession,
 };
 
 function render(){

@@ -348,6 +348,39 @@ rather than letting it get rediscovered next session.
   sessions list are live. Known limit: renaming an exercise AND renumbering it before any device
   syncs in between can't be matched (nothing links old to new), and ambiguous duplicate names are
   skipped on purpose. Any new feature that stores exercise ids must go through these.
+- **Custom Session is a rules-based recommendation engine, not AI (2026-10).** Home > Custom Session
+  > pick a soccer objective > "Generate My Session" > proposed-session preview > "Build This
+  Session" (an ordinary editable draft on Build). All logic lives in one block in `index.html`
+  ("SESSION RECOMMENDATION ENGINE"): `OBJECTIVE_RULES` (one entry per objective: primary/secondary
+  tags, preferred training dimensions + score ranges + weights, formats, negative signals,
+  per-phase notes/boosts), `REC_WEIGHTS` (every scoring knob), `scoreExerciseForObjective()`,
+  `rankExercisesForObjective()`, `allocatePhaseMinutes()`, `selectExercisesForPhase()`,
+  `assembleRecommendedSession()`, `explainExerciseRecommendation()`/`explainSessionRecommendation()`
+  and `checkRecommendedSession()`. It only READS existing exercise fields (4 scores, 6 tag fields,
+  section, duration, difficulty, location) and reuses `practiceTrainingProfile()` -- never add a
+  second scoring system or exercise store. Tune behavior by editing the rules/weights, not the
+  screens. It is deterministic (ties break on name) -- never add randomness. Exercises have no age
+  field, so age group maps to a difficulty band (`REC_AGE_BANDS`). Tags in the rules must be real
+  values from the Sheet's Valid Values (e.g. there is no "Rondo" format value in the data today;
+  rondos are found via the Rondos section and 4v2/5v2/3v1 format tags). A future AI layer should
+  sit in front (free text -> objective id + context) and leave this engine as the source of truth.
+  **Time rule (coach's call):** a generated session never fills the whole time -- 10-15 min are left
+  free for water breaks and transitions (`REC_TIME_BUFFER`; a 75-min session gets 60-65 min of
+  activities). `chooseSessionPlan()` picks one option per phase so the total lands in that window;
+  when a short session (45 min) can't fit every phase it leaves out the lowest-priority one(s) and
+  says so rather than overrunning. Build's "planned vs target" then naturally shows the free minutes.
+  **Athletic rule (coach's call):** Athletic is pinned to ~25% of the planned activity time and must
+  stay within 20-30% (`REC_ATHLETIC_SHARE`, enforced inside `chooseSessionPlan()`); the other phases
+  split the remaining 75% by the coach's own Settings percentages. Athletic exercises are only 5 or
+  10 min, so shares move in coarse steps (e.g. 60-min session = 10 of 50 = 20%).
+  **Custom Session is a 4-step workflow of its own (2026-10):** Home > Custom Session > 1 What do you
+  want to work on? (`quickStartCustom`, `PRACTICE_OBJECTIVES`: 5 categories x focus areas, one open at
+  a time, one focus area chosen) > 2 Session Setup (`customSessionSetup`: title, date, duration 60/75/90,
+  location, age U8-U12, style; values in `cs*` state, read via `customSessionConfig()`) > 3
+  Generating (`customSessionGenerating`, still a placeholder) > 4 Your Session (`proposedSession`) > "Build This Session" into the normal Build screen.
+  It has its own state (`customSessionStep`, `csObjectiveId`, `csFocusAreaId`) and must never touch
+  Start New Session's Setup/Build/Review. The 16 `OBJECTIVE_RULES` the engine runs on are not yet
+  connected to the new focus areas -- that mapping is part of wiring Step 3.
 
 ## Where things live
 
