@@ -368,7 +368,12 @@ rather than letting it get rediscovered next session.
   > build (`assembleRecommendedSession`: `allocatePhaseMinutes`, `selectExercisesForPhase`, `chooseSessionPlan`,
   variety sweeps via `calculateSimilarity`) > finalize (`validateGeneratedSession`, `repairGeneratedSession`,
   `explainExerciseRecommendation`, `explainSessionRecommendation`); `generateCustomSession(cfg)` runs them all.
-  `runCustomGeneration()` runs them one at a time with repaints between, keeps Step 3 up at least 1s, never opens
+  Step 4 always lists each group in the regular workflow order (Activate: Warmup > Athletic; Develop: Duels >
+  Rondos > SSGs; Play: Scrimmage) via `reviewGroupFlatOrder(group, true)`; reordering only works among exercises of the
+  same section there. Step 4 rows have a Replace button and each group an "Add exercise" button (custom Review only): they open the
+  normal Find Exercises picker with `pickReturnTo:'customReview'` / `replaceContext.returnTo:'customReview'`, so Back
+  and finishing return to Step 4 (`returnScreenFor()`), never to Build.
+  `runCustomGeneration()` runs them one at a time with repaints between, keeps Step 3 up at least 3s (`GEN_MIN_DISPLAY_MS`), never opens
   Step 4 before a valid session exists, and shows Try Again on failure. **Shuffle** (Step 4) re-runs the engine
   with the next shuffle seed (`cfg.shuffleSeed`, `REC_SHUFFLE_JITTER`): a small repeatable nudge to every
   exercise's rank so near-equal choices reorder -- same seed, same session; seed 0 (a fresh Generate) is the
@@ -382,12 +387,31 @@ rather than letting it get rediscovered next session.
   `Section` it carries -- ranking, selection, repair swaps and draft placement are all per-section (a swap
   that ignored this once put ~45% of sessions' exercises in the wrong phase); (2) 10-15 min of a session stay
   free for breaks (`REC_TIME_BUFFER`; 75 min -> 60-65 of activities), and a short session that can't fit every
-  phase leaves the lowest-priority one out and says so; (3) Athletic stays 20-30% of planned activity time,
-  pinned near 25% (`REC_ATHLETIC_SHARE`). The FT2 progression Activate > Develop > Apply > Scrimmage maps onto
+  phase leaves the lowest-priority one out and says so; (3) the Activate part (Warmup + Athletic together) averages 25% of the planned activity time, within +/-5 minutes
+  (`REC_ACTIVATE_SHARE`), built from exactly ONE Warmup exercise and at most TWO Athletic exercises
+  (`REC_PHASE_LIMITS`). The Warmup may be 5 or 10 minutes: Warmup and
+  Athletic share one Activate time budget (neither is held to its own slot). Option values in
+  `selectExercisesForPhase` are PER MINUTE (score x minutes/5), not per exercise -- summing raw scores rewards many short
+  exercises and made long ones (10-min warm-ups, 15-20 min games) almost never win; don't revert that. The FT2 progression Activate > Develop > Apply > Scrimmage maps onto
   the six Sections as Warmup+Athletic / Duels+Rondos / SSGs / Scrimmage (`REC_PROGRESSION`); Review's own
   3-group display is unchanged. The bundled offline fallback data has no Focus Areas column, so offline the
   Focus Area component is 0 and ranking falls back to tags only. A future AI layer should sit in front (free
   text -> objective + Focus Area + context) and leave this engine as the source of truth.
+- **Share a saved session (2026-10).** Saved Session Detail (owner only, not while editing) has a Share button.
+  It gives the session a long random `shareToken` (never the session id, which contains a timestamp), pushes it to
+  the Sessions tab, confirms the Apps Script can serve it back (`fetchSharedSession`), then opens the phone's share
+  sheet (copy-link fallback, then a manual-copy sheet). The link is `<app url>?s=<token>`; on load `initSharedLink()`
+  sends it to the read-only `sharedSession` screen, which works with no coach name (`inSharedPreview()` hides the
+  nav) and NEVER writes to `savedSessions`, the draft or the Sheet. The Apps Script `?sheet=sessions&share=<token>`
+  route (`readSharedSession`) returns only name/dates/length/location/focus/age/style and per-exercise
+  `{id,name,duration}` -- never notes, rating, coach name or other sessions; `readSessions` blanks `shareToken` for
+  everyone but the owner. Exercises are references: every tap goes through `resolveSavedExercise()` and opens the
+  normal Exercise Detail (`fromSharedSession` -> "Back to Shared Session"); a missing one shows "No longer
+  available" without breaking the others. Focus area / age group / session style are now stored on sessions saved
+  from Custom Session (blank for others). **Needs the updated Apps Script redeployed as a New Version of the
+  existing deployment**; until then Share says "Sharing isn't switched on yet". `SESSIONS_HEADERS` gained
+  focusArea/ageGroup/sessionStyle/shareToken; `getSessionsSheet_()` appends missing headers itself. Hosting is static,
+  so there are no real `/session/<id>` routes -- Universal/App Links are not set up.
 
 ## Where things live
 

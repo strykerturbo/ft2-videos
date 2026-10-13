@@ -2174,6 +2174,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .cs-area.selected .cs-cat-desc{color:rgba(255,255,255,0.78);}
 :root[data-theme="dark"] .cs-area.selected{border-color:#64748B;}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .cs-area.selected{border-color:#64748B;} }
+.cs-add-ex{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin-top:8px;border:1.5px dashed var(--line);border-radius:12px;background:transparent;color:var(--ink-soft);font-size:var(--fs-base);font-weight:700;}
+.cs-add-ex svg{width:15px;height:15px;}
 .cs-shuffle-row{display:flex;align-items:center;gap:12px;margin-top:12px;}
 .cs-shuffle-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg-surface);color:var(--ink);font-size:var(--fs-base);font-weight:700;flex-shrink:0;}
 .cs-shuffle-btn svg{width:18px;height:18px;}
@@ -2338,6 +2340,17 @@ input.section-title-input:focus{border-color:var(--turf);}
 .sd-meta{background:var(--bg-surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;flex:1;}
 .sd-meta .smnum{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-lg);color:var(--text-primary);}
 .sd-meta .smlbl{font-size:var(--fs-sm);color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.05em;}
+
+.shared-ex-chev{display:flex;align-items:center;color:var(--ink-soft);flex-shrink:0;}
+.shared-ex-chev svg{width:16px;height:16px;}
+.shared-ex-missing{opacity:0.6;}
+.shared-ex-note{display:block;font-size:var(--fs-sm);font-weight:500;color:var(--ink-soft);}
+.shared-state-card{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;padding:20px;}
+.shared-state-card h2{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-weight:700;font-size:var(--fs-xl,24px);margin:0 0 6px;color:var(--text-primary);}
+.shared-state-card p{margin:0;color:var(--ink-soft);font-size:var(--fs-md);line-height:1.5;}
+.shared-cta{margin:26px 0 8px;background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;padding:16px;}
+.shared-cta-title{font-weight:700;font-size:var(--fs-md);color:var(--text-primary);}
+.shared-cta-sub{margin-top:4px;font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.4;}
 </style>
 
 <style>
@@ -6827,6 +6840,7 @@ const ICONS = {
   play: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 5 11 7-11 7V5Z"/></g></svg>`,
   pencil: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z"/></g></svg>`,
   swap: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3M20 17H7M7 17l3-3M7 17l3 3"/></g></svg>`,
+  share: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></g></svg>`,
   copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></g></svg>`,
   user: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.3-6 8-6s7.3 2 8 6"/></g></svg>`,
   clock: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></g></svg>`,
@@ -7181,6 +7195,8 @@ function normalizeCloudSession(c){
     templateId: c.templateId || null,
     rating: Number(c.rating) || 0, comment: c.comment || '', favorited: !!c.favorited,
     visibility: c.visibility === 'private' ? 'private' : 'shared',
+    shareToken: c.shareToken ? String(c.shareToken) : '',
+    focusArea: c.focusArea || '', ageGroup: c.ageGroup || '', sessionStyle: c.sessionStyle || '',
   };
 }
 async function syncSessionsFromSheet(){
@@ -8716,6 +8732,7 @@ function backFromDetail(){
     renderOverlay();
     return;
   }
+  if(state.fromSharedSession){ nav('sharedSession', {fromSharedSession:false}); return; }
   if(state.fromReview){ nav(state.fromCustomReview ? 'customSessionReview' : 'review'); return; }
   if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
   if(state.fromHome){ nav('home', {fromHome:false}); return; }
@@ -8730,6 +8747,7 @@ function backFromDetail(){
    destination. The final fallthrough is nav('exercises'): that's Find Exercises while picking for a
    phase (pickingPhase still set), the standalone Exercise Library otherwise. */
 function detailBackLabel(){
+  if(state.fromSharedSession) return 'Shared Session';
   if(state.fromReview) return 'Session Review';
   if(state.fromSavedSession) return 'Saved Session';
   if(state.fromHome) return 'Home';
@@ -8754,11 +8772,18 @@ const state = {
   fromReview: false,          // came from the unsaved Session Review screen's exercise list
   fromCustomReview: false,    // ...and that review was Custom Session's Step 4 (so Back returns there, not to the normal Review)
   fromSavedSession: false,    // came from a SAVED practice's detail screen (viewing or adding)
+  fromSharedSession: false,   // came from a Shared Session link's page (read-only, nothing saved) -- Back returns there
+  sharedToken: null,          // the share-link token this page load was opened with (?s=...); never persisted
+  sharedSession: null,        // the read-only session fetched for that token; never added to savedSessions
+  sharedStatus: 'idle',       // idle | loading | ready | unavailable | offline | unsupported
+  shareBusy: false,           // a Share Session tap is preparing its link
+  shareLinkModal: null,       // {url,title} -- manual-copy fallback when neither the share sheet nor the clipboard works
   fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
   fromHome: false,            // came from Home's Featured Exercise card -- backFromDetail() returns to Home, not the Explore Exercises fallback
   fromBuildList: false,      // tapped an already-added exercise's row on the Build page itself (distinct from fromBuild, the picker flow) -- backFromDetail() returns to Build
   editingSavedSessionId: null,// set while browsing the library to add an exercise to a saved
                                // session (as opposed to the live build-a-new-session draft)
+  pickReturnTo: null,         // 'customReview' while the picker was opened from Custom Session's Step 4 (so Back returns there, not to Build)
   replaceContext: null,       // {key, oldId, returnTo} while picking a replacement for an
                                // already-added exercise -- see pickReplacementFor()/performReplace()
   reviewGroupOrder: {},       // {groupKey: [exerciseId,...]} -- coach's drag-reordered display
@@ -8884,6 +8909,7 @@ function nav(screen, extra={}){
   // replace the instant you tapped into Detail, with no indication anything changed, so tapping
   // "Add" there just added a duplicate instead of completing the replace.
   if(state.replaceContext && screen !== 'exercises' && screen !== 'detail') state.replaceContext = null;
+  if(screen !== 'detail' && screen !== 'sharedSession' && !('fromSharedSession' in extra)) extra = {...extra, fromSharedSession:false};
   setState({screen, ...extra}); const c=document.getElementById('content'); if(c) c.scrollTop=0;
 }
 
@@ -8958,10 +8984,11 @@ function activeNavKey(){
   const sc = state.screen;
   if(sc === 'home') return 'home';
   if(sc === 'settings') return 'settings';
+  if(sc === 'sharedSession') return 'sessions';
   if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','customSessionReview'].includes(sc)) return 'sessions';
   if(sc === 'exercises') return state.pickingPhase ? 'sessions' : 'exercises';
   if(sc === 'detail'){
-    return ((state.fromBuild && state.pickingPhase) || state.fromBuildList || state.fromReview || state.fromSavedSession) ? 'sessions' : null;
+    return ((state.fromBuild && state.pickingPhase) || state.fromBuildList || state.fromReview || state.fromSavedSession || state.fromSharedSession) ? 'sessions' : null;
   }
   return null;
 }
@@ -9679,16 +9706,21 @@ const REC_SIMILARITY_PENALTIES = {exactSame:-100, veryClose:-20, sameFormat:-5, 
 // and Athletic work stays near a quarter of the planned activity time (never below 20% or above 30%).
 // Shuffle: a seed (1, 2, 3...) nudges every exercise's ranking by a small, repeatable amount so near-equal choices come out
 // in a different order. Seed 0 (the default) adds nothing. The same seed always gives the same session.
-const REC_SHUFFLE_JITTER = 8;
+const REC_SHUFFLE_JITTER = 16;
 const REC_TIME_BUFFER = {min:10, max:15};
-const REC_ATHLETIC_SHARE = {min:0.20, ideal:0.25, max:0.30};
-// Where each style sends the non-Athletic time (percent of the session; Athletic is pinned separately, so each sums to 75).
+// The Activate part (Warmup + Athletic together) averages 25% of the planned activity time, give or take 5 minutes, and is
+// built from exactly one Warmup exercise and at most two Athletic exercises.
+const REC_ACTIVATE_SHARE = {ideal:0.25, toleranceMin:5};
+// How much it costs (in score points per minute) when a phase's exercises run over / under the minutes allotted to it.
+const REC_SLOT_PENALTY = {over:15, under:5};
+const REC_PHASE_LIMITS = {warmup:1, athletic:2};   // most exercises the generator puts in a phase (others: 3)
+// Where each style sends the time after Activate (relative shares of Duels / Rondos / SSGs / Scrimmage; Activate is pinned separately).
 const REC_STYLE_RULES = {
-  technical:{label:'More Technical', phasePcts:{warmup:5, duels:15, rondos:25, ssg:15, scrimmage:15},
+  technical:{label:'More Technical', phasePcts:{duels:15, rondos:25, ssg:15, scrimmage:15},
     preferredDifficulty:[1,2], favorTechnicalTags:['Ball Mastery','Passing','Receiving','First Touch','Dribbling','Turning','Shooting'],
     favorFormats:['Individual','1v1','2v2','2v1','3v1','4v1']},
   balanced:{label:'Balanced', phasePcts:null, preferredDifficulty:[2], favorTechnicalTags:[], favorFormats:[]},
-  game_based:{label:'More Game-Based', phasePcts:{warmup:5, duels:5, rondos:15, ssg:25, scrimmage:25},
+  game_based:{label:'More Game-Based', phasePcts:{duels:5, rondos:15, ssg:25, scrimmage:25},
     preferredDifficulty:[2,3], favorCognitiveTags:['Decision Making','Scanning','Spatial Awareness'],
     favorSections:['Rondos','SSGs','Scrimmage'], favorEngagement:['Team Competition','Scoring'], favorTactical:['Transition Attacking','Transition Defending']},
 };
@@ -9910,29 +9942,37 @@ function recVarietyPenalty(ex, others){
 }
 
 // ---- time ----------------------------------------------------------------------------------------
-/* Minutes for each phase, in whole 5-minute blocks: the style's split (or the coach's Settings split), Athletic pinned
-   to its target share, every switched-on phase getting at least one block when the session is long enough. */
+/* Minutes for each phase, in whole 5-minute blocks. Activate (Warmup + Athletic) is pinned to its share of the planned time
+   with exactly one 5-minute Warmup block and the rest Athletic; the remaining phases split what's left by the style's
+   shares (or the coach's Settings split), each switched-on phase getting at least one block when the session is long enough. */
 function allocatePhaseMinutes(duration, phases, pctMap){
   const units = Math.max(1, Math.round(duration/5));
-  let pcts = phases.map(p => (pctMap && pctMap[p.key] != null) ? pctMap[p.key] : (sectionDefaultPcts[p.key] || 0));
-  const ai = phases.findIndex(p => p.key === 'athletic');
-  if(ai !== -1){
-    const rest = pcts.reduce((a,b,i)=>a+(i===ai?0:b),0) || 1;
-    pcts = pcts.map((v,i) => i === ai ? REC_ATHLETIC_SHARE.ideal*100 : v/rest*(100 - REC_ATHLETIC_SHARE.ideal*100));
+  const wi = phases.findIndex(p => p.key === 'warmup'), ai = phases.findIndex(p => p.key === 'athletic');
+  const alloc = phases.map(() => 0);
+  let left = units;
+  if(wi !== -1 || ai !== -1){
+    const activate = Math.min(left, Math.max((wi !== -1 && ai !== -1) ? 2 : 1, Math.round(units * REC_ACTIVATE_SHARE.ideal)));
+    if(wi !== -1){ alloc[wi] = 1; }
+    if(ai !== -1){ alloc[ai] = activate - (wi !== -1 ? 1 : 0); }
+    else if(wi !== -1){ alloc[wi] = activate; }
+    left -= activate;
   }
+  const rest = phases.map((p, i) => (i === wi || i === ai) ? -1 : i).filter(i => i !== -1);
+  const pcts = rest.map(i => (pctMap && pctMap[phases[i].key] != null) ? pctMap[phases[i].key] : (sectionDefaultPcts[phases[i].key] || 0));
   const total = pcts.reduce((a,b)=>a+b,0) || 1;
-  const live = phases.map((p,i) => pcts[i] > 0);
+  const live = pcts.map(v => v > 0);
   const base = live.map(l => l ? 1 : 0);
-  const useBase = units >= base.reduce((a,b)=>a+b,0);
-  const alloc = useBase ? base.slice() : phases.map(()=>0);
-  const ideal = pcts.map(p => p/total*units);
-  let left = units - alloc.reduce((a,b)=>a+b,0);
+  const useBase = left >= base.reduce((a,b)=>a+b,0);
+  const got = useBase ? base.slice() : rest.map(() => 0);
+  left -= got.reduce((a,b)=>a+b,0);
+  const ideal = pcts.map(v => v/total*(left + got.reduce((a,b)=>a+b,0)));
   while(left > 0){
     let best = -1, bestGap = -Infinity;
-    phases.forEach((p,i) => { if(!live[i]) return; const gap = ideal[i] - alloc[i]; if(gap > bestGap + 1e-9){ bestGap = gap; best = i; } });
+    rest.forEach((_, k) => { if(!live[k]) return; const gap = ideal[k] - got[k]; if(gap > bestGap + 1e-9){ bestGap = gap; best = k; } });
     if(best === -1) break;
-    alloc[best]++; left--;
+    got[best]++; left--;
   }
+  rest.forEach((i, k) => { alloc[i] = got[k]; });
   return alloc.map(u => u*5);
 }
 function recJoinAnd(items){
@@ -9953,33 +9993,44 @@ function selectExercisesForPhase(candidates, phase, context, selectedExercises){
   const perLen = {};
   inPhase.forEach(r => { const d = dur(r); perLen[d] = perLen[d] || 0; if(perLen[d] < 2 && !pool.includes(r)) pool.push(r); if(perLen[d] < 2) perLen[d]++; });
   const chosenExercises = selectedExercises || [];
-  const options = [{pick:[], sum:0, value: phase.minutes > 0 ? -(100 + 3*(sectionDefaultPcts[phase.key]||0)) : 0}];
+  // Value is per minute, not per exercise: an exercise earns its score for every 5 minutes it fills. Otherwise two weaker 5-minute
+  // exercises would always out-score one stronger 10-minute exercise, and long exercises (10-minute warm-ups, 15-20 minute games)
+  // would almost never be chosen.
+  const UNIT = 5;
+  const options = [{pick:[], sum:0, value: phase.minutes > 0 ? -(100 + 3*(sectionDefaultPcts[phase.key]||0)) * Math.max(1, phase.minutes/UNIT) : 0}];
   const add = pick => {
     const sum = pick.reduce((a,r)=>a+dur(r),0);
-    let value = pick.reduce((a,r)=>a+r.details.rankScore + recVarietyPenalty(r.ex, chosenExercises),0);
+    let value = pick.reduce((a,r)=>a + r.details.rankScore*dur(r)/UNIT + recVarietyPenalty(r.ex, chosenExercises),0);
     for(let i = 0; i < pick.length; i++) for(let j = i+1; j < pick.length; j++) value += calculateSimilarity(pick[i].ex, pick[j].ex).penalty;
-    value -= 15*Math.max(0, sum - phase.minutes) + 5*Math.max(0, phase.minutes - sum) + 12*(pick.length-1);
+    // Warmup and Athletic share one Activate time budget (see chooseSessionPlan), so neither is held to its own slot: the
+    // Warmup can be 5 or 10 minutes and Athletic takes up whatever is left of Activate.
+    const sharesActivate = phase.key === 'warmup' || phase.key === 'athletic';
+    if(!sharesActivate) value -= REC_SLOT_PENALTY.over*Math.max(0, sum - phase.minutes) + REC_SLOT_PENALTY.under*Math.max(0, phase.minutes - sum);
+    value -= 12*(pick.length-1);
     const same = options.find(o => o.sum === sum && o.pick.length);
     if(!same) options.push({pick, sum, value});
     else if(value > same.value + 1e-9){ same.pick = pick; same.value = value; }
   };
+  const maxPicks = REC_PHASE_LIMITS[phase.key] || 3;   // e.g. exactly one Warmup, at most two Athletic
   for(let i = 0; i < pool.length; i++){
     add([pool[i]]);
+    if(maxPicks < 2) continue;
     for(let j = i+1; j < pool.length; j++){
       add([pool[i], pool[j]]);
+      if(maxPicks < 3) continue;
       for(let k = j+1; k < pool.length; k++) add([pool[i], pool[j], pool[k]]);
     }
   }
   return options;
 }
 /* Picks one option per phase so the activities add up to between `floor` and `target` minutes with the best total, and
-   optionally pins one phase (Athletic) to a share of the planned time. Tiny dynamic program over whole minutes; ties
+   optionally pins the Activate pair (Warmup + Athletic together) to its share of the planned time. Tiny dynamic program over whole minutes; ties
    prefer the longer plan, then the earlier option, so it is fully deterministic. */
 function chooseSessionPlan(optionsPerPhase, floor, target, share){
-  const fi = share ? share.index : -1;
+  const fixed = share ? share.indices.filter(i => i !== -1) : [];
   let layer = new Map([[0, {value:0, picks:[]}]]);
   optionsPerPhase.forEach((options, pi) => {
-    if(pi === fi) return;
+    if(fixed.includes(pi)) return;
     const next = new Map();
     layer.forEach((st, total) => {
       options.forEach((opt, oi) => {
@@ -9992,19 +10043,24 @@ function chooseSessionPlan(optionsPerPhase, floor, target, share){
     });
     layer = next;
   });
-  const focusOptions = fi === -1 ? [{sum:0, value:0}] : optionsPerPhase[fi];
+  // every way to fill the pinned phases together (Warmup x Athletic)
+  let combos = [{sum:0, value:0, picks:[]}];
+  fixed.forEach(pi => {
+    const next = [];
+    combos.forEach(c => optionsPerPhase[pi].forEach((o, oi) => next.push({sum:c.sum + o.sum, value:c.value + o.value, picks:[...c.picks, [pi, oi]]})));
+    combos = next;
+  });
   let best = null;
-  focusOptions.forEach((fo, foi) => {
+  combos.forEach(c => {
     layer.forEach((st, rest) => {
-      const total = rest + fo.sum;
+      const total = rest + c.sum;
       if(total > target) return;
-      let score = st.value + fo.value - (total >= floor ? 0 : 20*(floor - total));
-      if(fi !== -1){
-        const pct = total > 0 ? fo.sum/total : 0;
-        const outside = Math.max(0, share.min - pct, pct - share.max)*100;
-        score -= 40*outside + 2*Math.abs(pct - share.ideal)*100;
+      let score = st.value + c.value - (total >= floor ? 0 : 300*(floor - total));
+      if(fixed.length){
+        const dev = Math.abs(c.sum - share.ideal*total);                 // minutes away from the ideal Activate time
+        score -= 300*Math.max(0, dev - share.toleranceMin) + 2*dev;
       }
-      if(!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && total > best.total)) best = {score, total, picks: fi === -1 ? st.picks : [...st.picks, [fi, foi]]};
+      if(!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && total > best.total)) best = {score, total, picks:[...st.picks, ...c.picks]};
     });
   });
   const chosen = optionsPerPhase.map(() => 0);
@@ -10091,11 +10147,13 @@ function validateGeneratedSession(session, context){
   const avgDiff = keys => { const xs = session.phases.filter(p => keys.includes(p.phase.key)).flatMap(p => p.items).map(i => i.ex.difficulty).filter(v => typeof v === 'number'); return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null; };
   const early = avgDiff(['warmup','athletic']), late = avgDiff(['ssg','scrimmage']);
   if(early !== null && late !== null && late < early - 0.5) soft('progression', 'The later game phases are easier than the early phases — consider swapping an exercise so the session builds up.');
-  // Athletic share
-  const ath = session.phases.find(p => p.phase.key === 'athletic');
-  if(ath && session.totalMin > 0){
-    const pct = ath.totalMin/session.totalMin;
-    if(pct < REC_ATHLETIC_SHARE.min - 0.005 || pct > REC_ATHLETIC_SHARE.max + 0.005) soft('athletic', `Athletic work is ${Math.round(pct*100)}% of the session (aim for ${REC_ATHLETIC_SHARE.min*100}–${REC_ATHLETIC_SHARE.max*100}%).`);
+  // Activate (Warmup + Athletic) share, and the Warmup / Athletic exercise limits
+  const act = session.phases.filter(p => p.phase.key === 'warmup' || p.phase.key === 'athletic');
+  if(act.length && session.totalMin > 0){
+    const actMin = act.reduce((a,p) => a + p.totalMin, 0), want = REC_ACTIVATE_SHARE.ideal*session.totalMin;
+    if(Math.abs(actMin - want) > REC_ACTIVATE_SHARE.toleranceMin + 0.01) soft('activate', `The Activate part is ${actMin} min (about ${Math.round(actMin/session.totalMin*100)}% of the session); aim for roughly ${Math.round(REC_ACTIVATE_SHARE.ideal*100)}%.`);
+    const w = session.phases.find(p => p.phase.key === 'warmup'), a = session.phases.find(p => p.phase.key === 'athletic');
+    if((w && w.items.length > REC_PHASE_LIMITS.warmup) || (a && a.items.length > REC_PHASE_LIMITS.athletic)) soft('activateCount', 'The Activate part has more Warmup or Athletic exercises than usual.');
   }
   // training balance against the requested style
   const prof = recProfileObject(session), vals = Object.values(prof).filter(v => typeof v === 'number');
@@ -10146,8 +10204,8 @@ function assembleRecommendedSession(rankedByPhase, context){
   const minutes = allocatePhaseMinutes(target, phases, REC_STYLE_RULES[context.sessionStyle].phasePcts);
   const phaseObjs = phases.map((ph, i) => ({...ph, minutes:minutes[i]}));
   let optionsByPhase = phaseObjs.map(ph => selectExercisesForPhase(rankedByPhase[ph.key], ph, context, []));
-  const athleticIdx = phases.findIndex(p => p.key === 'athletic');
-  const chosen = chooseSessionPlan(optionsByPhase, floor, target, athleticIdx === -1 ? null : {index:athleticIdx, ...REC_ATHLETIC_SHARE});
+  const activateIdx = [phases.findIndex(p => p.key === 'warmup'), phases.findIndex(p => p.key === 'athletic')];
+  const chosen = chooseSessionPlan(optionsByPhase, floor, target, activateIdx.some(i => i !== -1) ? {indices:activateIdx, ...REC_ACTIVATE_SHARE} : null);
   // variety sweeps: re-pick each phase's exercises, now knowing the others, without changing its minutes
   for(let sweep = 0; sweep < 2; sweep++){
     phaseObjs.forEach((ph, i) => {
@@ -10578,7 +10636,7 @@ function applyGeneratedSessionToDraft(session){
 
 /* ---- Step 3: the Generating Session screen runs the engine's five real stages (see GEN_STAGES) one at a
    time, repainting between them so each checkmark appears as that stage actually finishes. ---- */
-const GEN_MIN_DISPLAY_MS = 1000;   // Step 3 is always shown for at least this long, even if the engine is instant
+const GEN_MIN_DISPLAY_MS = 3000;   // Step 3 is always shown for at least this long, even if the engine is instant
 const GEN_FINAL_HOLD_MS = 300;     // after the last check lands, so the coach sees all five before Step 4 opens
 const GEN_STAGE_INFO = [
   {title:'Understanding your request', sub:'Analyzing your objective, focus area, age group, session style, duration, and location.'},
@@ -10814,9 +10872,9 @@ function renderExercises(){
   return `
   <div class="section-pad" style="padding-bottom:4px;">
     ${pickingLabel ? `
-    <div class="nav-sticky-back">${navBackRowHtml('Build Session', "nav('build')")}</div>
+    <div class="nav-sticky-back">${pickerReturnsToCustomReview() ? navBackRowHtml('Session Review', "nav('customSessionReview')") : navBackRowHtml('Build Session', "nav('build')")}</div>
     <div style="margin-bottom:16px;">
-      ${navPageTitleHtml('Find Exercises', '', 'STEP 2 OF 3')}
+      ${navPageTitleHtml('Find Exercises', '', pickerReturnsToCustomReview() ? '' : 'STEP 2 OF 3')}
     </div>
     ` : ''}
     ${renderSessionBuilderBox(pickingLabel)}
@@ -11188,6 +11246,17 @@ function renderOverlay(){
       <div class="sheet-footer">
         <button class="btn btn-ghost" onclick="cancelDiscardSession()">Keep editing</button>
         <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDiscardSession()">Discard practice</button>
+      </div>
+    </div>`;
+  }
+  if(state.shareLinkModal){
+    html += `
+    <div class="ios-alert-backdrop" onclick="closeShareLinkModal()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>Copy this link</h3>
+        <p>Press and hold the link below, choose Copy, then paste it into a message.</p>
+        <input id="shareLinkField" class="setup-date-input" readonly value="${escAttr(state.shareLinkModal.url)}" onfocus="this.select()" style="margin:0 0 12px;font-size:var(--fs-sm);">
+        <div class="ios-alert-btns"><button class="ios-alert-btn primary" onclick="closeShareLinkModal()">Done</button></div>
       </div>
     </div>`;
   }
@@ -11849,7 +11918,7 @@ function removeExtraSection(key){
 
 function pickForPhase(key){
   const p = PHASES.find(p=>p.key===key);
-  nav('exercises', {pickingPhase:key, fromBuild:true, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
+  nav('exercises', {pickingPhase:key, pickReturnTo:null, fromBuild:true, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
 }
 
 /* "Replace Exercise": opens the same picker, scoped to the replaced exercise's own section, and
@@ -11857,15 +11926,27 @@ function pickForPhase(key){
    modeled directly on pickForPhase() above, just carrying a bit more context through state instead
    of landing on a normal add. returnTo is 'build' or 'review' so cancelling or completing sends the
    coach back to whichever screen they started the replace from. */
+/* Custom Session Step 4: add an exercise from the library into the generated session. Opens the same Find Exercises
+   picker (the section chips at the top switch phase), and Back returns to Step 4. */
+function pickForPhaseFromCustomReview(key){
+  const p = PHASES.find(p=>p.key===key);
+  state.replaceContext = null;
+  nav('exercises', {pickingPhase:key, pickReturnTo:'customReview', fromBuild:true, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
+}
+// 'customReview' as a return target means Custom Session's Step 4 screen.
+function returnScreenFor(returnTo){ return returnTo === 'customReview' ? 'customSessionReview' : returnTo; }
+function pickerReturnsToCustomReview(){
+  return state.pickReturnTo === 'customReview' || !!(state.replaceContext && state.replaceContext.returnTo === 'customReview');
+}
 function pickReplacementFor(key, oldId, returnTo){
   const p = PHASES.find(p=>p.key===key);
   state.replaceContext = {key, oldId, returnTo};
-  nav('exercises', {pickingPhase:key, fromBuild:returnTo==='build', fromReview:returnTo==='review', fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
+  nav('exercises', {pickingPhase:key, pickReturnTo:returnTo === 'customReview' ? 'customReview' : null, fromBuild:returnTo==='build', fromReview:returnTo==='review', fromSavedSession:false, editingSavedSessionId:null, sectionFilter: p ? p.section : null, search:'', quickFilterValue:null, balanceSheetOpen:false, quickPickOpen:false, quickPickCustomizeOpen:false, showAddedInPractice:false});
 }
 function cancelReplace(){
   const returnTo = state.replaceContext ? state.replaceContext.returnTo : 'build';
   state.replaceContext = null;
-  nav(returnTo);
+  nav(returnScreenFor(returnTo));
 }
 /* Finishes a replace: swaps the new exercise id into the exact array slot the old one occupied
    (exerciseListFor() already resolves to the right array whether that slot is a standard phase or
@@ -11882,7 +11963,7 @@ function performReplace(newId){
   state.replaceContext = null;
   const ex = exById(newId);
   showToast(ex ? `Replaced with "${ex.name}"` : 'Exercise replaced');
-  nav(ctx.returnTo);
+  nav(returnScreenFor(ctx.returnTo));
 }
 /* Switch which phase is being filled WITHOUT leaving the exercise list — lets a coach fill several
    phases back to back instead of bouncing to the Build screen between every add. */
@@ -12209,8 +12290,11 @@ const reviewDragCtl = makeDragReorderController({
   rowSelector: (groupKey, id) => `.phase-exlist[data-list-key="${CSS.escape(groupKey)}"] .phase-ex-item[data-ex-id="${CSS.escape(id)}"]`,
   rowSelectorAll: '.phase-ex-item',
   onSwap(groupKey, draggedId, neighborId){
-    const flat = reviewGroupFlatOrder(groupKey);
+    const onCustomReview = state.screen === 'customSessionReview';
+    const flat = reviewGroupFlatOrder(groupKey, onCustomReview);
     const phaseKeyById = new Map(flat.map(it=>[it.id, it.phaseKey]));
+    // Custom Session keeps the workflow order, so an exercise can only be moved among others from its own section there.
+    if(onCustomReview && phaseKeyById.get(draggedId) !== phaseKeyById.get(neighborId)) return;
     const ids = flat.map(it=>it.id);
     const fromIdx = ids.indexOf(draggedId);
     const toIdx = ids.indexOf(neighborId);
@@ -12433,6 +12517,11 @@ function completeSession(){
     targetDuration: state.targetDuration, phases: phasesSnapshot,
     practiceDate: state.practiceDate, location: state.practiceLocation, templateId: state.activeTemplateId,
     rating: 0, comment: '', favorited: false, visibility: 'shared',
+    // Only a Custom Session knows these; they let a shared link show "Play Forward - U10 - Balanced".
+    focusArea: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.focusArea) || '',
+    ageGroup: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.ageGroup) || '',
+    sessionStyle: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.sessionStyle) || '',
+    shareToken: '',
   };
   state.savedSessions.push(newSession);
   // reset builder
@@ -12592,21 +12681,33 @@ function reviewGroupNaturalOrder(groupKey){
 // state.reviewGroupOrder if one has been set (reviewExGripMove below), falling back to the
 // natural phase-by-phase order, and gracefully absorbing any exercise added/removed since the
 // custom order was last saved (dropped ids are skipped, new ids are appended at the end).
-function reviewGroupFlatOrder(groupKey){
+function reviewGroupFlatOrder(groupKey, byWorkflow){
   const natural = reviewGroupNaturalOrder(groupKey);
   const custom = state.reviewGroupOrder[groupKey];
-  if(!custom || !custom.length) return natural;
-  const byId = new Map(natural.map(it=>[it.id,it]));
-  const ordered = custom.map(id=>byId.get(id)).filter(Boolean);
-  natural.forEach(it => { if(!custom.includes(it.id)) ordered.push(it); });
+  let ordered = natural;
+  if(custom && custom.length){
+    const byId = new Map(natural.map(it=>[it.id,it]));
+    ordered = custom.map(id=>byId.get(id)).filter(Boolean);
+    natural.forEach(it => { if(!custom.includes(it.id)) ordered.push(it); });
+  }
+  if(byWorkflow){
+    // Custom Session's Review always lists a group in the regular workflow order -- Activate: Warmup then Athletic;
+    // Develop: Duels, Rondos, then Small Sided Games; Play: Scrimmage -- keeping the coach's own order only among
+    // exercises from the same section (Array.sort is stable).
+    const group = PHASE_GROUPS.find(g => g.key === groupKey);
+    if(group){
+      const rank = it => { const i = group.phaseKeys.indexOf(it.phaseKey); return i === -1 ? group.phaseKeys.length : i; };
+      ordered = ordered.slice().sort((a, b) => rank(a) - rank(b));
+    }
+  }
   return ordered;
 }
-function reviewPhaseGroups(){
+function reviewPhaseGroups(byWorkflow){
   // Every group always shows, even with zero exercises -- a coach reviewing a session should
   // see the full six-phase structure and notice a gap, not have an empty group silently vanish
   // as if that part of the practice didn't exist.
   return PHASE_GROUPS.map(group => {
-    const items = reviewGroupFlatOrder(group.key);
+    const items = reviewGroupFlatOrder(group.key, byWorkflow);
     const mins = items.reduce((a,it)=>a+(exById(it.id)?.duration||10),0);
     return {...group, items, mins};
   });
@@ -12637,7 +12738,7 @@ function customHowPanelHtml(){
 /* custom = true is Step 4 of the Custom Session workflow: the very same Session Review, with its own step label, back link and header. */
 function renderReview(custom){
   const {total, count} = currentTotalMinutes();
-  const groups = reviewPhaseGroups();
+  const groups = reviewPhaseGroups(!!custom);
   const usedExtras = state.extraSections.filter(s => s.exercises.length);
   const practiceProfile = practiceTrainingProfile(currentPracticeTrainingItems());
 
@@ -12708,9 +12809,10 @@ function renderReview(custom){
               ${g.items.length ? g.items.map(it=>{
                 const ex=exById(it.id);
                 const showGrip = g.items.length>1;
-                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;
+                return `<div class="phase-ex-item" data-ex-id="${escAttr(it.id)}" ${ex?`onclick="openDetailFromReview('${escJsAttr(ex.id)}')" style="cursor:pointer;"`:''}>${showGrip?`<span class="build-ex-grip" onpointerdown="reviewExGripDown(event,'${g.key}','${escJsAttr(it.id)}')" onclick="event.stopPropagation();">${ICONS.grip}</span>`:''}${peiThumbHtml(ex)}${ex?`<span class="peiname">${escHtml(ex.name)}</span><span class="peidur">${ex.duration||10}m</span>`:`<span class="peiname peiname-missing">Exercise unavailable</span>`}${custom ? replaceButtonHtml(it.phaseKey, it.id, 'customReview').replace('<button ', '<button style="margin-right:14px;" ') : ''}<button onclick="event.stopPropagation(); removeFromPhase('${it.phaseKey}','${escJsAttr(it.id)}')" title="Remove ${ex?escAttr(ex.name):'this unavailable exercise'}">${ICONS.trash}</button></div>`;
               }).join('') : `<div class="build-ex-empty">No exercises yet</div>`}
             </div>
+            ${custom ? `<button class="cs-add-ex" onclick="pickForPhaseFromCustomReview('${g.phaseKeys[0]}')">${ICONS.plus}<span>Add exercise</span></button>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -13108,6 +13210,7 @@ function renderSessionDetail(){
         ${isOwner
           ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${escJsAttr(s.id)}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
           : `<div class="session-state-tag saved" style="position:static;">${ICONS.user} By ${escHtml(s.createdBy)}</div>`}
+        ${isOwner && !editing ? `<button class="dh-icon-btn" onclick="shareSavedSession('${escJsAttr(s.id)}')" title="Share this session" aria-label="Share this session" ${state.shareBusy?'disabled':''}>${ICONS.share}</button>` : ''}
         <button class="dh-icon-btn" onclick="requestDuplicateSession('${escJsAttr(s.id)}')" title="Make a copy of this session" aria-label="Make a copy of this session">${ICONS.copy}</button>
       </div>
     </div>
@@ -13192,6 +13295,231 @@ function renderSessionDetail(){
   </div>`;
 }
 
+/* ============ SHARE A SAVED SESSION ============
+   A saved session can be sent to anyone as a link. The link carries only a long random token
+   (?s=...) -- never the session itself and never a guessable id -- and the Apps Script looks the
+   session up by that token and returns ONLY the plan (title, date, length, exercises as
+   {id,name,duration} per phase): no notes, ratings, other sessions, or coach accounts. The
+   recipient's page (renderSharedSession) is read-only: it never writes to savedSessions, drafts or
+   the Sheet. Exercises are references -- each tap goes through resolveSavedExercise() against the
+   recipient's own copy of the library and opens the normal Exercise Detail, so a renumbered or
+   removed exercise degrades to "no longer available" instead of opening the wrong one. */
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
+function newShareToken(){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let out = '';
+  try{
+    const buf = new Uint8Array(24);
+    crypto.getRandomValues(buf);
+    buf.forEach(b => { out += chars[b % 62]; });
+  }catch(e){
+    for(let i=0;i<24;i++) out += chars[Math.floor(Math.random()*62)];
+  }
+  return out;
+}
+function appBaseUrl(){ return window.location.href.split(/[?#]/)[0]; }
+function shareUrlFor(token){ return appBaseUrl() + '?s=' + encodeURIComponent(token); }
+function inSharedPreview(){
+  return !!state.sharedToken && (state.screen === 'sharedSession' || (state.screen === 'detail' && state.fromSharedSession));
+}
+// Called once at boot: a ?s=<token> in the address means this load is someone opening a shared link.
+function initSharedLink(){
+  try{
+    const tok = new URLSearchParams(window.location.search).get('s');
+    if(tok && SHARE_TOKEN_RE.test(tok)){
+      state.sharedToken = tok;
+      state.sharedSession = null;
+      state.sharedStatus = 'loading';
+      state.screen = 'sharedSession';
+      state.fromSharedSession = false;
+    }
+  }catch(e){ /* no URL support -- just a normal launch */ }
+}
+async function fetchSharedSession(token){
+  if(!APPS_SCRIPT_URL) return {status:'offline'};
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?sheet=sessions&share=' + encodeURIComponent(token), {cache:'no-store'});
+    if(!res.ok) return {status:'offline'};
+    const data = await res.json();
+    // An Apps Script that hasn't been updated yet ignores ?share= and answers with the whole
+    // sessions list (an array) -- treat that as "sharing not switched on" rather than guessing.
+    if(Array.isArray(data)) return {status:'unsupported'};
+    if(!data || data.error || !Array.isArray(data.phases)) return {status:'unavailable'};
+    return {status:'ready', data};
+  }catch(err){
+    return {status:'offline'};
+  }
+}
+async function loadSharedSession(){
+  if(!state.sharedToken) return;
+  state.sharedStatus = 'loading';
+  render();
+  const r = await fetchSharedSession(state.sharedToken);
+  state.sharedSession = r.status === 'ready' ? r.data : null;
+  state.sharedStatus = r.status;
+  render();
+}
+function leaveSharedSession(){
+  const hadCoach = !!state.coachName;
+  state.sharedToken = null; state.sharedSession = null; state.sharedStatus = 'idle'; state.fromSharedSession = false;
+  try{ window.history.replaceState(null, '', appBaseUrl()); }catch(e){}
+  if(hadCoach) nav('home'); else { state.screen = 'home'; render(); }
+}
+function shareDetailLine(s){
+  const parts = [];
+  const mins = Number(s.targetDuration) || Number(s.totalMin) || 0;
+  parts.push(mins ? `${mins}-minute${s.ageGroup ? ' ' + s.ageGroup : ''} session` : `${s.ageGroup ? s.ageGroup + ' ' : ''}session`);
+  const st = (CS_STYLES.find(x => x[0] === s.sessionStyle) || [])[1];
+  if(st) parts.push(st.replace(/^More /, ''));
+  parts.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
+  return parts.join(' • ');
+}
+async function shareSavedSession(id){
+  const s = state.savedSessions.find(x => x.id === id);
+  if(!s || s.createdBy !== state.coachName || state.shareBusy) return;
+  state.shareBusy = true;
+  showToast('Getting your link ready…');
+  try{
+    // The link has to exist on the server before it is handed out, so push the token first and
+    // then confirm the server can actually serve it back; otherwise the friend would get a dead link.
+    if(!s.shareToken || s._syncPending){
+      if(!s.shareToken) s.shareToken = newShareToken();
+      await pushSessionToSheet(s);
+    }
+    const check = await fetchSharedSession(s.shareToken);
+    if(check.status !== 'ready'){
+      state.shareBusy = false;
+      showToast(check.status === 'unsupported' ? 'Sharing isn’t switched on yet' : 'Couldn’t create the link — check your connection');
+      return;
+    }
+    state.shareBusy = false;
+    const url = shareUrlFor(s.shareToken);
+    const focus = (csFocusArea(s.focusArea) || {}).title;
+    const title = 'FT2 Coaches — ' + (focus ? focus + ' Session' : s.name);
+    const text = shareDetailLine(s);
+    if(navigator.share){
+      try{ await navigator.share({title, text, url}); render(); return; }
+      catch(err){ if(err && err.name === 'AbortError'){ render(); return; } /* fall through to copy */ }
+    }
+    await copyShareLink(url, title);
+  }finally{
+    state.shareBusy = false;
+  }
+}
+async function copyShareLink(url, title){
+  let ok = false;
+  try{ await navigator.clipboard.writeText(url); ok = true; }catch(e){}
+  if(!ok){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = url; ta.setAttribute('readonly',''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, url.length);
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){}
+  }
+  if(ok){ showToast('Link copied'); }
+  else { state.shareLinkModal = {url, title}; renderOverlay(); }
+}
+function closeShareLinkModal(){ state.shareLinkModal = null; renderOverlay(); }
+// Header for a recipient who hasn't told the app who they are: brand only, no search / profile.
+function renderSharedTopbar(){
+  document.getElementById('topbar').innerHTML = `<div class="brand"><div class="logo-badge">${LOGO_MARK}</div><div class="brand-lockup"><div class="bl-line1">Fast Tigers</div><div class="bl-line2">Futbol Training</div></div></div>`;
+}
+function openDetailFromSharedSession(id, savedName){
+  let entry = null;
+  const s = state.sharedSession;
+  if(s) s.phases.forEach(p => p.exercises.forEach(e => { if(!entry && String(e.id)===String(id) && e.name===savedName) entry = e; }));
+  const ex = resolveSavedExercise(entry || {id, name: savedName});
+  if(!ex){ showToast('That exercise is unavailable'); return; }
+  nav('detail', {detailId:ex.id, fromSharedSession:true, fromSavedSession:false, fromBuild:false, fromReview:false, fromHome:false, fromBuildList:false});
+}
+function sharedExerciseRowHtml(e){
+  const ex = resolveSavedExercise(e);
+  const name = escHtml(e.name);
+  if(!ex){
+    // While the exercise library is still loading, an unmatched row is just "not found yet" -- never
+    // labelled as removed until the live library has actually answered.
+    const note = state.dataSource === 'live' ? 'No longer available' : (state.dataSource === 'offline' ? 'Not available offline' : 'Loading\u2026');
+    return `<div class="phase-ex-item shared-ex-missing" onclick="showToast('${state.dataSource === 'unknown' ? 'Still loading \u2014 try again in a moment' : 'That exercise is unavailable'}')" style="cursor:pointer;">${peiThumbHtml(null)}<span class="peiname">${name}<span class="shared-ex-note">${note}</span></span><span class="peidur">${Number(e.duration)||0}m</span></div>`;
+  }
+  return `<div class="phase-ex-item" role="button" tabindex="0" onclick="openDetailFromSharedSession('${escJsAttr(e.id)}','${escJsAttr(e.name)}')" style="cursor:pointer;">${peiThumbHtml(ex)}<span class="peiname">${name}</span><span class="peidur">${Number(e.duration)||0}m</span><span class="shared-ex-chev">${ICONS.chevronRight||''}</span></div>`;
+}
+function sharedStatusCardHtml(){
+  const st = state.sharedStatus;
+  const msg = {
+    loading: ['Loading the session…', 'One moment.'],
+    unavailable: ['Session unavailable', 'This link isn’t active any more. Ask the coach who sent it to share it again.'],
+    offline: ['Can’t reach the session', 'Check your connection and try again.'],
+    unsupported: ['Sharing isn’t switched on yet', 'Ask the coach who sent this link to try again later.'],
+  }[st] || ['Session unavailable', 'This link isn’t active any more.'];
+  return `
+  <div class="section-pad" style="padding-top:36px;">
+    <div class="shared-state-card">
+      <h2>${msg[0]}</h2>
+      <p>${msg[1]}</p>
+      ${st === 'offline' ? `<button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="loadSharedSession()">Try again</button>` : ''}
+      ${st !== 'loading' ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="leaveSharedSession()">Open FT2</button>` : ''}
+    </div>
+  </div>`;
+}
+function renderSharedSession(){
+  const s = state.sharedSession;
+  if(!s || state.sharedStatus !== 'ready') return sharedStatusCardHtml();
+  const groups = sessionDetailPhaseGroups(s);
+  const extras = s.phases.filter(p => !PHASES.some(ph => ph.section === p.section));
+  const focus = (csFocusArea(s.focusArea) || {}).title || '';
+  const style = (CS_STYLES.find(x => x[0] === s.sessionStyle) || [])[1] || '';
+  const meta = [
+    ['Practice date', formatPracticeDateShort(s.practiceDate) || '—'],
+    ['Location', s.location === 'indoor' ? 'Indoor' : 'Outdoor'],
+    focus ? ['Focus area', escHtml(focus)] : null,
+    s.ageGroup ? ['Age group', escHtml(s.ageGroup)] : null,
+    style ? ['Session style', escHtml(style)] : null,
+  ].filter(Boolean);
+  const metaHtml = meta.map(m => `<div class="sd-meta"><div class="smnum">${m[1]}</div><div class="smlbl">${m[0]}</div></div>`);
+  const metaRows = [];
+  for(let i=0;i<metaHtml.length;i+=2) metaRows.push(`<div class="sd-meta-row" ${i?'style="margin-top:10px;"':''}>${metaHtml.slice(i,i+2).join('')}</div>`);
+  const phaseCard = (g, i, last, items) => `
+        <div class="phase-card">
+          <div class="phase-line">
+            <div class="phase-num" style="${g.bg ? `background:${g.bg};color:${g.textOn==='dark'?'var(--pitch-dark)':'white'};` : ''}">${i+1}</div>
+            ${last ? '' : '<div class="phase-connector"></div>'}
+          </div>
+          <div class="phase-content">
+            <div class="phase-title-row"><div class="phase-title">${escHtml(g.label)}</div><div class="phase-time">${g.mins} min</div></div>
+            ${g.sublabel ? `<div class="phase-group-sub">${escHtml(g.sublabel)}</div>` : ''}
+            <div class="phase-exlist">${items.map(sharedExerciseRowHtml).join('')}</div>
+          </div>
+        </div>`;
+  return `
+  <div class="detail-header" style="background:var(--pitch);">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button class="backbtn" style="margin-bottom:0;" onclick="leaveSharedSession()" aria-label="Close shared session and open FT2">${ICONS.back}</button>
+    </div>
+    <div class="dpill" style="margin-top:14px;color:#fff;">${ICONS.share} Shared Session</div>
+    <h1>${escHtml(s.name)}</h1>
+    <div class="stat-row">
+      <div class="stat"><div class="snum">${Number(s.totalMin)||0}</div><div class="slbl">Minutes</div></div>
+      <div class="stat"><div class="snum">${Number(s.exCount)||0}</div><div class="slbl">Exercises</div></div>
+      <div class="stat"><div class="snum">${Number(s.targetDuration)||0}</div><div class="slbl">Target</div></div>
+    </div>
+  </div>
+  <div class="section-pad">
+    ${metaRows.join('')}
+    <div class="sd-total-time" style="margin-top:22px;">${Number(s.totalMin)||0} min total</div>
+    <div class="phase-strip sd-phases" style="margin-top:22px;">
+      ${groups.map((g,i)=>phaseCard(g, i, i===groups.length-1 && extras.length===0, g.items)).join('')}
+      ${extras.map((p,i)=>phaseCard({label:p.label, mins:p.exercises.reduce((a,e)=>a+(Number(e.duration)||0),0)}, groups.length+i, i===extras.length-1, p.exercises)).join('')}
+    </div>
+    <div class="shared-cta">
+      <div class="shared-cta-title">Tap any exercise to see how it works.</div>
+      <div class="shared-cta-sub">You’re viewing a shared session. Nothing here is saved to your account.</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="leaveSharedSession()">Open FT2</button>
+    </div>
+  </div>`;
+}
+
 /* ============ PERSISTENCE ============
    A reload -- from the OS reclaiming a backgrounded phone browser tab/PWA, not from anything this
    app itself triggers -- previously meant losing an in-progress draft session, every saved session,
@@ -13241,6 +13569,7 @@ function saveAppStateToStorage(){
       fromBuild: state.fromBuild,
       fromReview: state.fromReview,
       fromCustomReview: state.fromCustomReview,
+      pickReturnTo: state.pickReturnTo,
       csReviewCfg: state.csReviewCfg,
       csDraftGenerated: state.csDraftGenerated,
       csGeneratedSig: state.csGeneratedSig, csReviewNotes: state.csReviewNotes, csReviewExplain: state.csReviewExplain, csPlannedByPhase: state.csPlannedByPhase,
@@ -13336,6 +13665,7 @@ function loadAppStateFromStorage(){
       state.fromBuild = !!snap.fromBuild;
       state.fromReview = !!snap.fromReview;
       state.fromCustomReview = !!snap.fromCustomReview;
+      state.pickReturnTo = snap.pickReturnTo === 'customReview' ? 'customReview' : null;
       state.fromSavedSessionId = snap.fromSavedSessionId ?? null;
       state.fromSavedSession = !!snap.fromSavedSession && state.savedSessions.some(s => s.id === state.fromSavedSessionId);
       state.editingSavedSessionId = (snap.editingSavedSessionId && state.savedSessions.some(s => s.id === snap.editingSavedSessionId)) ? snap.editingSavedSessionId : null;
@@ -13345,13 +13675,14 @@ function loadAppStateFromStorage(){
       if(restoredScreen === 'customSessionGenerating') restoredScreen = 'customSessionSetup';
       if(restoredScreen === 'customSessionReview' && !(state.csReviewCfg && currentTotalMinutes().count > 0)) restoredScreen = 'customSessionSetup';
       if(restoredScreen === 'sessionDetail' && !state.savedSessions.some(s => s.id === state.viewingSessionId)) restoredScreen = 'sessions';
+      if(restoredScreen === 'sharedSession') restoredScreen = 'home'; // a shared page only exists while its ?s= link is open
       // A reload mid-"replace an exercise" used to silently drop the replace context while still
       // landing back on what looked like the same picker screen -- tapping an exercise there then
       // just added a duplicate instead of replacing anything, with no banner to show anything was
       // wrong. Only trust it back if it's still reachable (exercises/detail) and the old exercise
       // it's replacing is still actually sitting in that exact phase/section.
       const rc = snap.replaceContext;
-      if(rc && typeof rc === 'object' && rc.oldId && (rc.returnTo === 'build' || rc.returnTo === 'review')
+      if(rc && typeof rc === 'object' && rc.oldId && (rc.returnTo === 'build' || rc.returnTo === 'review' || rc.returnTo === 'customReview')
           && (restoredScreen === 'exercises' || restoredScreen === 'detail')){
         const arr = exerciseListFor(rc.key);
         if(arr && arr.includes(rc.oldId)) state.replaceContext = {key: rc.key, oldId: rc.oldId, returnTo: rc.returnTo};
@@ -13371,6 +13702,7 @@ const screens = {
   review: renderReview,
   sessions: renderSessions,
   sessionDetail: renderSessionDetail,
+  sharedSession: renderSharedSession,
   settings: renderSettings,
   quickStartHome: renderQuickStartHome,
   quickStartPractices: renderQuickStartPractices,
@@ -13382,7 +13714,8 @@ const screens = {
 
 function render(){
   const bottomnavEl = document.getElementById('bottomnav');
-  if(!state.coachName){
+  const sharedPreview = !state.coachName && inSharedPreview();
+  if(!state.coachName && !sharedPreview){
     // Gate the whole app behind "who's coaching" -- no nav makes sense before that's known.
     document.getElementById('topbar').innerHTML = `<div class="brand"><div class="logo-badge">${LOGO_MARK}</div><div class="brand-lockup"><div class="bl-line1">Fast Tigers</div><div class="bl-line2">Futbol Training</div></div></div>`;
     bottomnavEl.innerHTML = '';
@@ -13393,12 +13726,12 @@ function render(){
     renderOverlay();
     return;
   }
-  document.getElementById('bottomDock').style.display = '';
-  renderTopbar();
+  document.getElementById('bottomDock').style.display = sharedPreview ? 'none' : '';
+  if(sharedPreview) renderSharedTopbar(); else renderTopbar();
   document.getElementById('content').innerHTML = screens[state.screen]();
   initLazyMedia();
-  renderBottomnav();
-  const footerHtml = workflowFooterHtml();
+  if(sharedPreview) bottomnavEl.innerHTML = ''; else renderBottomnav();
+  const footerHtml = sharedPreview ? '' : workflowFooterHtml();
   document.getElementById('workflowFooter').innerHTML = footerHtml;
   document.getElementById('shell').classList.toggle('has-workflow-cta', !!footerHtml);
   document.getElementById('shell').classList.toggle('workflow-tight', (state.screen === 'review' || state.screen === 'customSessionReview' || state.screen === 'build' || state.screen === 'practiceSetup'));
@@ -13409,9 +13742,11 @@ function render(){
 initTheme();
 loadAppStateFromStorage();
 state.coachName = loadCoachName();
+initSharedLink();
 render();
 syncExercisesFromSheet();
 if(state.coachName) syncSessionsFromSheet();
+if(state.sharedToken) loadSharedSession();
 
 /* Select all existing text the moment an editable field gets focus, so typing immediately
    replaces it instead of requiring a manual select-all or delete first. Delegated on #content

@@ -62,6 +62,11 @@ function doGet(e) {
   // asking (the same free-text name the app's "Who's Coaching?" screen collects) so a private
   // session only ever gets sent back to the coach who owns it -- see readSessions() below.
   if (e && e.parameter && e.parameter.sheet === 'sessions') {
+    // ?share=<token> is the "send a saved session to a friend" link: it returns ONE session, found
+    // by its long random token, trimmed down to just the plan -- see readSharedSession() below.
+    if (e.parameter.share) {
+      return jsonResponse(readSharedSession(e.parameter.share));
+    }
     const requestingCoach = (e.parameter.coach || '').toString();
     return jsonResponse(readSessions(requestingCoach));
   }
@@ -168,7 +173,8 @@ const SESSIONS_TAB_NAME = 'Sessions';
 const SESSIONS_HEADERS = [
   'id', 'name', 'createdBy', 'createdAt', 'totalMin', 'exCount', 'targetDuration',
   'practiceDate', 'location', 'templateId', 'rating', 'comment', 'favorited',
-  'visibility', 'phasesJson', 'updatedAt'
+  'visibility', 'phasesJson', 'updatedAt',
+  'focusArea', 'ageGroup', 'sessionStyle', 'shareToken'
 ];
 
 function getSessionsSheet_() {
@@ -177,7 +183,18 @@ function getSessionsSheet_() {
   if (!sheet) {
     sheet = ss.insertSheet(SESSIONS_TAB_NAME);
     sheet.appendRow(SESSIONS_HEADERS);
+    return sheet;
   }
+  // A Sessions tab made before a column was added gets the missing header(s) appended to the right
+  // of the existing ones, so nothing already saved moves and no manual sheet edit is needed.
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  SESSIONS_HEADERS.forEach(h => {
+    if (existing.indexOf(h) === -1) {
+      existing.push(h);
+      sheet.getRange(1, existing.length).setValue(h);
+    }
+  });
   return sheet;
 }
 
@@ -207,6 +224,8 @@ function readSessions(requestingCoach) {
         obj.phases = [];
       }
       delete obj.phasesJson;
+      // A session's share token is a private link key: only its owner's own sync gets it back.
+      if (String(obj.createdBy) !== String(requestingCoach)) obj.shareToken = '';
       obj.favorited = (obj.favorited === true || obj.favorited === 'true' || obj.favorited === 'TRUE');
       // practiceDate is written as a plain "YYYY-MM-DD" string, but that shape is exactly what
       // Sheets' own input parser auto-detects as a real date and silently converts the cell to --
@@ -224,6 +243,52 @@ function readSessions(requestingCoach) {
       }
       return obj;
     });
+}
+
+// The public, read-only lookup behind a shared link. Finds the one row whose shareToken matches and
+// returns ONLY what the Shared Session page needs. Deliberately left out: notes (comment), rating,
+// favorite, who made it, visibility, ids of other sessions, and the Exercises-tab data. A missing or
+// unknown token gets {error:'not_found'} with no hint about why.
+function readSharedSession(token) {
+  token = String(token || '');
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return { error: 'not_found' };
+  const sheet = getSessionsSheet_();
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return { error: 'not_found' };
+  const headers = values[0];
+  const tokenCol = headers.indexOf('shareToken');
+  if (tokenCol === -1) return { error: 'not_found' };
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][tokenCol]) !== token) continue;
+    const row = {};
+    headers.forEach((h, c) => { row[h] = values[i][c]; });
+    let phases = [];
+    try { phases = JSON.parse(row.phasesJson || '[]'); } catch (err) { phases = []; }
+    let practiceDate = row.practiceDate;
+    if (practiceDate instanceof Date) {
+      const pad = n => String(n).padStart(2, '0');
+      practiceDate = practiceDate.getFullYear() + '-' + pad(practiceDate.getMonth() + 1) + '-' + pad(practiceDate.getDate());
+    }
+    return {
+      name: row.name || 'Untitled Practice',
+      totalMin: Number(row.totalMin) || 0,
+      exCount: Number(row.exCount) || 0,
+      targetDuration: Number(row.targetDuration) || 0,
+      practiceDate: practiceDate || '',
+      location: row.location === 'indoor' ? 'indoor' : 'outdoor',
+      focusArea: row.focusArea || '',
+      ageGroup: row.ageGroup || '',
+      sessionStyle: row.sessionStyle || '',
+      phases: (Array.isArray(phases) ? phases : []).map(p => ({
+        label: p.label || '',
+        section: p.section || null,
+        exercises: (Array.isArray(p.exercises) ? p.exercises : []).map(e => ({
+          id: e.id, name: e.name || '', duration: Number(e.duration) || 0
+        }))
+      }))
+    };
+  }
+  return { error: 'not_found' };
 }
 
 function upsertSession(session, requestingCoach) {
@@ -252,6 +317,8 @@ function upsertSession(session, requestingCoach) {
     // flip visibility, etc.) -- the previous version allowed this unconditionally.
     throw new Error('Not authorized to edit this session');
   }
+  // Only a long random token is accepted as a share token; anything else is stored as "not shared".
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(session.shareToken || ''))) session.shareToken = '';
   const row = SESSIONS_HEADERS.map(h => {
     if (h === 'phasesJson') return JSON.stringify(session.phases || []);
     if (h === 'updatedAt') return Date.now();
