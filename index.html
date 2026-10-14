@@ -9734,12 +9734,14 @@ const REC_PHASE_FIT = {
   Apply:{Warmup:0, Athletic:1, Duels:2, Rondos:3, SSGs:5, Scrimmage:5},
   Scrimmage:{Warmup:0, Athletic:0, Duels:1, Rondos:2, SSGs:4, Scrimmage:5},
 };
-// FT2's four-step progression and the app phases (Sections) that belong to each.
+// The engine's four internal groups and the app phases (Sections) that belong to each. `group` is internal
+// only (it keys REC_PHASE_FIT); what a coach reads is `label`, which is the real three phases -- Activate,
+// Develop, Play -- since Small-Sided Games belong to Develop. `msgName` is how a note names a group.
 const REC_PROGRESSION = [
-  {group:'Activate', phaseKeys:['warmup','athletic'], intent:'Recognize'},
-  {group:'Develop', phaseKeys:['duels','rondos'], intent:'Execute'},
-  {group:'Apply', phaseKeys:['ssg'], intent:'Apply'},
-  {group:'Scrimmage', phaseKeys:['scrimmage'], intent:'Transfer'},
+  {group:'Activate', label:'Activate', msgName:'Activate', phaseKeys:['warmup','athletic'], intent:'Recognize'},
+  {group:'Develop', label:'Develop', msgName:'Develop', phaseKeys:['duels','rondos'], intent:'Execute'},
+  {group:'Apply', label:'Develop', msgName:'Small-Sided Games', phaseKeys:['ssg'], intent:'Apply'},
+  {group:'Scrimmage', label:'Play', msgName:'Scrimmage', phaseKeys:['scrimmage'], intent:'Transfer'},
 ];
 function recGroupForPhaseKey(key){ const g = REC_PROGRESSION.find(x => x.phaseKeys.includes(key)); return g ? g.group : 'Develop'; }
 
@@ -10106,7 +10108,7 @@ function explainSessionRecommendation(session, context){
       {title:'Your objective', body:context.meta.focusArea, sub:context.focusDescriptor || ''},
       {title:'We matched exercises to', body:(top.length ? top : context.meta.concepts).join(' · ')},
       {title:'We ranked exercises by', body:`Objective fit · Age (${context.ageGroup}) · Difficulty · Session style (${style.label}) · Phase · Training balance`},
-      {title:'We built progression', body:present.map(g => g.group).join(' → ')},
+      {title:'We built progression', body:present.map(g => g.label).filter((l,i,a) => a.indexOf(l) === i).join(' → ')},
       {title:'We balanced the session', body:`Technical ${fmt(prof.technical)} · Tactical ${fmt(prof.tactical)} · Physical ${fmt(prof.physical)} · Cognitive ${fmt(prof.cognitive)}`},
       {title:'You make the final call', body:'Change, remove or reorder any exercise before you save'},
     ],
@@ -10133,7 +10135,7 @@ function validateGeneratedSession(session, context){
   REC_PROGRESSION.forEach(g => {
     const required = g.group !== 'Scrimmage' || context.duration >= 75 || context.sessionStyle === 'game_based';
     if(required && !has(g) && g.phaseKeys.some(k => session.phases.some(p => p.phase.key === k))){
-      soft('phase' + g.group, available(g) ? `There wasn't room for ${g.group === 'Scrimmage' ? 'a Scrimmage' : g.group} in a session this length once time is left for breaks.` : `Your library has no suitable exercise for ${g.group}.`);
+      soft('phase' + g.group, available(g) ? `There wasn't room for ${g.group === 'Scrimmage' ? 'a Scrimmage' : g.msgName} in a session this length once time is left for breaks.` : `Your library has no suitable exercise for ${g.msgName}.`);
     }
   });
   const withFocus = items.filter(i => i.details.primaryFocusMatch).length;

@@ -392,7 +392,7 @@ rather than letting it get rediscovered next session.
   (`REC_PHASE_LIMITS`). The Warmup may be 5 or 10 minutes: Warmup and
   Athletic share one Activate time budget (neither is held to its own slot). Option values in
   `selectExercisesForPhase` are PER MINUTE (score x minutes/5), not per exercise -- summing raw scores rewards many short
-  exercises and made long ones (10-min warm-ups, 15-20 min games) almost never win; don't revert that. The FT2 progression Activate > Develop > Apply > Scrimmage maps onto
+  exercises and made long ones (10-min warm-ups, 15-20 min games) almost never win; don't revert that. The engine's internal four groups (Activate / Develop / Apply / Scrimmage, `REC_PROGRESSION`) are never shown to coaches -- Apply is not a phase; coaches only ever see Activate > Develop > Play (SSGs sit in Develop), via each group's `label`. They map onto
   the six Sections as Warmup+Athletic / Duels+Rondos / SSGs / Scrimmage (`REC_PROGRESSION`); Review's own
   3-group display is unchanged. The bundled offline fallback data has no Focus Areas column, so offline the
   Focus Area component is 0 and ranking falls back to tags only. A future AI layer should sit in front (free
