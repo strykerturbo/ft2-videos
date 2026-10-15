@@ -412,6 +412,14 @@ rather than letting it get rediscovered next session.
   existing deployment**; until then Share says "Sharing isn't switched on yet". `SESSIONS_HEADERS` gained
   focusArea/ageGroup/sessionStyle/shareToken; `getSessionsSheet_()` appends missing headers itself. Hosting is static,
   so there are no real `/session/<id>` routes -- Universal/App Links are not set up.
+- **Sessions page is a hub (2026-10).** `renderSessions()` = Continue Session (only with a real draft; resumes via
+  `resumeDraftFromSessions()`: generated Custom drafts -> Step 4, else Build) > Recent Sessions (5 newest; the My Sessions
+  / Community toggle filters ONLY this section) > Templates (My Templates, Create New Template). "View All" sets
+  `state.sessionsViewAll` and shows the original full list (`renderSessionsAll()`, with the favorite/delete controls).
+  No Start New Session button here -- that lives on Home. The practice-template library/editor still render inside
+  `renderSettings()` (it's the same code, and Settings still lists it); opening them from Sessions sets
+  `state.templatesOrigin='sessions'` so Back returns to Sessions and the Sessions tab stays highlighted. The bottom-nav
+  Sessions/Settings taps reset these flags. A draft has no "modified" time stored, so the card doesn't show one.
 
 ## Where things live
 

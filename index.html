@@ -1866,6 +1866,28 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hm-qs-desc{font-size:var(--fs-sm);color:var(--ink-soft);}
 .hm-soon{font-size:10px;font-weight:800;letter-spacing:0.03em;padding:3px 8px;border-radius:999px;background:var(--chalk-dim);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;}
 
+
+/* ---------- Sessions hub ---------- */
+.ss-page .nav-page-title{margin-bottom:6px;}
+.ss-section{margin-top:22px;}
+.ss-page .ss-section:first-of-type{margin-top:18px;}
+.ss-h2{font-family:'Inter',sans-serif;font-size:var(--fs-base);font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink);margin:0;}
+.ss-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;}
+/* Continue Session: the one emphasised card on the page (unfinished work) -- pale volt fill with fixed dark text. */
+.ss-continue{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:10px;background:var(--cone-dim);border:1.5px solid var(--cone);border-radius:14px;padding:13px 14px;color:#0F172A;}
+.ss-continue:active{filter:brightness(0.97);}
+.ss-continue-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.ss-continue-top{display:flex;align-items:center;gap:8px;min-width:0;}
+.ss-continue-name{font-size:var(--fs-md);font-weight:800;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ss-draft-pill{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#0F172A;color:#fff;}
+.ss-continue-meta{font-size:var(--fs-sm);color:#475569;}
+.ss-continue .hm-chev{color:#0F172A;}
+.ss-date{font-size:var(--fs-sm);font-weight:600;color:var(--ink-soft);flex-shrink:0;white-space:nowrap;}
+.ss-viewall{display:flex;align-items:center;gap:4px;margin:10px 0 0;padding:8px 0;min-height:44px;background:none;border:none;color:var(--turf);font-size:var(--fs-base);font-weight:700;}
+.ss-viewall svg{width:15px;height:15px;}
+.ss-empty{margin-top:12px;padding:16px;border:1px dashed var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink-soft);font-size:var(--fs-base);line-height:1.45;}
+.ss-empty-title{font-weight:700;color:var(--ink);margin-bottom:2px;}
+
 /* Recent Sessions -- one grouped list with hairline dividers, not a stack of separate cards */
 .hm-list{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
 .hm-sess{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
@@ -7323,12 +7345,14 @@ function closeTrainingSettings(){
   render();
 }
 function openTemplatesList(){
+  state.templatesOrigin = null;
   state.viewingTemplatesList = true;
   render();
   const c = document.getElementById('content'); if(c) c.scrollTop = 0;
 }
 function closeTemplatesList(){
   state.viewingTemplatesList = false;
+  if(state.templatesOrigin === 'sessions'){ state.templatesOrigin = null; nav('sessions'); return; }
   render();
 }
 function adjustDefaultSectionPct(key, delta){
@@ -8833,6 +8857,8 @@ const state = {
   validValuesSource: 'unknown',         // 'unknown' | 'live' | 'offline' -- only synced lazily, the first time Settings > Tag Valid Values is opened
   viewingValidValues: false,            // whether Settings is showing the Tag Valid Values sub-page
   viewingTrainingSettings: false,       // whether Settings is showing the Training Session Settings sub-page
+  sessionsViewAll: false,        // Sessions: false = the hub (Continue / Recent / Templates), true = the full saved-session list
+  templatesOrigin: null,         // 'sessions' when the template library/editor was opened from Sessions (so Back returns there)
   viewingTemplatesList: false,          // whether Settings is showing the Training Session Templates (practice-template library) sub-page
   pendingQuickAdd: null,      // {id, targetKey} awaiting the in-app "start a new session?" confirm sheet (native confirm() is silently swallowed in iOS home-screen mode)
   phaseData: Object.fromEntries(PHASES.map(p => [p.key, []])), // key -> [exerciseId,...]
@@ -8994,7 +9020,7 @@ function clearBookmarkFilter(){
 function activeNavKey(){
   const sc = state.screen;
   if(sc === 'home') return 'home';
-  if(sc === 'settings') return 'settings';
+  if(sc === 'settings') return (state.templatesOrigin === 'sessions' && (state.viewingTemplatesList || state.editingTemplateId)) ? 'sessions' : 'settings';
   if(sc === 'sharedSession') return 'sessions';
   if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','customSessionReview'].includes(sc)) return 'sessions';
   if(sc === 'exercises') return state.pickingPhase ? 'sessions' : 'exercises';
@@ -9014,8 +9040,8 @@ function renderBottomnav(){
   el.innerHTML = `
     ${item('home','Home',ICONS.homeFilled,"nav('home')")}
     ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
-    ${item('sessions','Sessions',ICONS.doc,"nav('sessions');syncSessionsFromSheet()")}
-    ${item('settings','Settings',ICONS.gear,"nav('settings')")}
+    ${item('sessions','Sessions',ICONS.doc,"nav('sessions',{sessionsViewAll:false, viewingTemplatesList:false, editingTemplateId:null, templatesOrigin:null});syncSessionsFromSheet()")}
+    ${item('settings','Settings',ICONS.gear,"nav('settings',{templatesOrigin:null, ...(state.templatesOrigin==='sessions' ? {viewingTemplatesList:false, editingTemplateId:null} : {})})")}
   `;
 }
 
@@ -9403,8 +9429,8 @@ function renderSettings(){
   if(state.viewingTemplatesList){
     return `
     <div class="section-pad">
-      <button class="back-pill-flat" onclick="closeTemplatesList()">${ICONS.back} Back to Settings</button>
-      <div class="eyebrow" style="margin-top:14px;">Settings</div>
+      <button class="back-pill-flat" onclick="closeTemplatesList()">${ICONS.back} Back to ${state.templatesOrigin==='sessions' ? 'Sessions' : 'Settings'}</button>
+      <div class="eyebrow" style="margin-top:14px;">${state.templatesOrigin==='sessions' ? 'Sessions' : 'Settings'}</div>
       <div class="sh" style="margin-top:2px;"><h2>Training Session Templates</h2></div>
       <div style="font-size:var(--fs-base);color:var(--ink-soft);margin-bottom:12px;">Save your own section/percentage splits, name as many as you want, and load one from the Build page whenever you start a new session. Templates live on this device only -- each coach saves their own.</div>
       <div class="tmpl-lib-list">
@@ -9607,7 +9633,7 @@ function renderHome(){
     </section>
 
     <section class="hm-section">
-      <div class="hm-sh"><h2>Recent Sessions</h2>${recent.length ? `<button class="see-all" onclick="nav('sessions');syncSessionsFromSheet()">See all</button>` : ''}</div>
+      <div class="hm-sh"><h2>Recent Sessions</h2>${recent.length ? `<button class="see-all" onclick="nav('sessions',{sessionsViewAll:true});syncSessionsFromSheet()">See all</button>` : ''}</div>
       ${recentHtml}
     </section>
 
@@ -11390,7 +11416,7 @@ function renderOverlay(){
       <h3>${state.templatePickerContext==='setup' ? 'Choose a template' : 'Load a template'}</h3>
       <div style="font-size:var(--fs-base);color:var(--ink-soft);margin:-4px 0 10px;">${state.templatePickerContext==='setup' ? 'Templates set up which of the six sections are included, their order, and roughly how long each gets. Tap one to select it, or tap it again to go back to starting from scratch.' : `Replaces which sections show up on this page (and their order) with this template's setup. Exercises you've already added to a section that stays enabled aren't removed.`}</div>
       <div class="tmpl-lib-list" style="max-height:48vh;overflow-y:auto;">
-        ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, true)).join('') : `<div class="build-ex-empty">No templates saved yet -- add one in Settings</div>`}
+        ${state.practiceTemplates.length ? state.practiceTemplates.map(t=>templateLibRowHtml(t, true)).join('') : `<div class="build-ex-empty">No templates saved yet -- add one in Sessions</div>`}
       </div>
       <div class="sheet-footer">
         <button class="btn btn-ghost" style="width:100%;" onclick="closeTemplatePicker()">Cancel</button>
@@ -13164,7 +13190,127 @@ function sessionRowHtml(s){
         <div class="srchevron">${ICONS.chevronRight}</div>
       </div>`;
 }
+/* ============ SESSIONS HUB ============
+   Sessions is the coach's hub, not another place to start a session (that's Home): 1 Continue Session
+   (only when a real draft exists), 2 Recent Sessions (the My Sessions / Community toggle filters ONLY this
+   section), 3 Templates. "View All" opens the original full list (renderSessionsAll), unchanged. */
+function sessionShortDate(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s.practiceDate||''));
+  const d = m ? new Date(+m[1], +m[2]-1, +m[3]) : new Date(s.createdAt || Date.now());
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+}
+function sessionMetaLine(s){
+  const parts = [`${s.totalMin} min`];
+  if(s.ageGroup) parts.push(escHtml(s.ageGroup));
+  parts.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
+  return parts.join(' &middot; ');
+}
+function sessionsHubRowHtml(s){
+  const isOwner = s.createdBy === state.coachName;
+  return `
+  <div class="hm-sess" role="button" tabindex="0" onclick="openSessionDetail('${escJsAttr(s.id)}')">
+    <div class="hm-sess-thumb">${ICONS.ball}</div>
+    <div class="hm-sess-body">
+      <div class="hm-sess-name">${escHtml(s.name)}</div>
+      <div class="hm-sess-meta">${sessionMetaLine(s)}${isOwner ? '' : ` &middot; ${escHtml(s.createdBy)}`}</div>
+    </div>
+    <span class="ss-date">${escHtml(sessionShortDate(s))}</span>
+    <span class="hm-chev">${ICONS.chevronRight}</span>
+  </div>`;
+}
+// Where the in-progress draft is picked up: a generated Custom Session goes back to its Step 4 review,
+// anything else to Build Session (same place Home's Continue Session goes).
+function resumeDraftFromSessions(){
+  nav((state.csDraftGenerated && state.csReviewCfg) ? 'customSessionReview' : 'build');
+}
+function openSessionsAll(){ state.sessionsViewAll = true; render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
+function closeSessionsAll(){ state.sessionsViewAll = false; render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
+function openMyTemplatesFromSessions(){
+  nav('settings', {viewingTemplatesList:true, editingTemplateId:null, templatesOrigin:'sessions'});
+}
+function createTemplateFromSessions(){
+  const id = 'tmpl'+Date.now();
+  state.practiceTemplates.push({id, name:'New Template', location:'outdoor', duration:75, sections:defaultTemplateSections()});
+  nav('settings', {viewingTemplatesList:true, editingTemplateId:id, templatesOrigin:'sessions'});
+}
 function renderSessions(){
+  if(state.sessionsViewAll) return renderSessionsAll();
+  const mode = state.sessionsViewMode || 'mine';
+  const mine = state.savedSessions.filter(s => s.createdBy === state.coachName);
+  const community = state.savedSessions.filter(s => s.visibility !== 'private');
+  const all = (mode==='mine' ? mine : community).slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  const shown = all.slice(0, 5);
+  const {count: draftCount} = currentTotalMinutes();
+  const hasDraft = draftCount > 0;
+
+  const draftAge = (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.ageGroup) || '';
+  const draftMeta = [`${state.targetDuration} min`, draftAge ? escHtml(draftAge) : '', state.practiceLocation === 'indoor' ? 'Indoor' : 'Outdoor'].filter(Boolean).join(' &middot; ');
+  const continueHtml = hasDraft ? `
+    <section class="ss-section">
+      <h2 class="ss-h2">Continue Session</h2>
+      <button class="ss-continue" onclick="resumeDraftFromSessions()">
+        <span class="ss-continue-body">
+          <span class="ss-continue-top"><span class="ss-continue-name">${escHtml(state.sessionName.trim() || 'Untitled session')}</span><span class="ss-draft-pill">Draft</span></span>
+          <span class="ss-continue-meta">${draftMeta} &middot; ${draftCount} exercise${draftCount===1?'':'s'}</span>
+        </span>
+        <span class="hm-chev">${ICONS.chevronRight}</span>
+      </button>
+    </section>` : '';
+
+  const toggle = `
+    <div class="view-toggle" style="margin-top:10px;">
+      <button class="view-toggle-btn ${mode==='mine'?'active':''}" onclick="setSessionsViewMode('mine')">${ICONS.user} My Sessions</button>
+      <button class="view-toggle-btn ${mode==='community'?'active':''}" onclick="setSessionsViewMode('community')">${ICONS.globe} Community</button>
+    </div>
+    ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
+
+  const recentBody = shown.length
+    ? `<div class="hm-list" style="margin-top:12px;">${shown.map(sessionsHubRowHtml).join('')}</div>
+       <button class="ss-viewall" onclick="openSessionsAll()"><span>${mode==='mine' ? 'View All Sessions' : 'View All Community Sessions'}</span>${ICONS.chevronRight}</button>`
+    : (mode==='mine'
+        ? `<div class="ss-empty"><div class="ss-empty-title">No saved sessions yet.</div><div>Your completed sessions will appear here.</div></div>`
+        : `<div class="ss-empty"><div class="ss-empty-title">Community Sessions</div><div>Sessions shared by the FT2 coaching community will appear here.</div></div>`);
+
+  const hasTemplates = state.practiceTemplates.length > 0;
+  const templatesHtml = `
+    <section class="ss-section">
+      <h2 class="ss-h2">Templates</h2>
+      <div class="ss-sub">Reusable session structures to help you get started.</div>
+      ${hasTemplates ? '' : `<div class="ss-empty" style="margin-top:12px;"><div class="ss-empty-title">No templates yet.</div><div>Create a template to save a session structure you can reuse.</div></div>`}
+      <div class="settings-group" style="margin-top:12px;">
+        ${hasTemplates ? `
+        <button class="settings-row" onclick="openMyTemplatesFromSessions()">
+          <span class="settings-row-icon purple">${ICONS.clipboard}</span>
+          <span class="settings-row-text">
+            <span class="settings-row-title">My Templates</span>
+            <span class="settings-row-desc">Your saved session templates</span>
+          </span>
+          <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+        </button>` : ''}
+        <button class="settings-row" onclick="createTemplateFromSessions()">
+          <span class="settings-row-icon gold">${ICONS.plus}</span>
+          <span class="settings-row-text">
+            <span class="settings-row-title">${hasTemplates ? 'Create New Template' : '+ Create New Template'}</span>
+            <span class="settings-row-desc">Build and save your own session template</span>
+          </span>
+          <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+        </button>
+      </div>
+    </section>`;
+
+  return `
+  <div class="section-pad ss-page">
+    ${navPageTitleHtml('Sessions', 'Manage your sessions, drafts, and templates.')}
+    ${continueHtml}
+    <section class="ss-section">
+      <h2 class="ss-h2">Recent Sessions</h2>
+      ${toggle}
+      ${recentBody}
+    </section>
+    ${templatesHtml}
+  </div>`;
+}
+function renderSessionsAll(){
   const mode = state.sessionsViewMode || 'mine';
   const mine = state.savedSessions.filter(s => s.createdBy === state.coachName);
   const community = state.savedSessions.filter(s => s.visibility !== 'private');
@@ -13177,9 +13323,10 @@ function renderSessions(){
     </div>
     ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
 
+  const backRow = `<div class="nav-sticky-back nav-sticky-root">${navBackRowHtml('Sessions', 'closeSessionsAll()')}</div>`;
   if(!list.length){
-    return `
-    <div class="section-pad">
+    return `${backRow}
+    <div class="section-pad" style="padding-top:0;">
       <div class="eyebrow">Sessions</div>
       ${toggle}
       <div class="empty-state">
@@ -13189,8 +13336,8 @@ function renderSessions(){
       ${mode==='mine' ? `<button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="nav('build')">Build a Session</button>` : ''}
     </div>`;
   }
-  return `
-  <div class="section-pad">
+  return `${backRow}
+  <div class="section-pad" style="padding-top:0;">
     <div class="eyebrow">${mode==='mine' ? 'My Sessions' : 'Community'}</div>
     <div class="sh" style="margin-top:2px;"><h2>${list.length} ${mode==='mine'?'saved':'shared'}</h2></div>
     ${toggle}
