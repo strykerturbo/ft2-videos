@@ -1888,6 +1888,81 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .ss-empty{margin-top:12px;padding:16px;border:1px dashed var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink-soft);font-size:var(--fs-base);line-height:1.45;}
 .ss-empty-title{font-weight:700;color:var(--ink);margin-bottom:2px;}
 
+
+/* ---------- Create / Edit Template ---------- */
+.te-page .nav-page-title{margin-bottom:6px;}
+.te-card{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg-surface);}
+.te-two{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;}
+.te-two .te-card{margin-top:12px;min-width:0;}
+.te-label{display:block;font-size:var(--fs-base);font-weight:800;color:var(--ink);margin-bottom:8px;}
+.te-opt{font-weight:600;color:var(--ink-soft);font-size:var(--fs-sm);}
+.te-input{width:100%;box-sizing:border-box;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-family:inherit;}
+.te-input:focus,.te-select:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
+.te-dur{display:flex;align-items:center;gap:8px;}
+.te-dur-icon{display:flex;color:var(--ink);flex-shrink:0;}
+.te-dur-icon svg{width:20px;height:20px;}
+.te-select{flex:1;min-width:0;min-height:48px;padding:0 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-weight:700;font-family:inherit;}
+.te-seg{gap:6px;}
+.te-seg .su-seg-btn{height:auto;min-height:48px;font-size:var(--fs-base);border-radius:10px;}
+.te-seg .su-seg-btn svg{width:15px;height:15px;}
+/* Selected = FT2 volt with fixed dark text (readable in both themes). */
+.te-seg .su-seg-btn.active{background:var(--cone);border-color:var(--cone);color:#0F172A;}
+.te-two .te-seg .su-seg-btn{padding:0 2px;font-size:var(--fs-sm);gap:4px;}
+.te-two .te-seg .su-seg-btn svg{width:13px;height:13px;}
+.te-structure-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:22px;}
+.te-h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl,24px);margin:0;color:var(--ink);}
+.te-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;line-height:1.35;}
+.te-total{text-align:right;flex-shrink:0;}
+.te-total-min{font-weight:800;font-size:var(--fs-md);color:var(--ink);white-space:nowrap;}
+.te-total-pct{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
+.te-total-pct.bad{color:var(--warn);}
+.te-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.te-row{background:var(--bg-surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px 10px;}
+.te-row.off .te-row-top > :not(.te-switch-hit):not(.te-grip):not(.te-grip-spacer){opacity:0.45;}
+.te-row.off .te-row-ctl{opacity:0.45;}
+.te-row.dragging{opacity:0.6;box-shadow:0 4px 14px rgba(0,0,0,0.25);position:relative;z-index:5;}
+.te-row-top{display:flex;align-items:center;gap:8px;}
+.te-grip,.te-grip-spacer{width:22px;flex-shrink:0;}
+.te-grip{height:48px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);touch-action:none;cursor:grab;}
+.te-grip svg{width:14px;height:14px;}
+.te-switch-hit{width:52px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:none;border:none;padding:0;touch-action:manipulation;}
+.te-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.te-icon svg{width:19px;height:19px;}
+.te-icon.custom{background:var(--chalk-dim);color:var(--ink-soft);}
+.te-text{flex:1;min-width:0;}
+.te-name{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
+.te-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.3;}
+.te-alloc{text-align:right;flex-shrink:0;min-width:48px;}
+.te-alloc-pct{font-size:var(--fs-md);font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+.te-alloc-min{font-size:var(--fs-sm);color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.te-row-ctl{display:flex;align-items:center;gap:10px;margin-top:6px;padding-left:30px;}
+/* The + and - buttons are real 48 x 48 targets (not just the glyphs), never shrunk, with their own gap. */
+.te-adj{width:48px;height:48px;min-width:48px;min-height:48px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid var(--line);padding:0;touch-action:manipulation;color:#0F172A;}
+.te-adj svg{width:22px;height:22px;}
+.te-adj-minus{background:var(--chalk-dim);color:var(--ink);}
+.te-adj-plus{background:var(--cone);border-color:var(--cone);}
+.te-adj:active{filter:brightness(0.94);}
+.te-adj:disabled{opacity:0.5;}
+.te-val{min-width:26px;text-align:center;font-weight:800;font-size:var(--fs-md);color:var(--ink);font-variant-numeric:tabular-nums;}
+.te-range{flex:1;min-width:60px;height:48px;background:transparent;-webkit-appearance:none;appearance:none;touch-action:manipulation;}
+.te-range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line);}
+.te-range::-moz-range-track{height:6px;border-radius:3px;background:var(--line);}
+.te-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:var(--cone);border:2px solid #0F172A;}
+.te-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--cone);border:2px solid #0F172A;}
+.te-range:disabled{opacity:0.5;}
+.te-mini{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-soft);}
+.te-mini svg{width:16px;height:16px;}
+.te-addrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);min-height:56px;}
+.te-addrow-icon{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink);}
+.te-addrow-icon svg{width:20px;height:20px;}
+.te-addrow-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.te-addrow-title{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
+.te-addrow-desc{font-size:var(--fs-sm);color:var(--ink-soft);}
+.te-addrow-chev{display:flex;color:var(--ink-soft);}
+.te-addrow-chev svg{width:16px;height:16px;}
+.te-save{width:100%;margin-top:14px;min-height:52px;font-size:var(--fs-lg);}
+.te-error{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--cone-dim);color:#7A1F1F;border:1px solid var(--warn);font-size:var(--fs-sm);font-weight:700;}
+
 /* Recent Sessions -- one grouped list with hairline dividers, not a stack of separate cards */
 .hm-list{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
 .hm-sess{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
@@ -8881,6 +8956,11 @@ const state = {
     {id:'tmpl-outdoor-90',      name:'Outdoor Practice (90 min)', location:'outdoor', duration:90, sections: defaultTemplateSections()},
     {id:'tmpl-indoor-default',  name:'Indoor Practice',  location:'indoor',  duration:60, sections: defaultTemplateSections()},
   ],
+  templateDraft: null,           // the working copy the Create/Edit Template screen edits; only Save Template writes it into practiceTemplates
+  templateDraftOrig: '',         // JSON of the draft as opened, to know if Back would lose changes
+  templateSectionModal: null,    // Add/Edit Custom Section sheet: {mode,key,name,desc,pct,error}
+  confirmDiscardTemplateOpen: false,
+  templateSaveBusy: false,
   editingTemplateId: null,        // which template Settings is currently editing -- null shows the library list
   editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
   confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
@@ -9061,17 +9141,30 @@ function templateSum(id){
   return t ? t.sections.filter(s=>s.enabled!==false).reduce((a,s)=>a+s.pct,0) : 0;
 }
 function createTemplate(){
-  const id = 'tmpl'+Date.now();
-  state.practiceTemplates.push({id, name:'New Template', location:'outdoor', duration:75, sections:defaultTemplateSections()});
-  state.editingTemplateId = id;
+  teStartDraft(null);
+  state.editingTemplateId = state.templateDraft.id;
   render();
+  const c = document.getElementById('content'); if(c) c.scrollTop = 0;
 }
 function openTemplateEditor(id){
+  teStartDraft(id);
   state.editingTemplateId = id;
   render();
   const c = document.getElementById('content'); if(c) c.scrollTop = 0;
 }
-function closeTemplateEditor(){ state.editingTemplateId = null; render(); }
+// Back from the editor: asks first only when there are unsaved changes.
+function closeTemplateEditor(){
+  if(state.templateDraft && JSON.stringify(state.templateDraft) !== state.templateDraftOrig){ state.confirmDiscardTemplateOpen = true; renderOverlay(); return; }
+  discardTemplateDraft();
+}
+function discardTemplateDraft(){
+  state.confirmDiscardTemplateOpen = false;
+  state.templateSectionModal = null;
+  state.templateDraft = null; state.templateDraftOrig = '';
+  state.editingTemplateId = null;
+  render();
+}
+function cancelDiscardTemplate(){ state.confirmDiscardTemplateOpen = false; renderOverlay(); }
 function renameTemplate(id, val){
   const t = getTemplate(id);
   if(t) t.name = val;
@@ -9097,7 +9190,7 @@ function confirmDeleteSessionNow(){
 function confirmDeleteTemplateNow(){
   const id = state.confirmDeleteTemplateId;
   state.practiceTemplates = state.practiceTemplates.filter(t=>t.id!==id);
-  if(state.editingTemplateId === id) state.editingTemplateId = null;
+  if(state.editingTemplateId === id){ state.editingTemplateId = null; state.templateDraft = null; state.templateDraftOrig = ''; }
   state.confirmDeleteTemplateId = null;
   showToast('Template deleted');
   render();
@@ -9193,6 +9286,268 @@ function commitTemplateCustomDuration(id, rawVal){
   state.editingTemplateDurationId = null;
   setTimeout(render, 0);
 }
+/* ============ CREATE / EDIT TEMPLATE ============
+   The editor works on `state.templateDraft` (a copy); only Save Template validates it and writes it into
+   practiceTemplates, so backing out never leaves a half-made template behind. Allocation rules:
+   - enabled sections always total exactly 100%; disabled sections are 0% / 0 min;
+   - every enabled section keeps at least TE_MIN_PCT, so "enabled" never means "0 minutes";
+   - changing one section re-splits the REMAINING percentage over the other enabled sections in proportion to
+     what they have now (whole numbers, largest-remainder rounding, so the total can never drift);
+   - minutes = total duration split by the same largest-remainder rule, so they always add up to the duration. */
+const TE_MIN_PCT = 5, TE_STEP = 5;
+const TE_DURATIONS = [45, 60, 75, 90, 105, 120];
+const TE_SECTION_DESC = {
+  warmup:'Prepare the body and ball', athletic:'Get players moving and focused', duels:'1v1 and 2v2 situations',
+  rondos:'Keep the ball and build possession', ssg:'Small-sided games', scrimmage:'Play and compete',
+};
+function tmplEditTarget(id){ return (state.templateDraft && state.templateDraft.id === id) ? state.templateDraft : getTemplate(id); }
+// Split `total` into whole numbers in proportion to `weights` (largest remainder), so the parts sum to total exactly.
+function teSplit(total, weights){
+  const W = weights.reduce((a,b)=>a+b,0);
+  const raw = weights.map(w => W > 0 ? total * w / W : total / weights.length);
+  const out = raw.map(Math.floor);
+  let left = total - out.reduce((a,b)=>a+b,0);
+  raw.map((r,i)=>[r - out[i], i]).sort((a,b)=>b[0]-a[0] || a[1]-b[1]).forEach(([,i])=>{ if(left > 0){ out[i]++; left--; } });
+  return out;
+}
+// Re-split `target` percent over these sections (each keeps >= TE_MIN_PCT, extra shared by their current size).
+function teRedistribute(secs, target){
+  if(!secs.length) return;
+  const extra = Math.max(0, target - TE_MIN_PCT * secs.length);
+  const shares = teSplit(extra, secs.map(x => Math.max(x.pct - TE_MIN_PCT, 0)));
+  secs.forEach((x,i)=>{ x.pct = TE_MIN_PCT + shares[i]; });
+}
+function teEnabled(d){ return d.sections.filter(x => x.enabled !== false); }
+function teMinutes(d){
+  const en = teEnabled(d);
+  const mins = teSplit(Number(d.duration)||0, en.map(x => x.pct));
+  const map = {}; d.sections.forEach(x => { map[x.key] = 0; });
+  en.forEach((x,i)=>{ map[x.key] = mins[i]; });
+  return map;
+}
+function teTotalPct(d){ return teEnabled(d).reduce((a,x)=>a+x.pct,0); }
+function teNormalize(d){
+  d.sections.forEach(x => { if(x.enabled === false) x.pct = 0; });
+  const en = teEnabled(d);
+  if(!en.length){ d.sections[0].enabled = true; en.push(d.sections[0]); d.sections[0].pct = 100; }
+  if(teTotalPct(d) !== 100 || en.some(x => x.pct < TE_MIN_PCT)) teRedistribute(en, 100);
+}
+function teStartDraft(id){
+  let d;
+  if(id){
+    const t = getTemplate(id);
+    d = JSON.parse(JSON.stringify(t));
+  } else {
+    d = {id:'tmpl'+Date.now(), name:'', location:'outdoor', duration:75, ageGroup:CS_DEFAULT_AGE, isNew:true, sections:defaultTemplateSections()};
+  }
+  if(!CS_AGE_GROUPS.includes(d.ageGroup)) d.ageGroup = CS_DEFAULT_AGE;
+  d.sections.forEach(x => { if(x.standard && !x.description) x.description = TE_SECTION_DESC[x.key] || ''; });
+  teNormalize(d);
+  state.templateDraft = d;
+  state.templateDraftOrig = JSON.stringify(d);
+}
+function teSetName(v){ if(state.templateDraft) state.templateDraft.name = v; }
+function teSetDuration(v){ if(state.templateDraft){ state.templateDraft.duration = parseInt(v,10) || 75; render(); } }
+function teSetLocation(v){ if(state.templateDraft){ state.templateDraft.location = v; render(); } }
+function teSetAge(v){ if(state.templateDraft){ state.templateDraft.ageGroup = v; render(); } }
+function teSetPct(key, want){
+  const d = state.templateDraft; if(!d) return;
+  const s = d.sections.find(x => x.key === key); if(!s || s.enabled === false) return;
+  const others = teEnabled(d).filter(x => x !== s);
+  if(!others.length){ showToast('Turn on another section to change this one'); render(); return; }
+  const max = 100 - TE_MIN_PCT * others.length;
+  const next = Math.max(TE_MIN_PCT, Math.min(max, Math.round(want)));
+  if(next === s.pct){ showToast(want < s.pct ? `Each section keeps at least ${TE_MIN_PCT}%` : 'The other sections need at least 5% each'); render(); return; }
+  s.pct = next;
+  teRedistribute(others, 100 - next);
+  render();
+}
+function teAdjust(key, dir){
+  const d = state.templateDraft; if(!d) return;
+  const s = d.sections.find(x => x.key === key); if(!s) return;
+  teSetPct(key, s.pct + dir * TE_STEP);
+}
+function teToggle(key){
+  const d = state.templateDraft; if(!d) return;
+  const s = d.sections.find(x => x.key === key); if(!s) return;
+  if(s.enabled !== false){
+    if(teEnabled(d).length <= 1){ showToast('Keep at least one section on'); return; }
+    s.lastPct = s.pct; s.enabled = false; s.pct = 0;
+    teRedistribute(teEnabled(d), 100);           // its share flows to the sections that stay on
+  } else {
+    const others = teEnabled(d);
+    const max = 100 - TE_MIN_PCT * others.length;
+    s.enabled = true;
+    s.pct = Math.max(TE_MIN_PCT, Math.min(max, s.lastPct || 10));
+    teRedistribute(others, 100 - s.pct);
+  }
+  render();
+}
+function teRemoveCustom(key){
+  const d = state.templateDraft; if(!d) return;
+  const s = d.sections.find(x => x.key === key); if(!s || s.standard) return;
+  d.sections = d.sections.filter(x => x !== s);
+  teNormalize(d);
+  render();
+}
+function teOpenSectionModal(key){
+  const d = state.templateDraft; if(!d) return;
+  const s = key ? d.sections.find(x => x.key === key) : null;
+  const others = teEnabled(d).length;
+  const max = 100 - TE_MIN_PCT * others;
+  state.templateSectionModal = s
+    ? {mode:'edit', key, name:s.label, desc:s.description||'', pct:s.pct, error:''}
+    : {mode:'add', key:null, name:'', desc:'', pct:Math.max(TE_MIN_PCT, Math.min(10, max)), error:''};
+  renderOverlay();
+  setTimeout(()=>{ const el = document.getElementById('teSecName'); if(el) el.focus(); }, 60);
+}
+function teSectionModalField(f, v){ if(state.templateSectionModal) state.templateSectionModal[f] = v; }
+function teCloseSectionModal(){ state.templateSectionModal = null; renderOverlay(); }
+function teSaveSectionModal(){
+  const m = state.templateSectionModal, d = state.templateDraft; if(!m || !d) return;
+  const name = String(m.name||'').trim().replace(/\s+/g,' ');
+  if(!name){ m.error = 'Give the section a name.'; renderOverlay(); return; }
+  if(d.sections.some(x => x.key !== m.key && x.label.trim().toLowerCase() === name.toLowerCase())){ m.error = 'A section with that name already exists.'; renderOverlay(); return; }
+  if(m.mode === 'edit'){
+    const s = d.sections.find(x => x.key === m.key);
+    if(s){ s.label = name; s.description = String(m.desc||'').trim(); }
+  } else {
+    const pct = parseInt(String(m.pct).replace(/[^0-9]/g,''), 10);
+    const others = teEnabled(d);
+    const max = 100 - TE_MIN_PCT * others.length;
+    if(isNaN(pct) || pct < TE_MIN_PCT || pct > max){ m.error = `Enter a percentage between ${TE_MIN_PCT} and ${max}.`; renderOverlay(); return; }
+    d.sections.push({key:'tmplcustom'+Date.now(), label:name, description:String(m.desc||'').trim(), pct, standard:false, enabled:true});
+    teRedistribute(others, 100 - pct);
+  }
+  state.templateSectionModal = null;
+  render();
+}
+function teSaveTemplate(){
+  const d = state.templateDraft; if(!d || state.templateSaveBusy) return;
+  state.templateSaveBusy = true;
+  try{
+    const name = String(d.name||'').trim().replace(/\s+/g,' ');
+    if(!name){ showToast('Name your template first'); const el = document.getElementById('teName'); if(el) el.focus(); return; }
+    if(!(Number(d.duration) > 0)){ showToast('Choose a session duration'); return; }
+    if(d.location !== 'outdoor' && d.location !== 'indoor'){ showToast('Choose Outdoor or Indoor'); return; }
+    if(!CS_AGE_GROUPS.includes(d.ageGroup)){ showToast('Choose an age group'); return; }
+    if(!teEnabled(d).length){ showToast('Turn on at least one section'); return; }
+    if(teTotalPct(d) !== 100){ showToast('Section percentages must add up to 100%'); return; }
+    const mins = teMinutes(d);
+    if(Object.values(mins).reduce((a,b)=>a+b,0) !== Number(d.duration)){ showToast('Section minutes don’t add up to the session length'); return; }
+    const saved = JSON.parse(JSON.stringify(d));
+    delete saved.isNew;
+    saved.name = name;
+    saved.sections.forEach(x => { x.minutes = mins[x.key] || 0; x.pct = x.enabled === false ? 0 : x.pct; });
+    saved.updatedAt = Date.now();
+    const prev = state.practiceTemplates.slice();
+    const i = state.practiceTemplates.findIndex(t => t.id === saved.id);
+    if(i >= 0) state.practiceTemplates[i] = saved; else state.practiceTemplates.push(saved);
+    // Only report success once it has really been written to this device's storage.
+    saveAppStateToStorage();
+    let ok = false;
+    try{ ok = (localStorage.getItem(APP_STATE_STORAGE_KEY) || '').indexOf('"' + saved.id + '"') !== -1; }catch(e){ ok = false; }
+    if(!ok){
+      state.practiceTemplates = prev;
+      showToast('Couldn’t save — this device’s storage isn’t available');
+      return;
+    }
+    state.templateDraft = null; state.templateDraftOrig = ''; state.editingTemplateId = null; state.templateSectionModal = null;
+    showToast('Template saved');
+    render();
+    const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+  } finally {
+    state.templateSaveBusy = false;
+  }
+}
+function teSegHtml(options, current, fn){
+  return `<div class="su-seg te-seg">${options.map(([v,l,icon]) => `<button class="su-seg-btn ${current===v?'active':''}" aria-pressed="${current===v}" onclick="${fn}('${v}')">${icon||''}${escHtml(l)}</button>`).join('')}</div>`;
+}
+function teRowHtml(s, mins){
+  const off = s.enabled === false;
+  const key = escJsAttr(s.key);
+  const phase = s.standard ? PHASES.find(p => p.key === s.key) : null;
+  const st = phase ? secStyle(phase.section) : null;
+  const icon = s.standard
+    ? `<div class="te-icon" style="background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`
+    : `<div class="te-icon custom">${ICONS.doc}</div>`;
+  const grip = s.key === 'warmup' ? `<span class="te-grip-spacer"></span>` : `<span class="te-grip" onpointerdown="tmplGripDown(event,'${escJsAttr(state.templateDraft.id)}','${key}')" title="Long-press and drag to reorder" aria-label="Drag to reorder ${escAttr(s.label)}">${ICONS.grip}</span>`;
+  const label = s.standard ? (phase.key === 'ssg' ? 'SSG' : s.label) : s.label;
+  return `
+  <div class="te-row ${off?'off':''}" data-key="${escAttr(s.key)}">
+    <div class="te-row-top">
+      ${grip}
+      <button class="te-switch-hit" role="switch" aria-checked="${!off}" aria-label="${off?'Include':'Exclude'} ${escAttr(label)}" onclick="teToggle('${key}')"><span class="switch ${off?'':'on'}"><span class="dot"></span></span></button>
+      ${icon}
+      <div class="te-text"><div class="te-name">${escHtml(label)}</div><div class="te-desc">${escHtml(s.description||'')}</div></div>
+      <div class="te-alloc"><div class="te-alloc-pct">${s.pct}%</div><div class="te-alloc-min">${mins[s.key]} min</div></div>
+    </div>
+    <div class="te-row-ctl">
+      <button class="te-adj te-adj-minus" ${off?'disabled':''} onclick="teAdjust('${key}',-1)" aria-label="Decrease ${escAttr(label)} by ${TE_STEP}%">${ICONS.minus}</button>
+      <span class="te-val" aria-live="polite">${s.pct}</span>
+      <button class="te-adj te-adj-plus" ${off?'disabled':''} onclick="teAdjust('${key}',1)" aria-label="Increase ${escAttr(label)} by ${TE_STEP}%">${ICONS.plus}</button>
+      <input class="te-range" type="range" min="0" max="100" step="${TE_STEP}" value="${s.pct}" ${off?'disabled':''} aria-label="${escAttr(label)} allocation" onchange="teSetPct('${key}', this.value)">
+      ${s.standard ? '' : `<button class="te-mini" onclick="teOpenSectionModal('${key}')" aria-label="Edit ${escAttr(label)}">${ICONS.pencil}</button><button class="te-mini" onclick="teRemoveCustom('${key}')" aria-label="Delete ${escAttr(label)}">${ICONS.trash}</button>`}
+    </div>
+  </div>`;
+}
+function renderTemplateEditor(){
+  const d = state.templateDraft;
+  if(!d){ state.editingTemplateId = null; return renderSettings(); }
+  const mins = teMinutes(d);
+  const total = teTotalPct(d);
+  const isNew = !!d.isNew;
+  const durations = TE_DURATIONS.includes(Number(d.duration)) ? TE_DURATIONS : [...TE_DURATIONS, Number(d.duration)].sort((a,b)=>a-b);
+  return `
+  <div class="section-pad te-page">
+    <button class="back-pill-flat" onclick="closeTemplateEditor()">${ICONS.back} Back to Templates</button>
+    <div style="margin-top:14px;">${navPageTitleHtml(isNew ? 'Create New Template' : 'Edit Template', 'Set your template details and configure each section.')}</div>
+
+    <div class="te-card">
+      <label class="te-label" for="teName">Template Name</label>
+      <input id="teName" class="te-input" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off">
+    </div>
+
+    <div class="te-two">
+      <div class="te-card">
+        <div class="te-label">Session Duration</div>
+        <div class="te-dur"><span class="te-dur-icon">${ICONS.clock}</span>
+          <select class="te-select" aria-label="Session duration" onchange="teSetDuration(this.value)">
+            ${durations.map(v => `<option value="${v}" ${Number(d.duration)===v?'selected':''}>${v} min</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="te-card">
+        <div class="te-label">Location</div>
+        ${teSegHtml([['outdoor','Outdoor',ICONS.sun],['indoor','Indoor',ICONS.home]], d.location, 'teSetLocation')}
+      </div>
+    </div>
+
+    <div class="te-card">
+      <div class="te-label">Age Group</div>
+      ${teSegHtml(CS_AGE_GROUPS.map(a => [a,a]), d.ageGroup, 'teSetAge')}
+    </div>
+
+    <div class="te-structure-head">
+      <div>
+        <h2 class="te-h2">Session Structure</h2>
+        <div class="te-sub">Include the sections you want and adjust the time allocation.</div>
+      </div>
+      <div class="te-total"><div class="te-total-min">Total: ${Number(d.duration)} min</div><div class="te-total-pct ${total===100?'':'bad'}">${total}%</div></div>
+    </div>
+
+    <div class="te-list">${d.sections.map(x => teRowHtml(x, mins)).join('')}</div>
+
+    <button class="te-addrow" onclick="teOpenSectionModal()">
+      <span class="te-addrow-icon">${ICONS.plus}</span>
+      <span class="te-addrow-text"><span class="te-addrow-title">Add Custom Section</span><span class="te-addrow-desc">Create a custom section with your own name and description</span></span>
+      <span class="te-addrow-chev">${ICONS.chevronRight}</span>
+    </button>
+
+    <button class="btn btn-primary te-save" onclick="teSaveTemplate()">Save Template</button>
+    ${isNew ? '' : `<button class="discard-session-btn tmpl-del-btn" style="margin-top:12px;" onclick="requestDeleteTemplate('${escJsAttr(d.id)}')">${ICONS.trash} Delete this template</button>`}
+  </div>`;
+}
 /* Build page: pick a saved template to apply to the session currently being built. */
 function openTemplatePicker(){ state.templatePickerOpen = true; state.templatePickerContext = 'build'; renderOverlay(); }
 // Practice Setup's "View All Templates" -- same sheet, but selecting a row only marks it chosen
@@ -9227,7 +9582,7 @@ function tmplGripDown(e, id, key){
   const timer = setTimeout(()=>{
     if(!tmplDrag) return;
     tmplDrag.longPressed = true;
-    const row = document.querySelector(`.tmpl-row[data-key="${key}"]`);
+    const row = document.querySelector(`.te-row[data-key="${key}"]`);
     if(row) row.classList.add('dragging');
     if(navigator.vibrate) navigator.vibrate(15);
   }, 320);
@@ -9243,13 +9598,13 @@ function tmplGripMove(e){
   }
   e.preventDefault();
   const y = e.clientY;
-  const tmpl = getTemplate(tmplDrag.id);
+  const tmpl = tmplEditTarget(tmplDrag.id);
   if(!tmpl) return;
   const sections = tmpl.sections;
   const reorderableKeys = sections.filter(s=>s.key!=='warmup').map(s=>s.key);
   let overKey = null;
   reorderableKeys.forEach(k=>{
-    const el = document.querySelector(`.tmpl-row[data-key="${k}"]`);
+    const el = document.querySelector(`.te-row[data-key="${k}"]`);
     if(!el) return;
     const r = el.getBoundingClientRect();
     if(y >= r.top && y <= r.bottom) overKey = k;
@@ -9262,7 +9617,7 @@ function tmplGripMove(e){
   sections.splice(toIdx,0,moved);
   render();
   const key = tmplDrag.key;
-  setTimeout(()=>{ const row=document.querySelector(`.tmpl-row[data-key="${key}"]`); if(row) row.classList.add('dragging'); }, 0);
+  setTimeout(()=>{ const row=document.querySelector(`.te-row[data-key="${key}"]`); if(row) row.classList.add('dragging'); }, 0);
 }
 function tmplGripCancel(){
   if(tmplDrag) clearTimeout(tmplDrag.timer);
@@ -9354,78 +9709,7 @@ function renderSettings(){
       <button class="addsection-btn" style="margin-top:10px;" onclick="resetDefaultSectionPcts()">${ICONS.circleArrows} Reset to recommended split</button>
     </div>`;
   }
-  if(state.editingTemplateId){
-    const id = state.editingTemplateId;
-    const tmpl = getTemplate(id);
-    if(!tmpl){ state.editingTemplateId = null; return renderSettings(); }
-    const sum = templateSum(id);
-    const presets = [60,75,90];
-    const isTmplDurCustom = !presets.includes(tmpl.duration);
-    const warmupPct = (tmpl.sections.find(s=>s.key==='warmup'&&s.enabled!==false)||{pct:0}).pct;
-    const athleticPct = (tmpl.sections.find(s=>s.key==='athletic'&&s.enabled!==false)||{pct:0}).pct;
-    return `
-    <div class="section-pad">
-      <button class="back-pill-flat" onclick="closeTemplateEditor()">${ICONS.back} Back to Templates</button>
-      <div class="eyebrow" style="margin-top:14px;">Edit Template</div>
-      <input class="session-name-input" style="margin:2px 0 14px;" value="${escAttr(tmpl.name)}" oninput="renameTemplate('${id}', this.value)" placeholder="Name this template">
-
-      <div class="ps-label" style="margin-bottom:6px;">Location</div>
-      <div class="location-toggle" style="margin-bottom:14px;">
-        <button class="loc-btn ${tmpl.location==='outdoor'?'active':''}" onclick="setTemplateLocation('${id}','outdoor')">${ICONS.sun} Outdoor</button>
-        <button class="loc-btn ${tmpl.location==='indoor'?'active':''}" onclick="setTemplateLocation('${id}','indoor')">${ICONS.home} Indoor</button>
-        <button class="loc-btn ${tmpl.location==='any'?'active':''}" onclick="setTemplateLocation('${id}','any')">Either</button>
-      </div>
-
-      <div class="practice-setting-group" style="margin-bottom:14px;">
-        <div class="ps-label">Practice Duration</div>
-        <div class="duration-target compact">
-          ${presets.map(v => `<button class="dtarget compact ${tmpl.duration===v?'active':''}" onclick="setTemplateDuration('${id}',${v})">${v}</button>`).join('')}
-          ${state.editingTemplateDurationId===id
-            ? `<input id="tmplCustomDurInput" class="dtarget-input compact" type="text" inputmode="numeric" pattern="[0-9]*" value="${isTmplDurCustom?tmpl.duration:''}" placeholder="#" onblur="commitTemplateCustomDuration('${id}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
-            : `<button class="dtarget compact ${isTmplDurCustom?'active':''}" onclick="toggleTemplateDurationEdit('${id}')">${isTmplDurCustom?tmpl.duration:'+'}</button>`}
-        </div>
-      </div>
-      <div style="font-size:var(--fs-base);color:var(--ink-soft);margin-bottom:12px;">Set how much of this practice each section should take up. Suggested split: <b>25% Athletic-based training</b> (Warmup + Athletic combined) &middot; 10% Duels &middot; 20% Rondos &middot; 20% Small Sided Games (SSG) &middot; 25% Scrimmage. Long-press the grip and drag to reorder a section (Warmup always stays first).</div>
-
-      <div class="tmpl-list">
-        ${tmpl.sections.map(s=>{
-          const isOff = s.enabled===false;
-          const phase = s.standard ? PHASES.find(p=>p.key===s.key) : null;
-          const st = phase ? secStyle(phase.section) : null;
-          const isWarmup = s.key==='warmup';
-          return `
-          <div class="tmpl-row ${isOff?'off':''}" data-key="${s.key}">
-            ${isWarmup ? `<span class="tmpl-grip-spacer"></span>` : `<span class="tmpl-grip" onpointerdown="tmplGripDown(event,'${id}','${s.key}')" title="Long-press and drag to reorder">${ICONS.grip}</span>`}
-            ${s.standard
-              ? `<div class="tmpl-row-icon" style="background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${st.icon}</div>`
-              : `<div class="tmpl-row-icon custom">${ICONS.doc}</div>`}
-            <div class="tmpl-row-label">
-              ${s.standard
-                ? `<div>${s.label}</div>${(s.key==='warmup'||s.key==='athletic') ? `<div class="tmpl-row-hint">Part of 25% Athletic-based training</div>` : ''}`
-                : `<input class="extra-box-title-input" value="${escAttr(s.label)}" onblur="renameTemplateCustomSection('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">`}
-            </div>
-            <div class="tmpl-row-pct">
-              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',1)" ${isOff?'disabled':''} title="Increase ${escAttr(s.label)}">${ICONS.chevronUp}</button>
-              <input class="tmpl-pct-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${s.pct}" ${isOff?'disabled':''} onblur="setTemplatePct('${id}','${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">%
-              <button class="tmpl-step" onclick="adjustTemplatePct('${id}','${s.key}',-1)" ${isOff?'disabled':''} title="Decrease ${escAttr(s.label)}">${ICONS.chevronDown}</button>
-            </div>
-            ${s.standard
-              ? `<button class="tmpl-toggle" onclick="toggleTemplateSection('${id}','${s.key}')" title="${isOff?'Include':'Exclude'} ${escAttr(s.label)}">${isOff?ICONS.plus:ICONS.minus}</button>`
-              : `<button class="tmpl-toggle remove" onclick="removeTemplateSection('${id}','${s.key}')" title="Remove section">${ICONS.trash}</button>`}
-          </div>`;
-        }).join('')}
-      </div>
-
-      <button class="addsection-btn" style="margin-top:10px;" onclick="addTemplateCustomSection('${id}')">${ICONS.plus} Add custom section</button>
-
-      <div class="tmpl-sum-row ${sum===100?'ok':'bad'}">
-        <span>${sum}% of 100% allocated${(warmupPct||athleticPct) ? ` &middot; ${warmupPct+athleticPct}% Athletic-based` : ''}</span>
-        <span class="tmpl-sum-warn">${sum===100 ? 'Ready to save' : (sum<100?'Add '+(100-sum)+'% to save':'Remove '+(sum-100)+'% to save')}</span>
-      </div>
-      <button class="btn btn-primary" style="width:100%;margin-top:10px;" ${sum!==100?'disabled':''} onclick="saveTemplate('${id}')">Save Template</button>
-      <button class="discard-session-btn tmpl-del-btn" style="margin-top:10px;" onclick="requestDeleteTemplate('${id}')">${ICONS.trash} Delete this template</button>
-    </div>`;
-  }
+  if(state.editingTemplateId) return renderTemplateEditor();
 
   if(state.viewingTemplatesList){
     return `
@@ -11278,6 +11562,42 @@ function renderOverlay(){
       <div class="sheet-footer">
         <button class="btn btn-ghost" onclick="cancelDiscardSession()">Keep editing</button>
         <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDiscardSession()">Discard practice</button>
+      </div>
+    </div>`;
+  }
+  if(state.confirmDiscardTemplateOpen){
+    html += `
+    <div class="ios-alert-backdrop" onclick="cancelDiscardTemplate()">
+      <div class="ios-alert" onclick="event.stopPropagation()">
+        <h3>Discard your changes?</h3>
+        <p>This template hasn't been saved yet. If you go back, your changes will be lost.</p>
+        <div class="ios-alert-btns">
+          <button class="ios-alert-btn primary" onclick="cancelDiscardTemplate()">Keep editing</button>
+          <button class="ios-alert-btn danger" onclick="discardTemplateDraft()">Discard changes</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(state.templateSectionModal){
+    const m = state.templateSectionModal, dd = state.templateDraft;
+    const maxPct = dd ? 100 - TE_MIN_PCT * teEnabled(dd).length : 100;
+    html += `
+    <div class="sheet-backdrop" onclick="teCloseSectionModal()"></div>
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3>${m.mode==='edit' ? 'Edit Custom Section' : 'Add Custom Section'}</h3>
+      <label class="te-label" for="teSecName" style="margin-top:4px;">Section name</label>
+      <input id="teSecName" class="te-input" type="text" maxlength="40" value="${escAttr(m.name)}" placeholder="e.g. Finishing" oninput="teSectionModalField('name', this.value)" autocomplete="off">
+      <label class="te-label" for="teSecDesc" style="margin-top:12px;">Short description <span class="te-opt">(optional)</span></label>
+      <input id="teSecDesc" class="te-input" type="text" maxlength="80" value="${escAttr(m.desc)}" placeholder="What happens in this section" oninput="teSectionModalField('desc', this.value)" autocomplete="off">
+      ${m.mode==='add' ? `
+      <label class="te-label" for="teSecPct" style="margin-top:12px;">Starting percentage <span class="te-opt">(${TE_MIN_PCT}–${maxPct}%)</span></label>
+      <input id="teSecPct" class="te-input" type="text" inputmode="numeric" pattern="[0-9]*" value="${escAttr(String(m.pct))}" oninput="teSectionModalField('pct', this.value)" autocomplete="off">
+      <div class="te-opt" style="margin-top:6px;">The other sections shrink to make room, and the total stays 100%.</div>` : ''}
+      ${m.error ? `<div class="te-error" role="alert">${escHtml(m.error)}</div>` : ''}
+      <div class="sheet-footer">
+        <button class="btn btn-ghost" onclick="teCloseSectionModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="teSaveSectionModal()">${m.mode==='edit' ? 'Save' : 'Add section'}</button>
       </div>
     </div>`;
   }
@@ -13222,9 +13542,8 @@ function openMyTemplatesFromSessions(){
   nav('settings', {viewingTemplatesList:true, editingTemplateId:null, templatesOrigin:'sessions'});
 }
 function createTemplateFromSessions(){
-  const id = 'tmpl'+Date.now();
-  state.practiceTemplates.push({id, name:'New Template', location:'outdoor', duration:75, sections:defaultTemplateSections()});
-  nav('settings', {viewingTemplatesList:true, editingTemplateId:id, templatesOrigin:'sessions'});
+  teStartDraft(null);
+  nav('settings', {viewingTemplatesList:true, editingTemplateId:state.templateDraft.id, templatesOrigin:'sessions'});
 }
 function renderSessions(){
   if(state.sessionsViewAll) return renderSessionsAll();

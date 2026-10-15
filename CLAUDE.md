@@ -420,6 +420,14 @@ rather than letting it get rediscovered next session.
   `renderSettings()` (shared code; Settings no longer has a row for it -- templates are reached only from Sessions); opening them from Sessions sets
   `state.templatesOrigin='sessions'` so Back returns to Sessions and the Sessions tab stays highlighted. The bottom-nav
   Sessions/Settings taps reset these flags. A draft has no "modified" time stored, so the card doesn't show one.
+- **Create / Edit Template screen (2026-10).** `renderTemplateEditor()` edits a copy (`state.templateDraft`); only
+  `teSaveTemplate()` validates and writes it to `practiceTemplates` (and checks it really landed in localStorage
+  before saying "Template saved"). Allocation rules live in the `te*` helpers: enabled sections always total exactly
+  100%, each keeps at least `TE_MIN_PCT` (5), `+`/`-` move `TE_STEP` (5) and re-split the remainder over the other
+  enabled sections (`teRedistribute`, largest-remainder, whole numbers); minutes use the same rounding (`teMinutes`) so
+  they always add up to the session length. The + / - buttons are real 48x48 targets -- don't shrink them. Templates
+  now also store `ageGroup`, per-section `description` and `minutes`. Section names are the app's own (Athletic, SSG),
+  not the mockup's "Activate", since Activate means Warmup + Athletic everywhere else. Warmup stays first (no grip).
 
 ## Where things live
 
