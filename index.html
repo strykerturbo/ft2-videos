@@ -2002,14 +2002,15 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    -- 10px/14px padding around a 19px icon clears the 44px minimum with room to spare, landing
    close to the ~48px preferred size, while the negative left margin keeps the chevron's visible
    left edge flush with the page's own left padding instead of the touch target pushing it in. */
+/* Every "Back to ..." link is the same pill the Settings sub-pages use (.back-pill-flat): soft fill, hairline
+   border, bold ink text. */
 .nav-back-link{
   display:inline-flex;align-items:center;gap:6px;
-  background:none;border:none;color:var(--ink-soft);
-  font-size:var(--fs-base);font-weight:600;
-  padding:14px 10px;margin:0 0 8px -10px;min-height:44px;box-sizing:border-box;
-  border-radius:8px;
+  background:var(--chalk-dim);color:var(--ink);border:1px solid var(--line);border-radius:20px;
+  font-size:var(--fs-base);font-weight:700;
+  padding:8px 14px;margin:0 0 8px;min-height:44px;box-sizing:border-box;
 }
-.nav-back-link svg{width:19px;height:19px;flex-shrink:0;}
+.nav-back-link svg{width:13px;height:13px;flex-shrink:0;}
 .nav-back-link:active{opacity:0.7;}
 /* Whitespace above the back link's text (page top -> text) should match the whitespace below it
    (text -> step label/title). The link's own 14px padding is its touch target, so the extra top
@@ -2018,7 +2019,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .section-pad:has(> .nav-sticky-back:first-child){padding-top:11px;}
 /* Find Exercises only: the back link stays pinned at the top while the exercise list scrolls, with
    the sticky session-stats box (see renderSessionBuilderBox) pinned directly beneath it -- that
-   box's inline top:39px is this wrapper's 55px height minus the 16px of its own top padding. */
+   box's inline top:36px is this wrapper's 52px height minus the 16px of its own top padding. */
 .nav-sticky-back{
   position:sticky;top:0;z-index:12;background:var(--chalk);
   margin:0 -18px;padding:0 18px 8px;
@@ -2029,10 +2030,10 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .nav-sticky-back.nav-sticky-root{margin:0;padding:11px 18px 8px;}
 /* The coloured box on Exercise Detail is split in two stacked halves that read as one box: the top half
    (section + exercise name) docks under the Back link while the details scroll; the bottom half (duration /
-   format / difficulty) scrolls away. top:65px tucks 1px under the Back link's own 66px so no seam shows. */
-.detail-header.dh-dock{position:sticky;top:65px;z-index:11;padding-bottom:12px;}
+   format / difficulty) scrolls away. top:62px tucks 1px under the Back link's own 63px so no seam shows. */
+.detail-header.dh-dock{position:sticky;top:62px;z-index:11;padding-bottom:12px;}
 .detail-header.dh-dock h1{margin:0;}
-.detail-header.dh-stats{padding-top:0;}
+.detail-header.dh-stats{padding-top:0;margin-top:-1px;} /* hides a sub-pixel hairline between the two halves */
 .nav-page-title{
   font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:23px;
   text-transform:uppercase;letter-spacing:0.01em;color:var(--ink);line-height:1.1;
@@ -9466,14 +9467,6 @@ function renderSettings(){
         </span>
         <span class="settings-row-chevron">${ICONS.chevronRight}</span>
       </button>
-      <button class="settings-row" onclick="openTemplatesList()">
-        <span class="settings-row-icon purple">${ICONS.clipboard}</span>
-        <span class="settings-row-text">
-          <span class="settings-row-title">Training Session Templates</span>
-          <span class="settings-row-desc">Save and reuse your own practice templates</span>
-        </span>
-        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
-      </button>
     </div>
 
     <div class="settings-section-label">Exercises &amp; Tags</div>
@@ -12060,7 +12053,7 @@ function renderSessionBuilderBox(pickingLabel){
   // active chip below already communicates the current section.
   const NAV_CHIP_LABEL = {warmup:'Warmup', athletic:'Ath', duels:'Duels', rondos:'Rondos', ssg:'SSG', scrimmage:'Scrim'};
   return `
-  <div class="sbb-sticky-wrap" style="top:39px;">
+  <div class="sbb-sticky-wrap" style="top:36px;">
   <div class="session-builder-box">
     <div class="sbb-compact-row2" style="margin-top:0;">
       <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>

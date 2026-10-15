@@ -417,7 +417,7 @@ rather than letting it get rediscovered next session.
   / Community toggle filters ONLY this section) > Templates (My Templates, Create New Template). "View All" sets
   `state.sessionsViewAll` and shows the original full list (`renderSessionsAll()`, with the favorite/delete controls).
   No Start New Session button here -- that lives on Home. The practice-template library/editor still render inside
-  `renderSettings()` (it's the same code, and Settings still lists it); opening them from Sessions sets
+  `renderSettings()` (shared code; Settings no longer has a row for it -- templates are reached only from Sessions); opening them from Sessions sets
   `state.templatesOrigin='sessions'` so Back returns to Sessions and the Sessions tab stays highlighted. The bottom-nav
   Sessions/Settings taps reset these flags. A draft has no "modified" time stored, so the card doesn't show one.
 
