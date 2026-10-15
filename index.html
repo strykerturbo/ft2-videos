@@ -1860,7 +1860,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .hm-qs{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--bg-surface);cursor:default;}
 .hm-qs-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0F172A;}
 .hm-qs-icon svg{width:19px;height:19px;}
-.hm-qs-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.hm-qs-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;} /* the live card is a <button>, which centers its text by default */
 .hm-qs-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .hm-qs-title{font-size:var(--fs-md);font-weight:700;color:var(--ink);}
 .hm-qs-desc{font-size:var(--fs-sm);color:var(--ink-soft);}
@@ -2002,6 +2002,15 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   margin:0 -18px;padding:0 18px 8px;
 }
 .nav-sticky-back .nav-back-link{margin-bottom:0;}
+/* Exercise Detail: the wrapper sits directly in the scroll area (not inside a padded block), so it
+   stays pinned for the whole page rather than only while its own small block is in view. */
+.nav-sticky-back.nav-sticky-root{margin:0;padding:11px 18px 8px;}
+/* The coloured box on Exercise Detail is split in two stacked halves that read as one box: the top half
+   (section + exercise name) docks under the Back link while the details scroll; the bottom half (duration /
+   format / difficulty) scrolls away. top:65px tucks 1px under the Back link's own 66px so no seam shows. */
+.detail-header.dh-dock{position:sticky;top:65px;z-index:11;padding-bottom:12px;}
+.detail-header.dh-dock h1{margin:0;}
+.detail-header.dh-stats{padding-top:0;}
 .nav-page-title{
   font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:23px;
   text-transform:uppercase;letter-spacing:0.01em;color:var(--ink);line-height:1.1;
@@ -11484,11 +11493,11 @@ function renderDetail(){
   const st = secStyle(ex.section);
   const isDraft = state.draftExercise && state.draftExercise.id === ex.id;
   return `
-  <div class="section-pad" style="padding-bottom:0;">
-    ${navBackRowHtml(detailBackLabel(), 'backFromDetail()')}
+  <div class="nav-sticky-back nav-sticky-root">${navBackRowHtml(detailBackLabel(), 'backFromDetail()')}</div>
+  <div class="section-pad" style="padding-top:0;padding-bottom:0;">
     ${navPageTitleHtml('Exercise Detail')}
   </div>
-  <div class="detail-header" style="background:${st.bg};">
+  <div class="detail-header dh-dock" style="background:${st.bg};">
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
@@ -11498,6 +11507,8 @@ function renderDetail(){
       ${ex.category?`<span class="eyebrow-cat">&middot; ${escHtml(ex.category)}</span>`:''}
     </div>
     <h1 style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">${escHtml(ex.name)}</h1>
+  </div>
+  <div class="detail-header dh-stats" style="background:${st.bg};">
     <div class="stat-row">
       <div class="stat" style="background:rgba(${st.textOn==='dark'?'16,20,31':'255,255,255'},0.16);">
         <div class="stat-value snum-row"><span contenteditable="true" class="snum-editable" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onblur="updateExerciseField('${escJsAttr(ex.id)}','duration',this.innerText,'number')">${ex.duration!=null?ex.duration:'—'}</span>${ex.duration!=null?`<span class="snum-suffix" style="color:${st.textOn==='dark'?'rgba(16,20,31,0.75)':'rgba(255,255,255,0.75)'};">min</span>`:''}</div>
@@ -12490,6 +12501,19 @@ function renderBuild(){
 }
 
 /* ============ SESSION REVIEW (current in-progress builder) ============ */
+/* Session names are unique across every session this device can see (yours and the Community's), compared
+   ignoring case and extra spaces. A name that's already taken gets " (2)", " (3)"... instead of blocking the
+   save -- a coach saving on the sideline shouldn't be stopped by a name clash. excludeId = the session being
+   renamed, so keeping its own name is never a clash. Older duplicates already saved are left as they are. */
+function sessionNameKey(n){ return String(n||'').trim().replace(/\s+/g,' ').toLowerCase(); }
+function uniqueSessionName(name, excludeId){
+  const base = String(name||'').trim().replace(/\s+/g,' ');
+  const taken = new Set(state.savedSessions.filter(x => x.id !== excludeId).map(x => sessionNameKey(x.name)));
+  if(!taken.has(sessionNameKey(base))) return base;
+  let n = 2;
+  while(taken.has(sessionNameKey(`${base} (${n})`))) n++;
+  return `${base} (${n})`;
+}
 function completeSession(){
   const {total, count} = currentTotalMinutes();
   if(count===0){ showToast('Add at least one exercise first'); return; }
@@ -12514,7 +12538,8 @@ function completeSession(){
   // both happen to save in the same millisecond -- astronomically unlikely, but free to guard
   // against now that ids are shared across everyone's devices instead of just one browser.
   const id = 'S' + Date.now() + Math.random().toString(36).slice(2,7);
-  const name = state.sessionName.trim() || `${dayName()} Session — ${state.savedSessions.length+1}`;
+  const wantedName = state.sessionName.trim() || `${dayName()} Session — ${state.savedSessions.length+1}`;
+  const name = uniqueSessionName(wantedName);
   const newSession = {
     id, name,
     totalMin: total, exCount: count, createdAt: Date.now(), createdBy: state.coachName,
@@ -12541,7 +12566,7 @@ function completeSession(){
   state.csReviewNotes = [];
   state.csReviewExplain = null;
   state.csPlannedByPhase = null;
-  showToast('Session saved!');
+  showToast(name !== wantedName.replace(/\s+/g,' ') ? `Saved as “${name}” — that name was taken` : 'Session saved!');
   nav('home');
   pushSessionToSheet(newSession);
 }
@@ -13036,8 +13061,17 @@ function openSessionDetail(id){ state.editingSessionDetail = false; nav('session
 function toggleEditSessionDetail(){ state.editingSessionDetail = !state.editingSessionDetail; render(); }
 function renameSavedSession(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
-  if(s){ const v = (val||'').trim(); if(v){ s.name = v; pushSessionToSheet(s); } }
+  let note = '';
+  if(s){
+    const v = (val||'').trim().replace(/\s+/g,' ');
+    if(v && v !== s.name){
+      const u = uniqueSessionName(v, s.id);
+      if(u !== v) note = `Renamed to “${u}” — that name was taken`;
+      s.name = u; pushSessionToSheet(s);
+    }
+  }
   render();
+  if(note) showToast(note);
 }
 function setSavedSessionDuration(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
