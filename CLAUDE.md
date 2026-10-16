@@ -449,7 +449,7 @@ rather than letting it get rediscovered next session.
   (`ftPrintModel`, phases laid end to end from the start time; the header range is start -> start + session length). No start
   **Print always uses the LIVE exercise library**: `createPrintFile()` waits on `ensureExercisesSynced()` (2 tries, 15 s each) and shows
   "Couldn't load the latest exercises" instead of drawing a session against the bundled copy (which lacks newer exercises and most diagrams).
-  The sheet header uses the square FT2-letters logo (`LOGO_LETTERS`, cropped to the letters and scaled to the two text rows). Every
+  The sheet header uses the square black tiger-head logo (`LOGO_PRINT`, from tigerhead.svg: white tiger + FT2 on black), as tall as the two header text rows. Every
   exercise video needs a `thumbs/<name>.jpg` for its print diagram too (`ftImageUrl`).
   time = no clock times printed, nothing else changes. Needs the Apps Script redeployed as a new version.
   **Weekly schedule (`PRACTICE_SCHEDULE`)**: Mon 5:00-6:30 PM outdoor (90), Tue 6:00-7:00 PM indoor (60), Thu 5:00-6:15 PM outdoor (75).
@@ -462,6 +462,12 @@ rather than letting it get rediscovered next session.
 - **Yellow needs a grey edge (2026-10).** Every solid-yellow button/box carries a light-grey border (`.btn-primary` 1.5px #B8C2CF, #64748B in dark;
   also `.hm-start`, `#workflowFooter .btn-primary`) because yellow on white doesn't read on its own -- keep it on any new yellow control.
   The bottom workflow CTA (`#workflowFooter`) has equal 12px white space above and below the button. Custom Session Step 1 always opens with nothing selected.
+- **Saved Session Detail top section (2026-10).** Header = Back + "Saved Session" pill, then Favorite + More (...) (no pencil, no visibility tag, no copy icon);
+  big title; one metadata grid (date | "75 min session" TARGET | location | coach); a 2-stat dark card (exercises count + `totalMin` ACTUAL
+  minutes -- target and actual are deliberately different things and never merged); then the Print PDF / Create Image and Share Session buttons
+  side by side (`sessionDetailActionsHtml`, stack under 340px). The More menu (`sessionMoreSheetHtml`): Edit, Copy Session (= the existing
+  "make a copy" duplicate flow), Make Private/Shared, Delete Session (existing confirm). Editing mode shows a check "Done" button and makes the
+  target number editable inside the metadata. Everything below the button row is unchanged.
 
 ## Where things live
 
