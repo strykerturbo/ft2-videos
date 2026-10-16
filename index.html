@@ -1963,6 +1963,26 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .te-save{width:100%;margin-top:14px;min-height:52px;font-size:var(--fs-lg);}
 .te-error{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--cone-dim);color:#7A1F1F;border:1px solid var(--warn);font-size:var(--fs-sm);font-weight:700;}
 
+
+/* ---------- Print / Export + Share sheets ---------- */
+.sa-group{margin-top:18px;}
+.pe-intro{font-size:var(--fs-base);color:var(--ink-soft);margin:-2px 0 12px;line-height:1.45;}
+.pe-group-label{font-size:var(--fs-sm);font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink);margin:12px 0 6px;}
+.pe-opts{display:flex;flex-direction:column;gap:8px;}
+.pe-opts-2{flex-direction:row;}
+.pe-opts-2 .pe-opt{flex:1;min-width:0;}
+.pe-opt{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink);min-height:56px;}
+.pe-opt.active{border-color:var(--cone);background:var(--cone-dim);color:#0F172A;}
+.pe-opt-title{font-size:var(--fs-md);font-weight:800;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.pe-opt-size{font-size:var(--fs-sm);font-weight:700;opacity:0.7;}
+.pe-opt-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.35;}
+.pe-opt.active .pe-opt-desc{color:#475569;}
+.pe-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:18px 4px 4px;}
+.pe-state-title{font-size:var(--fs-lg);font-weight:800;color:var(--ink);}
+.pe-state-sub{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.4;word-break:break-word;}
+.pe-check{width:40px;height:40px;border-radius:50%;background:var(--turf);color:#fff;display:flex;align-items:center;justify-content:center;}
+.pe-check svg{width:20px;height:20px;}
+
 /* Recent Sessions -- one grouped list with hairline dividers, not a stack of separate cards */
 .hm-list{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
 .hm-sess{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
@@ -6949,6 +6969,7 @@ const ICONS = {
   play: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 5 11 7-11 7V5Z"/></g></svg>`,
   pencil: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z"/></g></svg>`,
   swap: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3M20 17H7M7 17l3-3M7 17l3 3"/></g></svg>`,
+  printer: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></g></svg>`,
   share: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></g></svg>`,
   copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></g></svg>`,
   user: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.3-6 8-6s7.3 2 8 6"/></g></svg>`,
@@ -8887,6 +8908,9 @@ const state = {
   sharedToken: null,          // the share-link token this page load was opened with (?s=...); never persisted
   sharedSession: null,        // the read-only session fetched for that token; never added to savedSessions
   sharedStatus: 'idle',       // idle | loading | ready | unavailable | offline | unsupported
+  shareSheet: null,           // Share Session sheet: {sessionId, status:'preparing'|'ready'|'error'|'copied'|'manual', url, message, title, errorText}
+  printSheet: null,           // Print / Export sheet: {sessionId, step:'options'|'working'|'ready'|'error', format:'pdf'|'image', layout:'pocket'|'full', file, fileName}
+  saveFirstSheet: null,       // 'print' | 'share' -- Session Review tapped one of them before saving
   shareBusy: false,           // a Share Session tap is preparing its link
   shareLinkModal: null,       // {url,title} -- manual-copy fallback when neither the share sheet nor the clipboard works
   fromSavedSessionId: null,   // which saved session to return to when fromSavedSession is true
@@ -11565,6 +11589,9 @@ function renderOverlay(){
       </div>
     </div>`;
   }
+  html += saveFirstSheetHtml();
+  html += shareSheetHtml();
+  html += printSheetHtml();
   if(state.confirmDiscardTemplateOpen){
     html += `
     <div class="ios-alert-backdrop" onclick="cancelDiscardTemplate()">
@@ -13215,6 +13242,7 @@ function renderReview(custom){
     </div>
 
     ${draftNoteRowHtml(false)}
+    ${sessionActionRowsHtml("requireSaveFirst('print')", "requireSaveFirst('share')")}
   </div>`;
 }
 
@@ -13707,7 +13735,6 @@ function renderSessionDetail(){
         ${isOwner
           ? `<button class="session-state-tag saved" style="position:static;border:none;cursor:pointer;" onclick="toggleSessionVisibility('${escJsAttr(s.id)}')" title="Tap to make this ${isPrivate?'Shared':'Private'}">${isPrivate?ICONS.lock:ICONS.globe} ${isPrivate?'Private':'Shared'}</button>`
           : `<div class="session-state-tag saved" style="position:static;">${ICONS.user} By ${escHtml(s.createdBy)}</div>`}
-        ${isOwner && !editing ? `<button class="dh-icon-btn" onclick="shareSavedSession('${escJsAttr(s.id)}')" title="Share this session" aria-label="Share this session" ${state.shareBusy?'disabled':''}>${ICONS.share}</button>` : ''}
         <button class="dh-icon-btn" onclick="requestDuplicateSession('${escJsAttr(s.id)}')" title="Make a copy of this session" aria-label="Make a copy of this session">${ICONS.copy}</button>
       </div>
     </div>
@@ -13742,6 +13769,8 @@ function renderSessionDetail(){
     <div class="sd-meta-row" style="margin-top:10px;">
       <div class="sd-meta"><div class="smnum">${s.createdBy}</div><div class="smlbl">Added by</div></div>
     </div>
+
+    ${editing ? '' : sessionActionRowsHtml(`openPrintSheet('${escJsAttr(s.id)}')`, isOwner ? `shareSavedSession('${escJsAttr(s.id)}')` : '')}
 
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
 
@@ -13792,6 +13821,408 @@ function renderSessionDetail(){
   </div>`;
 }
 
+/* ============ PRINT / EXPORT ============
+   Turns a SAVED session into a field-ready document: an actual PDF or a single shareable image, in a Pocket
+   (4 x 5.5 in) or Full Page (8.5 x 11 in) layout. Everything is drawn on canvas pages from the saved session +
+   the live exercise library (Setup / Activity / Coaching point come straight from the repository text, trimmed
+   at sentence boundaries -- nothing is written for the coach). The PDF is a small hand-written container around
+   those page images (JPEG), so it prints at the right size and needs no library. New layouts = one more entry in
+   PRINT_LAYOUTS. Layout units are PDF points (1/72 in). */
+const PRINT_LAYOUTS = {
+  pocket:{label:'Pocket', size:'4 × 5.5"', desc:'Compact field-side reference', w:4, h:5.5, dpi:220, m:14, cols:[62,76], gap:6,
+          fTitle:8.5, fTime:7, fNote:7, fBanner:8.5, fHead:17, fMeta:7.5, banH:15, pad:5, foot:10, setupN:130, actN:190, coachN:130},
+  full:{label:'Full Page', size:'8.5 × 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:36, cols:[125,150], gap:10,
+        fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:30, fMeta:11, banH:20, pad:8, foot:16, setupN:200, actN:320, coachN:200},
+};
+const PRINT_BODY_FONT = '"Inter", "Helvetica Neue", Arial, sans-serif';
+const PRINT_HEAD_FONT = '"Barlow Condensed", "Arial Narrow", sans-serif';
+function ftCssColor(v){
+  const m = /var\((--[\w-]+)\)/.exec(v || '');
+  const raw = m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : String(v || '');
+  return raw || '#64748B';
+}
+// First `maxSent` sentences of a repository text, cut at a word boundary if it is still longer than maxChars.
+function ftBrief(text, maxSent, maxChars){
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if(!t) return '';
+  const sents = t.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) || [t];
+  let out = sents.slice(0, maxSent).join(' ').trim();
+  if(out.length > maxChars){
+    out = out.slice(0, maxChars);
+    out = out.slice(0, Math.max(out.lastIndexOf(' '), 20)).replace(/[,;:\s]+$/, '') + '…';
+  }
+  return out;
+}
+function ftImageUrl(ex){
+  const u = ex && ex.mediaUrl;
+  if(!u) return '';
+  if(u.startsWith('data:image')) return u;
+  if(isVideoUrl(u)) return thumbUrlFor(u);
+  try{
+    const file = decodeURIComponent(u.split('#')[0].split('?')[0].split('/').pop());
+    return /\.(png|jpe?g|gif|webp)$/i.test(file) ? encodeURIComponent(file) : '';   // same-origin copy in the repo, so the canvas stays exportable
+  }catch(e){ return ''; }
+}
+function ftLoadImage(src){
+  return new Promise(res => {
+    if(!src) return res(null);
+    const im = new Image();
+    const t = setTimeout(() => res(null), 8000);
+    im.crossOrigin = 'anonymous';
+    im.onload = () => { clearTimeout(t); res(im); };
+    im.onerror = () => { clearTimeout(t); res(null); };
+    im.src = src;
+  });
+}
+function ftPrintModel(s, L){
+  let n = 0;
+  const mk = (e) => {
+    n++;
+    const ex = resolveSavedExercise(e);
+    return {n, name: ex ? ex.name : e.name, mins: Number(e.duration) || (ex && ex.duration) || 0, unavailable: !ex,
+      img: ex ? ftImageUrl(ex) : '',
+      setup: ex ? ftBrief(ex.setup, 1, L.setupN) : '',
+      activity: ex ? ftBrief(ex.description, 2, L.actN) : '',
+      coaching: ex ? ftBrief(ex.coachingPoints, 1, L.coachN) : ''};
+  };
+  const groups = sessionDetailPhaseGroups(s).map(g => ({label:g.label, mins:g.mins, color:ftCssColor(g.color), dark:g.textOn === 'dark', items:g.items.map(mk)}));
+  s.phases.filter(p => !PHASES.some(ph => ph.section === p.section) && p.exercises.length).forEach(p => {
+    groups.push({label:p.label, mins:p.exercises.reduce((a,e)=>a+(Number(e.duration)||0),0), color:'#475569', dark:false, items:p.exercises.map(mk)});
+  });
+  const dateText = formatPracticeDateShort(s.practiceDate) || new Date(s.createdAt || Date.now()).toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+  const meta = [dateText, `${Number(s.targetDuration) || Number(s.totalMin) || 0} min`];
+  if(s.ageGroup) meta.push(s.ageGroup);
+  meta.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
+  return {title:s.name, meta:meta.join('  ·  '), groups};
+}
+// Greedy word wrap; `runs` = [{t, bold}] words (so a bold label can lead a normal-weight sentence).
+function ftWrapRuns(ctx, runs, maxW, fN, fB){
+  const lines = []; let cur = [], w = 0;
+  const sp = (() => { ctx.font = fN; return ctx.measureText(' ').width; })();
+  runs.forEach(r => {
+    ctx.font = r.bold ? fB : fN;
+    const rw = ctx.measureText(r.t).width;
+    if(cur.length && w + sp + rw > maxW){ lines.push(cur); cur = []; w = 0; }
+    w += (cur.length ? sp : 0) + rw;
+    cur.push(r);
+  });
+  if(cur.length) lines.push(cur);
+  return lines;
+}
+function ftRuns(label, text){
+  const runs = label ? [{t:label, bold:true}] : [];
+  String(text||'').split(' ').filter(Boolean).forEach(w => runs.push({t:w, bold:false}));
+  return runs;
+}
+function ftDrawLine(ctx, line, x, y, fN, fB, color){
+  const sp = (() => { ctx.font = fN; return ctx.measureText(' ').width; })();
+  let cx = x;
+  line.forEach((r,i) => {
+    ctx.font = r.bold ? fB : fN;
+    ctx.fillStyle = color;
+    ctx.fillText(r.t, cx, y);
+    cx += ctx.measureText(r.t).width + sp;
+  });
+}
+function ftRoundRect(ctx, x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+async function ftRenderPages(s, layoutKey){
+  const L = PRINT_LAYOUTS[layoutKey];
+  const model = ftPrintModel(s, L);
+  try{
+    await Promise.all([document.fonts.load(`700 12px ${PRINT_HEAD_FONT}`), document.fonts.load(`400 12px ${PRINT_BODY_FONT}`), document.fonts.load(`700 12px ${PRINT_BODY_FONT}`)]);
+  }catch(e){}
+  const items = model.groups.flatMap(g => g.items);
+  const logo = await ftLoadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_MARK));
+  const imgs = await Promise.all(items.map(it => ftLoadImage(it.img)));
+  items.forEach((it,i) => { it.image = imgs[i]; });
+
+  const PW = L.w*72, PH = L.h*72, M = L.m, CW = PW - 2*M;
+  const c1 = L.cols[0], c2 = L.cols[1], c3 = CW - c1 - c2 - 2*L.gap;
+  const x1 = M, x2 = M + c1 + L.gap, x3 = x2 + c2 + L.gap;
+  const mc = document.createElement('canvas').getContext('2d');
+  const fT = `700 ${L.fTitle}px ${PRINT_BODY_FONT}`, fN = `400 ${L.fNote}px ${PRINT_BODY_FONT}`, fB = `700 ${L.fNote}px ${PRINT_BODY_FONT}`;
+  const badge = L.fTitle * 1.7, lhT = L.fTitle * 1.22, lhN = L.fNote * 1.28, imgH = c2 * 0.66;
+
+  // measure every exercise row
+  items.forEach(it => {
+    it.titleLines = ftWrapRuns(mc, ftRuns('', it.name).map(r => ({...r, bold:true})), c1 - badge - 3, fT, fT);
+    const h1 = Math.max(it.titleLines.length * lhT, badge) + 2 + L.fTime * 1.3;
+    const notes = it.unavailable
+      ? [ftWrapRuns(mc, ftRuns('Exercise unavailable:', 'This exercise is no longer in the FT2 exercise library.'), c3, fN, fB)]
+      : [['Setup', it.setup], ['Activity', it.activity], ['Coaching point', it.coaching]].filter(n => n[1]).map(n => ftWrapRuns(mc, ftRuns(n[0] + ':', n[1]), c3, fN, fB));
+    it.noteLines = notes;
+    const h3 = notes.reduce((a,n) => a + n.length * lhN, 0) + Math.max(notes.length - 1, 0) * 2.5;
+    it.h = Math.max(h1, imgH, h3) + L.pad * 2;
+  });
+
+  // paginate
+  const headTitleLines = ftWrapRuns(mc, ftRuns('', model.title).map(r => ({...r, bold:true})), CW - (L.fHead * 1.5), `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`);
+  const head1H = L.fHead * 1.35 + L.fHead * 0.95 + (headTitleLines.length - 1) * L.fHead * 1.08 + L.fMeta * 1.9 + 8;
+  const headNH = L.fMeta * 2;
+  const bottom = PH - M - L.foot;
+  const pages = [];
+  let page = {items:[], y:M + head1H}; pages.push(page);
+  const newPage = () => { page = {items:[], y:M + headNH}; pages.push(page); };
+  model.groups.forEach(g => {
+    g.items.forEach((it, idx) => {
+      const needBanner = idx === 0;
+      const need = (needBanner ? L.banH + 4 : 0) + it.h;
+      if(page.y + need > bottom && page.items.length) newPage();
+      if(needBanner || (page.items.length === 0)){
+        page.items.push({kind:'banner', y:page.y, g, cont:!needBanner});
+        page.y += L.banH + 4;
+      }
+      page.items.push({kind:'row', y:page.y, it, g});
+      page.y += it.h;
+    });
+  });
+
+  // draw
+  const S = L.dpi / 72;
+  const out = [];
+  for(let pi = 0; pi < pages.length; pi++){
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(PW * S); cv.height = Math.round(PH * S);
+    const ctx = cv.getContext('2d');
+    ctx.scale(S, S);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PW, PH);
+    ctx.textBaseline = 'alphabetic';
+    // header
+    if(pi === 0){
+      const lg = L.fHead * 1.35;
+      if(logo){ ctx.save(); ftRoundRect(ctx, M, M, lg, lg, lg*0.18); ctx.clip(); ctx.drawImage(logo, M, M, lg, lg); ctx.restore(); }
+      else { ctx.fillStyle = '#F7FF00'; ftRoundRect(ctx, M, M, lg, lg, lg*0.18); ctx.fill(); }
+      ctx.fillStyle = '#0F172A'; ctx.font = `700 ${L.fMeta * 1.25}px ${PRINT_BODY_FONT}`;
+      ctx.fillText('FT2 COACHES', M + lg + 6, M + lg * 0.5);
+      ctx.fillStyle = '#64748B'; ctx.font = `400 ${L.fMeta}px ${PRINT_BODY_FONT}`;
+      ctx.fillText('Fast Tigers Futbol Training', M + lg + 6, M + lg * 0.5 + L.fMeta * 1.3);
+      let ty = M + lg + L.fHead * 0.95;
+      headTitleLines.forEach(line => { ftDrawLine(ctx, line, M, ty, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, '#0F172A'); ty += L.fHead * 1.08; });
+      ctx.fillStyle = '#334155'; ctx.font = `600 ${L.fMeta}px ${PRINT_BODY_FONT}`;
+      ctx.fillText(model.meta, M, ty + L.fMeta * 0.5);
+    } else {
+      ctx.fillStyle = '#64748B'; ctx.font = `700 ${L.fMeta}px ${PRINT_BODY_FONT}`;
+      ctx.fillText(`FT2 COACHES  ·  ${model.title}`, M, M + L.fMeta);
+    }
+    // body
+    pages[pi].items.forEach(b => {
+      if(b.kind === 'banner'){
+        ctx.fillStyle = b.g.color; ftRoundRect(ctx, M, b.y, CW, L.banH, 3); ctx.fill();
+        ctx.fillStyle = b.g.dark ? '#0F172A' : '#FFFFFF'; ctx.font = `800 ${L.fBanner}px ${PRINT_BODY_FONT}`;
+        ctx.textAlign = 'left'; ctx.fillText(b.g.label.toUpperCase() + (b.cont ? ' (CONT.)' : ''), M + 6, b.y + L.banH * 0.5 + L.fBanner * 0.36);
+        ctx.textAlign = 'right'; ctx.fillText(`${b.g.mins} min`, M + CW - 6, b.y + L.banH * 0.5 + L.fBanner * 0.36); ctx.textAlign = 'left';
+        return;
+      }
+      const it = b.it, y0 = b.y + L.pad;
+      // separator
+      ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(M, b.y + it.h); ctx.lineTo(M + CW, b.y + it.h); ctx.stroke();
+      // number badge + title + timing
+      ctx.fillStyle = b.g.color; ctx.beginPath(); ctx.arc(x1 + badge/2, y0 + badge/2, badge/2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = b.g.dark ? '#0F172A' : '#FFFFFF'; ctx.font = `800 ${L.fTitle * 0.95}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'center';
+      ctx.fillText(String(it.n), x1 + badge/2, y0 + badge/2 + L.fTitle * 0.34); ctx.textAlign = 'left';
+      let ty = y0 + L.fTitle * 0.95;
+      it.titleLines.forEach(line => { ftDrawLine(ctx, line, x1 + badge + 3, ty, fT, fT, '#0F172A'); ty += lhT; });
+      ctx.fillStyle = '#64748B'; ctx.font = `600 ${L.fTime}px ${PRINT_BODY_FONT}`;
+      ctx.fillText(`${it.mins} min`, x1 + badge + 3, Math.max(ty, y0 + badge) + L.fTime * 0.5);
+      // diagram
+      ctx.fillStyle = '#F1F5F9'; ftRoundRect(ctx, x2, y0, c2, imgH, 3); ctx.fill();
+      if(it.image){
+        const iw = it.image.naturalWidth || it.image.width, ih = it.image.naturalHeight || it.image.height;
+        const k = Math.min(c2 / iw, imgH / ih), dw = iw * k, dh = ih * k;
+        ctx.save(); ftRoundRect(ctx, x2, y0, c2, imgH, 3); ctx.clip(); ctx.drawImage(it.image, x2 + (c2 - dw)/2, y0 + (imgH - dh)/2, dw, dh); ctx.restore();
+      } else {
+        ctx.fillStyle = '#94A3B8'; ctx.font = `600 ${L.fTime}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'center';
+        ctx.fillText(it.unavailable ? 'Unavailable' : 'No diagram', x2 + c2/2, y0 + imgH/2 + L.fTime * 0.35); ctx.textAlign = 'left';
+      }
+      // notes
+      let ny = y0 + L.fNote * 0.95;
+      it.noteLines.forEach(note => {
+        note.forEach(line => { ftDrawLine(ctx, line, x3, ny, fN, fB, '#1E293B'); ny += lhN; });
+        ny += 2.5;
+      });
+    });
+    // footer
+    ctx.fillStyle = '#94A3B8'; ctx.font = `400 ${L.fMeta * 0.9}px ${PRINT_BODY_FONT}`;
+    ctx.fillText('FT2 Coaches · Fast Tigers Futbol Training', M, PH - M * 0.55);
+    ctx.textAlign = 'right'; ctx.fillText(`Page ${pi + 1} of ${pages.length}`, PW - M, PH - M * 0.55); ctx.textAlign = 'left';
+    out.push(cv);
+  }
+  return {canvases:out, wPt:PW, hPt:PH};
+}
+const ftCanvasBlob = (cv, type, q) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('encode failed')), type, q));
+async function ftBuildPdf(canvases, wPt, hPt){
+  const enc = new TextEncoder(), chunks = [], offs = [];
+  let len = 0;
+  const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; chunks.push(b); len += b.length; };
+  const jpgs = [];
+  for(const cv of canvases){ jpgs.push({w:cv.width, h:cv.height, bytes:new Uint8Array(await (await ftCanvasBlob(cv, 'image/jpeg', 0.92)).arrayBuffer())}); }
+  const n = jpgs.length;
+  push('%PDF-1.4\n');
+  const obj = (id, fn) => { offs[id] = len; push(`${id} 0 obj\n`); fn(); push('\nendobj\n'); };
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Kids [${jpgs.map((_,i) => `${3+3*i} 0 R`).join(' ')}] /Count ${n} >>`));
+  jpgs.forEach((p, i) => {
+    const pid = 3+3*i, cid = 4+3*i, iid = 5+3*i;
+    obj(pid, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt} ${hPt}] /Resources << /XObject << /Im0 ${iid} 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ${cid} 0 R >>`));
+    const content = `q ${wPt} 0 0 ${hPt} 0 0 cm /Im0 Do Q`;
+    obj(cid, () => push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`));
+    obj(iid, () => { push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.bytes.length} >>\nstream\n`); push(p.bytes); push('\nendstream'); });
+  });
+  const total = 3 + 3*n, xref = len;
+  let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+  for(let id = 1; id < total; id++) x += String(offs[id]).padStart(10, '0') + ' 00000 n \n';
+  push(x); push(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(chunks, {type:'application/pdf'});
+}
+// One tall image: the pages stacked top to bottom with a thin gap (kept under the phone browsers' canvas size limit).
+async function ftBuildImage(canvases){
+  const gap = Math.round(canvases[0].width * 0.02);
+  const w = canvases[0].width, hEach = canvases[0].height;
+  let k = 1;
+  const area = w * (hEach * canvases.length + gap * (canvases.length - 1));
+  if(area > 14e6) k = Math.sqrt(14e6 / area);
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(w * k); cv.height = Math.round((hEach * canvases.length + gap * (canvases.length - 1)) * k);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#E2E8F0'; ctx.fillRect(0, 0, cv.width, cv.height);
+  canvases.forEach((c, i) => ctx.drawImage(c, 0, Math.round(i * (hEach + gap) * k), Math.round(w * k), Math.round(hEach * k)));
+  return await ftCanvasBlob(cv, 'image/png');
+}
+function ftSlug(n){ return String(n||'session').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'session'; }
+
+function openPrintSheet(id){
+  state.printSheet = {sessionId:id, step:'options', format:'pdf', layout:'pocket', file:null, fileName:'', error:''};
+  renderOverlay();
+}
+function closePrintSheet(){ state.printSheet = null; renderOverlay(); }
+function setPrintFormat(v){ if(state.printSheet){ state.printSheet.format = v; renderOverlay(); } }
+function setPrintLayout(v){ if(state.printSheet){ state.printSheet.layout = v; renderOverlay(); } }
+async function createPrintFile(){
+  const ps = state.printSheet; if(!ps || ps.step === 'working') return;
+  const s = state.savedSessions.find(x => x.id === ps.sessionId);
+  if(!s){ ps.step = 'error'; renderOverlay(); return; }
+  ps.step = 'working'; renderOverlay();
+  try{
+    const {canvases, wPt, hPt} = await ftRenderPages(s, ps.layout);
+    let blob, name;
+    if(ps.format === 'pdf'){ blob = await ftBuildPdf(canvases, wPt, hPt); name = `${ftSlug(s.name)}-${ps.layout}.pdf`; }
+    else { blob = await ftBuildImage(canvases); name = `${ftSlug(s.name)}-${ps.layout}.png`; }
+    if(state.printSheet !== ps) return;     // the coach closed the sheet meanwhile
+    ps.file = new File([blob], name, {type:blob.type});
+    ps.fileName = name;
+    ps.step = 'ready';
+    renderOverlay();
+    // Straight to the phone's own Print / Save to Files / AirDrop / Mail sheet where the browser allows it
+    // right after generating; otherwise the Ready screen's button does it from a fresh tap.
+    if(navigator.canShare && navigator.canShare({files:[ps.file]})){
+      try{ await navigator.share({files:[ps.file], title:s.name}); }catch(e){ /* cancelled or not allowed yet -- the Ready screen still offers it */ }
+    }
+  }catch(err){
+    console.warn('Print/export failed:', err && err.message);
+    if(state.printSheet === ps){ ps.step = 'error'; renderOverlay(); }
+  }
+}
+async function sharePrintFile(){
+  const ps = state.printSheet; if(!ps || !ps.file) return;
+  if(navigator.canShare && navigator.canShare({files:[ps.file]})){
+    try{ await navigator.share({files:[ps.file], title:ps.fileName}); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; }
+  }
+  if(ps.format === 'pdf'){ const url = URL.createObjectURL(ps.file); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 60000); }
+  else downloadPrintFile();
+}
+function downloadPrintFile(){
+  const ps = state.printSheet; if(!ps || !ps.file) return;
+  const url = URL.createObjectURL(ps.file);
+  const a = document.createElement('a'); a.href = url; a.download = ps.fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+// Session Review: neither Print nor Share can use an unsaved draft -- a saved session is the stable thing they point at.
+function requireSaveFirst(kind){ state.saveFirstSheet = kind; renderOverlay(); }
+function closeSaveFirstSheet(){ state.saveFirstSheet = null; renderOverlay(); }
+function saveFirstSheetSave(){
+  state.saveFirstSheet = null;
+  const before = state.savedSessions.length;
+  completeSession();
+  if(state.savedSessions.length > before) openSessionDetail(state.savedSessions[state.savedSessions.length - 1].id);   // land where Print / Share live
+  renderOverlay();
+}
+function sessionActionRowsHtml(onPrint, onShare){
+  return `
+    <div class="settings-group sa-group">
+      <button class="settings-row" onclick="${onPrint}">
+        <span class="settings-row-icon blue">${ICONS.printer}</span>
+        <span class="settings-row-text"><span class="settings-row-title">Print / Export</span><span class="settings-row-desc">Create a field-ready PDF or image</span></span>
+        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+      </button>
+      ${onShare ? `<button class="settings-row" onclick="${onShare}">
+        <span class="settings-row-icon teal">${ICONS.share}</span>
+        <span class="settings-row-text"><span class="settings-row-title">Share Session</span><span class="settings-row-desc">Send this session to another coach</span></span>
+        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+      </button>` : ''}
+    </div>`;
+}
+function printSheetHtml(){
+  const ps = state.printSheet; if(!ps) return '';
+  const opt = (sel, onclick, title, desc, extra) => `<button class="pe-opt ${sel?'active':''}" aria-pressed="${sel}" onclick="${onclick}"><span class="pe-opt-title">${title}${extra ? `<span class="pe-opt-size">${extra}</span>` : ''}</span><span class="pe-opt-desc">${desc}</span></button>`;
+  const noun = ps.format === 'pdf' ? 'PDF' : 'image';
+  let body = '';
+  if(ps.step === 'options'){
+    body = `
+      <div class="pe-intro">Create a field-ready version of this session.</div>
+      <div class="pe-group-label">Format</div>
+      <div class="pe-opts">
+        ${opt(ps.format==='pdf', "setPrintFormat('pdf')", 'Print-ready PDF', 'Best for printing or saving a detailed session plan.')}
+        ${opt(ps.format==='image', "setPrintFormat('image')", 'Shareable Image', 'Save to Photos or send as an image.')}
+      </div>
+      <div class="pe-group-label">Layout</div>
+      <div class="pe-opts pe-opts-2">
+        ${Object.entries(PRINT_LAYOUTS).map(([k, l]) => opt(ps.layout===k, `setPrintLayout('${k}')`, l.label, l.desc, l.size)).join('')}
+      </div>
+      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Create ${ps.format==='pdf' ? 'PDF' : 'Image'}</button></div>`;
+  } else if(ps.step === 'working'){
+    body = `<div class="pe-state"><span class="gen-spinner" aria-hidden="true"></span><div class="pe-state-title">Creating your ${noun}…</div><div class="pe-state-sub">This takes a few seconds.</div></div>`;
+  } else if(ps.step === 'ready'){
+    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Your ${noun} is ready</div><div class="pe-state-sub">${escHtml(ps.fileName)}</div></div>
+      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="sharePrintFile()">${ps.format==='pdf' ? 'Print / Save / Share' : 'Share / Save Image'}</button><button class="btn btn-ghost" onclick="downloadPrintFile()">Download</button><button class="btn btn-ghost" onclick="closePrintSheet()">Done</button></div>`;
+  } else {
+    body = `<div class="pe-state"><div class="pe-state-title">Unable to create ${noun === 'PDF' ? 'PDF' : 'image'}</div><div class="pe-state-sub">Your saved session is safe. Please try again.</div></div>
+      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Try Again</button></div>`;
+  }
+  return `<div class="sheet-backdrop" onclick="${ps.step==='working' ? '' : 'closePrintSheet()'}"></div><div class="sheet"><div class="sheet-handle"></div><h3>Print / Export Session</h3>${body}</div>`;
+}
+function shareSheetHtml(){
+  const sh = state.shareSheet; if(!sh) return '';
+  let body = '';
+  if(sh.status === 'preparing'){
+    body = `<div class="pe-intro">Send this session to another coach.</div>
+      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" disabled>Getting your link ready…</button><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
+  } else if(sh.status === 'ready'){
+    body = `<div class="pe-intro">Send this session to another coach.</div>
+      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="copySessionLink()">${ICONS.copy} Copy Session</button><button class="btn btn-ghost" onclick="moreSharingOptions()">More Sharing Options</button><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
+  } else if(sh.status === 'copied'){
+    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Session link copied</div><div class="pe-state-sub">You can now paste it into Messages or another app.</div></div>
+      <div class="sheet-footer"><button class="btn btn-primary" onclick="closeShareSheet()">Done</button></div>`;
+  } else if(sh.status === 'manual'){
+    body = `<div class="pe-intro">Press and hold the message below, choose Copy, then paste it into Messages.</div>
+      <textarea class="te-input" readonly rows="5" onfocus="this.select()" style="font-size:var(--fs-sm);">${escHtml(sh.message)}</textarea>
+      <div class="sheet-footer"><button class="btn btn-primary" onclick="closeShareSheet()">Done</button></div>`;
+  } else {
+    body = `<div class="pe-state"><div class="pe-state-title">Unable to create share link</div><div class="pe-state-sub">${escHtml(sh.errorText || 'Please try again.')} Your saved session is safe.</div></div>
+      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button><button class="btn btn-primary" onclick="prepareShareLink('${escJsAttr(sh.sessionId)}')">Try Again</button></div>`;
+  }
+  return `<div class="sheet-backdrop" onclick="closeShareSheet()"></div><div class="sheet"><div class="sheet-handle"></div><h3>Share Session</h3>${body}</div>`;
+}
+function saveFirstSheetHtml(){
+  const k = state.saveFirstSheet; if(!k) return '';
+  return `<div class="sheet-backdrop" onclick="closeSaveFirstSheet()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <h3>Save your session first</h3>
+    <div class="pe-intro">${k === 'share' ? 'To share a session with another coach, save it first.' : 'To print or export a session, save it first.'}</div>
+    <div class="sheet-footer"><button class="btn btn-ghost" onclick="closeSaveFirstSheet()">Not yet</button><button class="btn btn-primary" onclick="saveFirstSheetSave()">Save Session</button></div>
+  </div>`;
+}
 /* ============ SHARE A SAVED SESSION ============
    A saved session can be sent to anyone as a link. The link carries only a long random token
    (?s=...) -- never the session itself and never a guessable id -- and the Apps Script looks the
@@ -13871,11 +14302,29 @@ function shareDetailLine(s){
   parts.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
   return parts.join(' • ');
 }
+// Share Session = give another coach a link to the actual saved session. The sheet prepares the link first
+// (token pushed + confirmed on the server) so Copy Session can write to the clipboard straight inside the tap.
+function sessionMetaPlain(s){
+  const parts = [`${Number(s.targetDuration) || Number(s.totalMin) || 0} min`];
+  if(s.ageGroup) parts.push(s.ageGroup);
+  parts.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
+  return parts.join(' · ');
+}
+function shareMessageFor(s, url){
+  return `${s.name}\n${sessionMetaPlain(s)}\n\nView this session in FT2 Coaches:\n${url}`;
+}
 async function shareSavedSession(id){
   const s = state.savedSessions.find(x => x.id === id);
-  if(!s || s.createdBy !== state.coachName || state.shareBusy) return;
-  state.shareBusy = true;
-  showToast('Getting your link ready…');
+  if(!s || s.createdBy !== state.coachName) return;
+  state.shareSheet = {sessionId:id, status:'preparing', url:'', message:'', title:'', errorText:''};
+  renderOverlay();
+  await prepareShareLink(id);
+}
+async function prepareShareLink(id){
+  const s = state.savedSessions.find(x => x.id === id);
+  const sh = state.shareSheet;
+  if(!s || !sh || sh.sessionId !== id) return;
+  sh.status = 'preparing'; renderOverlay();
   try{
     // The link has to exist on the server before it is handed out, so push the token first and
     // then confirm the server can actually serve it back; otherwise the friend would get a dead link.
@@ -13884,24 +14333,48 @@ async function shareSavedSession(id){
       await pushSessionToSheet(s);
     }
     const check = await fetchSharedSession(s.shareToken);
+    if(!state.shareSheet || state.shareSheet !== sh) return;
     if(check.status !== 'ready'){
-      state.shareBusy = false;
-      showToast(check.status === 'unsupported' ? 'Sharing isn’t switched on yet' : 'Couldn’t create the link — check your connection');
-      return;
+      sh.status = 'error';
+      sh.errorText = check.status === 'unsupported' ? 'Sharing isn’t switched on yet.' : 'Check your connection and try again.';
+      renderOverlay(); return;
     }
-    state.shareBusy = false;
     const url = shareUrlFor(s.shareToken);
     const focus = (csFocusArea(s.focusArea) || {}).title;
-    const title = 'FT2 Coaches — ' + (focus ? focus + ' Session' : s.name);
-    const text = shareDetailLine(s);
-    if(navigator.share){
-      try{ await navigator.share({title, text, url}); render(); return; }
-      catch(err){ if(err && err.name === 'AbortError'){ render(); return; } /* fall through to copy */ }
-    }
-    await copyShareLink(url, title);
-  }finally{
-    state.shareBusy = false;
+    sh.url = url;
+    sh.message = shareMessageFor(s, url);
+    sh.title = 'FT2 Coaches — ' + (focus ? focus + ' Session' : s.name);
+    sh.status = 'ready';
+    renderOverlay();
+  }catch(err){
+    if(state.shareSheet === sh){ sh.status = 'error'; sh.errorText = 'Check your connection and try again.'; renderOverlay(); }
   }
+}
+function closeShareSheet(){ state.shareSheet = null; renderOverlay(); }
+async function copySessionLink(){
+  const sh = state.shareSheet; if(!sh || !sh.message) return;
+  let ok = false;
+  try{ await navigator.clipboard.writeText(sh.message); ok = true; }catch(e){}
+  if(!ok){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = sh.message; ta.setAttribute('readonly',''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, sh.message.length);
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){}
+  }
+  sh.status = ok ? 'copied' : 'manual';
+  renderOverlay();
+}
+async function moreSharingOptions(){
+  const sh = state.shareSheet; if(!sh || !sh.url) return;
+  const s = state.savedSessions.find(x => x.id === sh.sessionId);
+  if(navigator.share){
+    try{ await navigator.share({title:sh.title, text:s ? `${s.name}\n${sessionMetaPlain(s)}` : sh.title, url:sh.url}); return; }
+    catch(err){ if(err && err.name === 'AbortError') return; }
+  }
+  copySessionLink();
 }
 async function copyShareLink(url, title){
   let ok = false;

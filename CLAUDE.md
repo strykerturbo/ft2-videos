@@ -428,6 +428,14 @@ rather than letting it get rediscovered next session.
   they always add up to the session length. The + / - buttons are real 48x48 targets -- don't shrink them. Templates
   now also store `ageGroup`, per-section `description` and `minutes`. Section names are the app's own (Athletic, SSG),
   not the mockup's "Activate", since Activate means Warmup + Athletic everywhere else. Warmup stays first (no grip).
+- **Print / Export vs Share Session (2026-10).** Three separate actions, never merged: Save Session (library), Print / Export
+  (PDF or one tall image in `PRINT_LAYOUTS` Pocket 4x5.5in / Full Page 8.5x11in, drawn on canvas by `ftRenderPages()`;
+  the PDF is a hand-written container of JPEG page images, `ftBuildPdf()`; page text comes from the exercise
+  repository trimmed by `ftBrief()`, diagrams from the same-origin repo files / `thumbs/*.jpg` so the canvas stays
+  exportable), and Share Session (sheet -> `Copy Session` copies "name / 75 min - U10 - Outdoor / View this session in FT2
+  Coaches: link"; the link is prepared BEFORE the tap so clipboard writes stay inside the user's tap). Both appear on
+  Saved Session Detail and (below the content, Save Session stays the footer CTA) on Session Review; on Review an unsaved
+  draft only gets the "Save your session first" sheet, never a file or link. A new layout is one more `PRINT_LAYOUTS` entry.
 
 ## Where things live
 
