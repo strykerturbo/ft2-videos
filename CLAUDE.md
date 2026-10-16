@@ -429,16 +429,28 @@ rather than letting it get rediscovered next session.
   now also store `ageGroup`, per-section `description` and `minutes`. Section names are the app's own (Athletic, SSG),
   not the mockup's "Activate", since Activate means Warmup + Athletic everywhere else. Warmup stays first (no grip).
 - **Print / Export vs Share Session (2026-10).** Three separate actions, never merged: Save Session (library), Print / Export
-  (PDF or one tall image in `PRINT_LAYOUTS` Pocket 4x5.5in / Full Page 8.5x11in, drawn on canvas by `ftRenderPages()`;
-  the PDF is a hand-written container of JPEG page images, `ftBuildPdf()`; page text comes from the exercise
+  (PDF or image, always exactly ONE page of the chosen size in `PRINT_LAYOUTS`: Pocket 4.25x5.5in / Half Page 5.5x8.5in /
+  Full Page 8.5x11in; `ftRenderPages()` draws on canvas and auto-fits -- full size first, then smaller type down to each layout's
+  `minNote` floor, then progressively shorter notes (`FT_TRIM_LEVELS`) and diagrams -- so everything lands on the one page;
+  the PDF is a hand-written container of the JPEG page image, `ftBuildPdf()`; page text comes from the exercise
   repository trimmed by `ftBrief()`, diagrams from the same-origin repo files / `thumbs/*.jpg` so the canvas stays
   exportable), and Share Session (ONE tap: the link is prepared in the background when a saved session opens -- `prefetchShareLink()`, cached in
   `state.shareReady` -- so the tap itself synchronously copies the "name / 75 min - U10 - Outdoor / View this session in FT2
   Coaches: link" message, flashes "Session Link Copied" and opens the phone's share sheet; browsers only allow clipboard +
   share straight from a tap, so nothing in that tap may wait on the network; if the link isn't ready yet a sheet gets it and
   asks for one more tap). The Print & Share section sits at the top of Saved Session Detail and (bottom, Save Session stays
-  the footer CTA) on Session Review; layouts are Pocket / Half Page / Full Page; on Review an unsaved
+  the footer CTA) on Session Review; layouts are Pocket / Half Page / Full Page (single page each); on Review an unsaved
   draft only gets the "Save your session first" sheet, never a file or link. A new layout is one more `PRINT_LAYOUTS` entry.
+- **Start time (2026-10).** Sessions now carry a `startTime` ("HH:MM", 24h, '' = none): set on Session Setup and Custom Session
+  Step 2 (`practiceStartTime` / `setupStartTime` / `csStartTime`, last used is remembered, default 5:00 PM), editable on Saved Session
+  Detail in edit mode, stored in a new Sessions-tab `startTime` column (Apps Script keeps it as plain text -- Sheets turns "17:00" into
+  a time cell otherwise -- and `startTimeText_()` reads either shape). The printed sheet's header (yellow slanted block + logo,
+  title, then date | time range | length | age | location with icons) and each phase's "15 MIN (5:00 - 5:15 PM)" window come from it
+  (`ftPrintModel`, phases laid end to end from the start time; the header range is start -> start + session length). No start
+  time = no clock times printed, nothing else changes. Needs the Apps Script redeployed as a new version.
+  **Weekly schedule (`PRACTICE_SCHEDULE`)**: Mon 5:00-6:30 PM outdoor (90), Tue 6:00-7:00 PM indoor (60), Thu 5:00-6:15 PM outdoor (75).
+  Picking one of those dates on Session Setup / Custom Session Step 2 pre-fills start time, length and location, except fields the
+  coach already changed by hand (`setupTouched` / `csTouched`); other days keep the last-used values. Change the schedule there only.
 
 ## Where things live
 

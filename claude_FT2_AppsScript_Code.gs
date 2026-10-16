@@ -174,8 +174,18 @@ const SESSIONS_HEADERS = [
   'id', 'name', 'createdBy', 'createdAt', 'totalMin', 'exCount', 'targetDuration',
   'practiceDate', 'location', 'templateId', 'rating', 'comment', 'favorited',
   'visibility', 'phasesJson', 'updatedAt',
-  'focusArea', 'ageGroup', 'sessionStyle', 'shareToken'
+  'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'startTime'
 ];
+
+// A start time is stored as plain "HH:MM" text, but Sheets likes to turn "17:00" into a real time-of-day cell, which then
+// reads back as a Date. This converts either shape to "HH:MM" so the app always gets text.
+function startTimeText_(v) {
+  if (v instanceof Date) {
+    const pad = n => String(n).padStart(2, '0');
+    return pad(v.getHours()) + ':' + pad(v.getMinutes());
+  }
+  return v === undefined || v === null ? '' : String(v);
+}
 
 function getSessionsSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -226,6 +236,7 @@ function readSessions(requestingCoach) {
       delete obj.phasesJson;
       // A session's share token is a private link key: only its owner's own sync gets it back.
       if (String(obj.createdBy) !== String(requestingCoach)) obj.shareToken = '';
+      obj.startTime = startTimeText_(obj.startTime);
       obj.favorited = (obj.favorited === true || obj.favorited === 'true' || obj.favorited === 'TRUE');
       // practiceDate is written as a plain "YYYY-MM-DD" string, but that shape is exactly what
       // Sheets' own input parser auto-detects as a real date and silently converts the cell to --
@@ -275,6 +286,7 @@ function readSharedSession(token) {
       exCount: Number(row.exCount) || 0,
       targetDuration: Number(row.targetDuration) || 0,
       practiceDate: practiceDate || '',
+      startTime: startTimeText_(row.startTime),
       location: row.location === 'indoor' ? 'indoor' : 'outdoor',
       focusArea: row.focusArea || '',
       ageGroup: row.ageGroup || '',
@@ -333,6 +345,10 @@ function upsertSession(session, requestingCoach) {
   const practiceDateCol = SESSIONS_HEADERS.indexOf('practiceDate');
   if (practiceDateCol !== -1) {
     sheet.getRange(destRow, practiceDateCol + 1).setNumberFormat('@');
+  }
+  const startTimeCol = SESSIONS_HEADERS.indexOf('startTime');   // same trick: keep "17:00" as text, not a time cell
+  if (startTimeCol !== -1) {
+    sheet.getRange(destRow, startTimeCol + 1).setNumberFormat('@');
   }
   if (rowIndex === -1) {
     sheet.getRange(destRow, 1, 1, row.length).setValues([row]);

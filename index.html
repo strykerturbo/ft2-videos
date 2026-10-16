@@ -749,6 +749,8 @@ a{color:inherit;text-decoration:none;}
 }
 .btn-primary{background:#F7FF00;color:#0B0F1A;}
 .btn-ghost{background:var(--chalk-dim);color:var(--ink);}
+/* A clearly-a-button secondary: dark outline (same family as the app's selected-option outline). */
+.btn-outline{background:var(--bg-surface);color:var(--ink);border:1.5px solid var(--ink);padding:13.5px 0;}
 /* An icon dropped straight into a .btn's text (e.g. "${ICONS.check} Save Exercise") had no size
    rule of its own, so it rendered at the SVG's unconstrained intrinsic size -- fixes that for
    every .btn everywhere, not just the new Setup CTA that exposed it. */
@@ -2000,6 +2002,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pe-state-sub{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.4;word-break:break-word;}
 .pe-check{width:40px;height:40px;border-radius:50%;background:var(--turf);color:#fff;display:flex;align-items:center;justify-content:center;}
 .pe-check svg{width:20px;height:20px;}
+.pe-ready-row{display:flex;align-items:center;gap:10px;margin:2px 0 10px;}
+.pe-check-sm{width:26px;height:26px;flex-shrink:0;}
+.pe-check-sm svg{width:14px;height:14px;}
+.pe-ready-title{font-size:var(--fs-lg);font-weight:800;color:var(--ink);}
+.pe-preview{border:1px solid var(--line);border-radius:12px;background:#E2E8F0;padding:8px;display:flex;justify-content:center;}
+/* The whole one-page sheet is visible at once (no scrolling), sized to fit the sheet. */
+.pe-preview img{display:block;width:auto;height:auto;max-width:100%;max-height:min(44vh, 400px);border-radius:4px;background:#fff;}
 
 /* Recent Sessions -- one grouped list with hairline dividers, not a stack of separate cards */
 .hm-list{background:var(--bg-surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
@@ -2061,6 +2070,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .su-date-value{font-size:var(--fs-lg);font-weight:700;color:var(--ink);}
 .su-date-chev{display:flex;color:var(--ink-soft);}
 .su-date-chev svg{width:16px;height:16px;}
+.sd-time-input{width:100%;box-sizing:border-box;min-height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-weight:700;padding:0 6px;font-family:inherit;}
 .su-date-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:none;cursor:pointer;}
 .su-seg{display:flex;gap:6px;}
 .su-seg-btn{
@@ -7339,7 +7349,7 @@ function normalizeCloudSession(c){
     totalMin: Number(c.totalMin) || 0, exCount: Number(c.exCount) || 0,
     targetDuration: Number(c.targetDuration) || 60,
     phases: Array.isArray(c.phases) ? c.phases : [],
-    practiceDate: c.practiceDate || '', location: c.location || 'outdoor',
+    practiceDate: c.practiceDate || '', startTime: c.startTime || '', location: c.location || 'outdoor',
     templateId: c.templateId || null,
     rating: Number(c.rating) || 0, comment: c.comment || '', favorited: !!c.favorited,
     visibility: c.visibility === 'private' ? 'private' : 'shared',
@@ -9018,6 +9028,7 @@ const state = {
   phaseOrder: PHASES.map(p => p.key),     // standard-phase display order -- reorderable in Settings (Warmup always stays first)
 
   // ---- Practice Setup (batch 68) ----
+  practiceStartTime: '17:00',     // when the committed practice starts (HH:MM, 24h) -- last used is remembered; printed on the session sheet
   practiceDate: todayISODate(),   // the committed practice's own date -- separate from createdAt (when it was saved). Retained on the saved-session record.
   activeTemplateId: null,         // which template (if any) the CURRENT draft was started from -- cleared on discard/save, carried onto the saved-session record as "Selected template, if any"
   templatePickerContext: 'build', // 'build' (existing "Load a template" flow on the Build page -- applies immediately) | 'setup' (Practice Setup's "View All Templates" -- selects only, no immediate apply)
@@ -9028,6 +9039,9 @@ const state = {
   // in fresh every time Setup is opened for a brand-new practice.
   setupName: null,
   setupDate: null,
+  setupStartTime: null,
+  setupTouched: {},               // which Setup fields the coach changed by hand (the weekly schedule never overwrites those)
+  csTouched: {},
   setupDuration: null,
   setupLocation: null,
   setupSelectedTemplateId: null,  // null = Start From Scratch (the default); a template's id once chosen
@@ -9041,6 +9055,7 @@ const state = {
   confirmShuffleOpen: false,      // Step 4: "shuffle replaces your changes?" guard
   csTitle: '',                    // Step 2: session title (auto-built from objective + focus area until the coach edits it)
   csTitleEdited: false,           // true once the coach has typed their own title -- then a changed focus area no longer rewrites it
+  csStartTime: null,              // Step 2: practice start time (HH:MM), defaults to the last one used
   csDate: null,                   // Step 2: practice date (ISO yyyy-mm-dd), defaults to today
   csDuration: null,               // Step 2: 60 | 75 | 90
   csLocation: null,               // Step 2: 'outdoor' | 'indoor' | 'either'
@@ -10894,8 +10909,10 @@ function csAutoTitle(){
 // Fills any Step 2 value the coach hasn't set yet with its default; keeps the auto title current until they edit it.
 function csInitSetup(){
   if(!state.csDate) state.csDate = todayISODate();
-  if(!CS_DURATIONS.includes(state.csDuration)) state.csDuration = CS_DURATIONS.includes(state.targetDuration) ? state.targetDuration : 75;
-  if(!CS_LOCATIONS.some(l => l[0] === state.csLocation)) state.csLocation = (state.practiceLocation === 'indoor') ? 'indoor' : 'outdoor';
+  const sc = scheduleFor(state.csDate);
+  if(!state.csStartTime) state.csStartTime = (sc && sc.start) || state.practiceStartTime || '17:00';
+  if(!CS_DURATIONS.includes(state.csDuration)) state.csDuration = (sc && CS_DURATIONS.includes(sc.duration)) ? sc.duration : (CS_DURATIONS.includes(state.targetDuration) ? state.targetDuration : 75);
+  if(!CS_LOCATIONS.some(l => l[0] === state.csLocation)) state.csLocation = sc ? sc.location : ((state.practiceLocation === 'indoor') ? 'indoor' : 'outdoor');
   if(!CS_AGE_GROUPS.includes(state.csAgeGroup)) state.csAgeGroup = CS_DEFAULT_AGE;
   if(!CS_STYLES.some(st => st[0] === state.csSessionStyle)) state.csSessionStyle = 'balanced';
   if(!state.csTitleEdited || !String(state.csTitle||'').trim()){ state.csTitle = csAutoTitle(); state.csTitleEdited = false; }
@@ -10907,6 +10924,7 @@ function customSessionConfig(){
     focusArea: state.csFocusAreaId,
     title: String(state.csTitle||'').trim() || csAutoTitle(),
     date: state.csDate,
+    startTime: state.csStartTime,
     duration: state.csDuration,
     location: state.csLocation,
     ageGroup: state.csAgeGroup,
@@ -10920,9 +10938,21 @@ function commitCsTitle(el){
   if(!t || t === csAutoTitle()){ state.csTitleEdited = false; state.csTitle = csAutoTitle(); el.value = state.csTitle; }
   else { state.csTitleEdited = true; state.csTitle = t; }
 }
-function setCsDate(v){ if(v) state.csDate = v; render(); }
-function setCsDuration(v){ state.csDuration = v; render(); }
-function setCsLocation(v){ state.csLocation = v; render(); }
+function setCsDate(v){
+  if(v){
+    state.csDate = v;
+    const sc = scheduleFor(v), t = state.csTouched || {};
+    if(sc){
+      if(!t.start) state.csStartTime = sc.start;
+      if(!t.dur && CS_DURATIONS.includes(sc.duration)) state.csDuration = sc.duration;
+      if(!t.loc) state.csLocation = sc.location;
+    }
+  }
+  render();
+}
+function setCsStartTime(v){ if(v){ state.csStartTime = v; (state.csTouched = state.csTouched || {}).start = true; } render(); }
+function setCsDuration(v){ state.csDuration = v; (state.csTouched = state.csTouched || {}).dur = true; render(); }
+function setCsLocation(v){ state.csLocation = v; (state.csTouched = state.csTouched || {}).loc = true; render(); }
 function setCsAgeGroup(v){ state.csAgeGroup = v; render(); }
 function setCsSessionStyle(v){ state.csSessionStyle = v; render(); }
 function csGoToGenerate(){
@@ -10985,6 +11015,7 @@ function applyGeneratedSessionToDraft(session){
   if(cfg.location === 'indoor' || cfg.location === 'outdoor') state.practiceLocation = cfg.location;   // "Either" keeps the app's current default
   state.sessionName = cfg.title;
   if(cfg.date) state.practiceDate = cfg.date;
+  if(cfg.startTime) state.practiceStartTime = cfg.startTime;
   state.csReviewCfg = {...cfg};
   state.csDraftGenerated = true;
   state.csGeneratedSig = csDraftSignature();
@@ -11105,6 +11136,7 @@ function renderCustomSessionSetup(){
     <div class="su-group">
       ${setupRowHtml(ICONS.pencil, 'Session Title', titleCtl)}
       ${setupRowHtml(ICONS.calendar, 'Date', dateCtl)}
+      ${setupRowHtml(ICONS.clock, 'Start Time', startTimeFieldHtml(state.csStartTime, 'setCsStartTime'))}
       ${setupRowHtml(ICONS.clock, 'Session Duration', csSegHtml(CS_DURATIONS.map(d => [d, String(d)]), state.csDuration, 'setCsDuration'))}
       ${setupRowHtml(ICONS.mapPin, 'Location', csSegHtml(CS_LOCATIONS, state.csLocation, 'setCsLocation'))}
       ${setupRowHtml(ICONS.user, 'Age Group', csSegHtml(CS_AGE_GROUPS.map(a => [a, a]), state.csAgeGroup, 'setCsAgeGroup'))}
@@ -12210,6 +12242,39 @@ function formatPracticeDateShort(iso){
   const d = new Date(parts[0], parts[1]-1, parts[2]);
   return d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
 }
+/* The club's regular practice nights (JS weekday: 1 = Mon, 2 = Tue, 4 = Thu). Picking one of these dates pre-fills the start time,
+   length and location on Session Setup / Custom Session Step 2 -- but only for fields the coach hasn't already changed by hand. */
+const PRACTICE_SCHEDULE = {
+  1:{start:'17:00', duration:90, location:'outdoor'},   // Monday 5:00 - 6:30 PM, outdoor
+  2:{start:'18:00', duration:60, location:'indoor'},    // Tuesday 6:00 - 7:00 PM, indoor
+  4:{start:'17:00', duration:75, location:'outdoor'},   // Thursday 5:00 - 6:15 PM, outdoor
+};
+function scheduleFor(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||'')); if(!m) return null;
+  return PRACTICE_SCHEDULE[new Date(+m[1], +m[2]-1, +m[3]).getDay()] || null;
+}
+/* Start times are stored as 24-hour "HH:MM" text ('' = none set). */
+function timeToMin(hhmm){ const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm||'')); return m ? (+m[1])*60 + (+m[2]) : null; }
+function minToTime(min){ const t = ((Math.round(min) % 1440) + 1440) % 1440; return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0'); }
+function timeLabel(hhmm){
+  const m = timeToMin(hhmm); if(m === null) return '';
+  const h = Math.floor(m/60), mi = m % 60;
+  return `${h%12 || 12}:${String(mi).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+// "5:00 \u2013 6:15 PM" (the AM/PM is only repeated when the two ends differ).
+function timeRangeLabel(hhmm, offsetMin, lenMin){
+  const a = timeToMin(hhmm); if(a === null) return '';
+  const s1 = timeLabel(minToTime(a + offsetMin)), s2 = timeLabel(minToTime(a + offsetMin + lenMin));
+  return s1.slice(-2) === s2.slice(-2) ? `${s1.slice(0, -3)} \u2013 ${s2}` : `${s1} \u2013 ${s2}`;
+}
+function startTimeFieldHtml(value, fn){
+  return `
+    <label class="su-date-field">
+      <span class="su-date-value">${escHtml(timeLabel(value) || 'Set a time')}</span>
+      <span class="su-date-chev">${ICONS.chevronRight}</span>
+      <input type="time" class="su-date-input" value="${escAttr(value||'')}" aria-label="Start time" onclick="try{this.showPicker()}catch(e){}" onchange="${fn}(this.value)">
+    </label>`;
+}
 // Fills in Practice Setup's own draft fields fresh -- called whenever Setup is entered to start a
 // brand-new practice. Duration/location default to whatever was last used (state.targetDuration/
 // state.practiceLocation already persist across sessions today -- this preserves that instead of
@@ -12217,8 +12282,11 @@ function formatPracticeDateShort(iso){
 function initSetupDraft(){
   state.setupName = defaultSessionName();
   state.setupDate = todayISODate();
+  state.setupStartTime = state.practiceStartTime;
   state.setupDuration = state.targetDuration;
   state.setupLocation = state.practiceLocation;
+  state.setupTouched = {};
+  applySetupSchedule();
   state.setupSelectedTemplateId = null;
   state.setupEditingDuration = false;
 }
@@ -12932,7 +13000,7 @@ function completeSession(){
     id, name,
     totalMin: total, exCount: count, createdAt: Date.now(), createdBy: state.coachName,
     targetDuration: state.targetDuration, phases: phasesSnapshot,
-    practiceDate: state.practiceDate, location: state.practiceLocation, templateId: state.activeTemplateId,
+    practiceDate: state.practiceDate, startTime: state.practiceStartTime || '', location: state.practiceLocation, templateId: state.activeTemplateId,
     rating: 0, comment: '', favorited: false, visibility: 'shared',
     // Only a Custom Session knows these; they let a shared link show "Play Forward - U10 - Balanced".
     focusArea: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.focusArea) || '',
@@ -13276,20 +13344,29 @@ function renderReview(custom){
    fields (state.setup*) so back-navigation can never leave behind a stray mutated or accidental
    empty practice. */
 function setSetupName(v){ state.setupName = v; }
-function setSetupDate(v){ state.setupDate = v; render(); }
-function setSetupDuration(v){ state.setupDuration = v; state.setupEditingDuration = false; render(); }
+function applySetupSchedule(){
+  const sc = scheduleFor(state.setupDate), t = state.setupTouched || {};
+  if(!sc) return;
+  if(!t.start) state.setupStartTime = sc.start;
+  if(!t.dur) state.setupDuration = sc.duration;
+  if(!t.loc) state.setupLocation = sc.location;
+}
+function setSetupDate(v){ state.setupDate = v; applySetupSchedule(); render(); }
+function setSetupStartTime(v){ if(v){ state.setupStartTime = v; (state.setupTouched = state.setupTouched || {}).start = true; } render(); }
+function setSetupDuration(v){ state.setupDuration = v; state.setupEditingDuration = false; (state.setupTouched = state.setupTouched || {}).dur = true; render(); }
 function toggleSetupCustomDurationEdit(){
   state.setupEditingDuration = true;
   render();
   setTimeout(()=>{ const el=document.getElementById('setupCustomDurInput'); if(el){ el.focus(); el.select(); } }, 0);
 }
 function commitSetupCustomDuration(rawVal){
+  (state.setupTouched = state.setupTouched || {}).dur = true;
   const n = parseInt(String(rawVal).replace(/[^0-9]/g,''), 10);
   if(!isNaN(n) && n>0) state.setupDuration = Math.max(15, n);
   state.setupEditingDuration = false;
   setTimeout(render, 0);
 }
-function setSetupLocation(loc){ state.setupLocation = loc; render(); }
+function setSetupLocation(loc){ state.setupLocation = loc; (state.setupTouched = state.setupTouched || {}).loc = true; render(); }
 // Tapping an already-selected template again deselects it (back to Start From Scratch) -- the
 // coach can freely change their mind before ever committing via the bottom CTA.
 function selectSetupTemplate(id){
@@ -13304,8 +13381,10 @@ function selectSetupScratch(){ state.setupSelectedTemplateId = null; render(); }
 function editPracticeSetup(){
   state.setupName = state.sessionName;
   state.setupDate = state.practiceDate;
+  state.setupStartTime = state.practiceStartTime;
   state.setupDuration = state.targetDuration;
   state.setupLocation = state.practiceLocation;
+  state.setupTouched = {start:true, dur:true, loc:true};   // editing a practice already in progress: never overwrite its values
   state.setupSelectedTemplateId = state.activeTemplateId;
   state.setupEditingDuration = false;
   nav('practiceSetup');
@@ -13338,6 +13417,7 @@ function startFromSetup(){
   // (a template's duration is just its typical/default length, not a hard requirement for today).
   state.sessionName = (state.setupName || '').trim() || defaultSessionName();
   state.practiceDate = state.setupDate || todayISODate();
+  state.practiceStartTime = state.setupStartTime || state.practiceStartTime || '17:00';
   state.targetDuration = state.setupDuration;
   state.practiceLocation = state.setupLocation;
   state.activeTemplateId = templateId || null;
@@ -13421,6 +13501,7 @@ function renderPracticeSetup(){
     <div class="su-group">
       ${setupRowHtml(ICONS.pencil, 'Title', titleCtl)}
       ${setupRowHtml(ICONS.calendar, 'Date', dateCtl)}
+      ${setupRowHtml(ICONS.clock, 'Start Time', startTimeFieldHtml(state.setupStartTime, 'setSetupStartTime'))}
       ${setupRowHtml(ICONS.clock, 'Duration (min)', durationCtl)}
       ${setupRowHtml(ICONS.mapPin, 'Location', locationCtl)}
     </div>
@@ -13461,6 +13542,11 @@ function renameSavedSession(id, val){
   }
   render();
   if(note) showToast(note);
+}
+function setSavedSessionStartTime(id, val){
+  const s = state.savedSessions.find(s=>s.id===id);
+  if(s && timeToMin(val) !== null && s.createdBy === state.coachName){ s.startTime = val; pushSessionToSheet(s); }
+  render();
 }
 function setSavedSessionDuration(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
@@ -13791,6 +13877,9 @@ function renderSessionDetail(){
     </div>
     <div class="sd-meta-row" style="margin-top:10px;">
       <div class="sd-meta"><div class="smnum">${s.createdBy}</div><div class="smlbl">Added by</div></div>
+      <div class="sd-meta">${editing
+        ? `<label class="sd-time-edit"><input type="time" class="sd-time-input" value="${escAttr(s.startTime||'')}" aria-label="Start time" onchange="setSavedSessionStartTime('${escJsAttr(s.id)}', this.value)"></label>`
+        : `<div class="smnum">${s.startTime ? escHtml(timeLabel(s.startTime)) : '\u2014'}</div>`}<div class="smlbl">Start time</div></div>
     </div>
 
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
@@ -13850,15 +13939,42 @@ function renderSessionDetail(){
    those page images (JPEG), so it prints at the right size and needs no library. New layouts = one more entry in
    PRINT_LAYOUTS. Layout units are PDF points (1/72 in). */
 const PRINT_LAYOUTS = {
-  pocket:{label:'Pocket', size:'4 × 5.5"', desc:'Compact field-side reference', w:4, h:5.5, dpi:220, m:14, cols:[62,76], gap:6,
-          fTitle:8.5, fTime:7, fNote:7, fBanner:8.5, fHead:17, fMeta:7.5, banH:15, pad:5, foot:10, setupN:130, actN:190, coachN:130},
-  half:{label:'Half Page', size:'5.5 × 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:22, cols:[82,100], gap:8,
-        fTitle:9.5, fTime:7.5, fNote:8, fBanner:9.5, fHead:22, fMeta:8.5, banH:17, pad:6, foot:12, setupN:160, actN:240, coachN:160},
-  full:{label:'Full Page', size:'8.5 × 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:36, cols:[125,150], gap:10,
-        fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:30, fMeta:11, banH:20, pad:8, foot:16, setupN:200, actN:320, coachN:200},
+  // w / h = the exact page in inches. c1f / c2f = share of the content width for the title and diagram columns.
+  // f* = font sizes in points at full size; ftRenderPages() shrinks (down to minNote) and then shortens the
+  // notes until the WHOLE session fits on that one page.
+  pocket:{label:'Pocket', size:'4.25 \u00d7 5.5"', desc:'Compact field-side reference', w:4.25, h:5.5, dpi:240, m:11, c1f:0.21, c2f:0.27, gap:4,
+          fTitle:7, fTime:5.6, fNote:6, fBanner:6.5, fHead:12, fMeta:5.8, banH:10.5, pad:3, foot:7, setupN:110, actN:170, coachN:110, minNote:4.6},
+  half:{label:'Half Page', size:'5.5 \u00d7 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:18, c1f:0.21, c2f:0.27, gap:6,
+        fTitle:9, fTime:7, fNote:7.6, fBanner:8.5, fHead:18, fMeta:7.2, banH:13.5, pad:4.5, foot:9, setupN:150, actN:230, coachN:150, minNote:5.6},
+  full:{label:'Full Page', size:'8.5 \u00d7 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:30, c1f:0.2, c2f:0.27, gap:10,
+        fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:28, fMeta:10, banH:18, pad:7, foot:14, setupN:200, actN:320, coachN:200, minNote:6.3},
 };
 const PRINT_BODY_FONT = '"Inter", "Helvetica Neue", Arial, sans-serif';
 const PRINT_HEAD_FONT = '"Barlow Condensed", "Arial Narrow", sans-serif';
+// "linear-gradient(90deg, #a, #b)" token -> [#a, #b] (falls back to a flat colour).
+function ftCssGradient(v, flat){
+  const raw = ftCssColor(v);
+  const hex = raw.match(/#[0-9a-fA-F]{3,8}/g);
+  return hex && hex.length >= 2 ? [hex[0], hex[1]] : [flat, flat];
+}
+// Small line icons (24x24 grid) drawn straight onto the canvas.
+const FT_ICON_PATHS = {
+  calendar:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+  clock:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  stopwatch:'M12 8v5l3 2M9 2h6M12 2v3M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16z',
+  users:'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1M17 4a3.5 3.5 0 0 1 0 7M22 20v-1a5 5 0 0 0-3.5-4.8',
+  pin:'M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  Activate:'M13 2L4 14h7l-1 8 9-12h-7z',
+  Develop:'M4 4l5 5M9 4l-5 5M15 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 4l3 3-3 3',
+  Play:'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3',
+};
+function ftDrawIcon(ctx, key, x, y, size, color, width){
+  const d = FT_ICON_PATHS[key]; if(!d) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(size/24, size/24);
+  ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.stroke(new Path2D(d));
+  ctx.restore();
+}
 function ftCssColor(v){
   const m = /var\((--[\w-]+)\)/.exec(v || '');
   const raw = m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : String(v || '');
@@ -13897,26 +14013,37 @@ function ftLoadImage(src){
     im.src = src;
   });
 }
-function ftPrintModel(s, L){
+// Text-trimming levels used when a long session still doesn't fit after shrinking: [cap multiplier, activity sentences].
+const FT_TRIM_LEVELS = [[1, 2], [0.8, 2], [0.62, 1], [0.5, 1], [0.4, 1]];
+const FT_DIAGRAM_K = [1, 1, 0.9, 0.8, 0.7];   // extra diagram shrink per trim level (the diagram also follows the type scale)
+function ftPrintModel(s, L, level){
+  const [capK, actSent] = FT_TRIM_LEVELS[level || 0];
   let n = 0;
   const mk = (e) => {
     n++;
     const ex = resolveSavedExercise(e);
     return {n, name: ex ? ex.name : e.name, mins: Number(e.duration) || (ex && ex.duration) || 0, unavailable: !ex,
       img: ex ? ftImageUrl(ex) : '',
-      setup: ex ? ftBrief(ex.setup, 1, L.setupN) : '',
-      activity: ex ? ftBrief(ex.description, 2, L.actN) : '',
-      coaching: ex ? ftBrief(ex.coachingPoints, 1, L.coachN) : ''};
+      setup: ex ? ftBrief(ex.setup, 1, Math.round(L.setupN * capK)) : '',
+      activity: ex ? ftBrief(ex.description, actSent, Math.round(L.actN * capK)) : '',
+      coaching: ex ? ftBrief(ex.coachingPoints, 1, Math.round(L.coachN * capK)) : ''};
   };
-  const groups = sessionDetailPhaseGroups(s).map(g => ({label:g.label, mins:g.mins, color:ftCssColor(g.color), dark:g.textOn === 'dark', items:g.items.map(mk)}));
+  const groups = sessionDetailPhaseGroups(s).map(g => ({label:g.label, mins:g.mins, color:ftCssColor(g.color), grad:ftCssGradient(g.bg, ftCssColor(g.color)), dark:g.textOn === 'dark', items:g.items.map(mk)}));
   s.phases.filter(p => !PHASES.some(ph => ph.section === p.section) && p.exercises.length).forEach(p => {
-    groups.push({label:p.label, mins:p.exercises.reduce((a,e)=>a+(Number(e.duration)||0),0), color:'#475569', dark:false, items:p.exercises.map(mk)});
+    groups.push({label:p.label, mins:p.exercises.reduce((a,e)=>a+(Number(e.duration)||0),0), color:'#475569', grad:['#475569','#64748B'], dark:false, items:p.exercises.map(mk)});
   });
   const dateText = formatPracticeDateShort(s.practiceDate) || new Date(s.createdAt || Date.now()).toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
-  const meta = [dateText, `${Number(s.targetDuration) || Number(s.totalMin) || 0} min`];
-  if(s.ageGroup) meta.push(s.ageGroup);
-  meta.push(s.location === 'indoor' ? 'Indoor' : 'Outdoor');
-  return {title:s.name, meta:meta.join('  ·  '), groups};
+  const target = Number(s.targetDuration) || Number(s.totalMin) || 0;
+  const start = timeToMin(s.startTime) !== null ? s.startTime : '';
+  // Each phase's own clock window, laid end to end from the start time.
+  let offset = 0;
+  groups.forEach(g => { g.timeText = start ? timeRangeLabel(start, offset, g.mins) : ''; offset += g.mins; });
+  const info = [{icon:'calendar', text:dateText}];
+  if(start) info.push({icon:'clock', text:timeRangeLabel(start, 0, target)});
+  info.push({icon:'stopwatch', text:`${target} min`});
+  if(s.ageGroup) info.push({icon:'users', text:s.ageGroup});
+  info.push({icon:'pin', text:s.location === 'indoor' ? 'Indoor' : 'Outdoor'});
+  return {title:s.name, dateText, info, groups};
 }
 // Greedy word wrap; `runs` = [{t, bold}] words (so a bold label can lead a normal-weight sentence).
 function ftWrapRuns(ctx, runs, maxW, fN, fB){
@@ -13950,129 +14077,159 @@ function ftDrawLine(ctx, line, x, y, fN, fB, color){
 function ftRoundRect(ctx, x, y, w, h, r){
   ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
 }
-async function ftRenderPages(s, layoutKey){
-  const L = PRINT_LAYOUTS[layoutKey];
-  const model = ftPrintModel(s, L);
-  try{
-    await Promise.all([document.fonts.load(`700 12px ${PRINT_HEAD_FONT}`), document.fonts.load(`400 12px ${PRINT_BODY_FONT}`), document.fonts.load(`700 12px ${PRINT_BODY_FONT}`)]);
-  }catch(e){}
-  const items = model.groups.flatMap(g => g.items);
-  const logo = await ftLoadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_MARK));
-  const imgs = await Promise.all(items.map(it => ftLoadImage(it.img)));
-  items.forEach((it,i) => { it.image = imgs[i]; });
-
+// Everything has to fit on ONE page of the exact size: try the full-size layout first, then shrink the type (never below
+// the layout's readable floor), then shorten the repository notes a step at a time, until the whole session fits.
+function ftScaled(L, k){
+  return {...L, fTitle:L.fTitle*k, fTime:L.fTime*k, fNote:L.fNote*k, fBanner:L.fBanner*k, fHead:L.fHead*k, fMeta:L.fMeta*k, banH:L.banH*k, pad:L.pad*k, foot:L.foot*k, gap:L.gap*k};
+}
+function ftMeasure(model, L, mc, dS){
   const PW = L.w*72, PH = L.h*72, M = L.m, CW = PW - 2*M;
-  const c1 = L.cols[0], c2 = L.cols[1], c3 = CW - c1 - c2 - 2*L.gap;
-  const x1 = M, x2 = M + c1 + L.gap, x3 = x2 + c2 + L.gap;
-  const mc = document.createElement('canvas').getContext('2d');
+  const c1 = CW * L.c1f, c2 = CW * L.c2f * dS, c3 = CW - c1 - c2 - 2*L.gap;   // dS shrinks the diagram column (and gives the notes the room)
   const fT = `700 ${L.fTitle}px ${PRINT_BODY_FONT}`, fN = `400 ${L.fNote}px ${PRINT_BODY_FONT}`, fB = `700 ${L.fNote}px ${PRINT_BODY_FONT}`;
-  const badge = L.fTitle * 1.7, lhT = L.fTitle * 1.22, lhN = L.fNote * 1.28, imgH = c2 * 0.66;
-
-  // measure every exercise row
+  const badge = L.fTitle * 1.7, lhT = L.fTitle * 1.2, lhN = L.fNote * 1.22, imgH = c2 * 0.62;
+  const m = {PW, PH, M, CW, c1, c2, c3, fT, fN, fB, badge, lhT, lhN, imgH, badgeGap:Math.max(3.5, L.fTitle * 0.6)};   // room between the number circle and the title
+  const items = model.groups.flatMap(g => g.items);
   items.forEach(it => {
-    it.titleLines = ftWrapRuns(mc, ftRuns('', it.name).map(r => ({...r, bold:true})), c1 - badge - 3, fT, fT);
-    const h1 = Math.max(it.titleLines.length * lhT, badge) + 2 + L.fTime * 1.3;
+    it.titleLines = ftWrapRuns(mc, ftRuns('', it.name).map(r => ({...r, bold:true})), c1 - badge - m.badgeGap, fT, fT);
+    const h1 = Math.max(it.titleLines.length * lhT, badge) + 1.5 + L.fTime * 1.25;
     const notes = it.unavailable
       ? [ftWrapRuns(mc, ftRuns('Exercise unavailable:', 'This exercise is no longer in the FT2 exercise library.'), c3, fN, fB)]
       : [['Setup', it.setup], ['Activity', it.activity], ['Coaching point', it.coaching]].filter(n => n[1]).map(n => ftWrapRuns(mc, ftRuns(n[0] + ':', n[1]), c3, fN, fB));
     it.noteLines = notes;
-    const h3 = notes.reduce((a,n) => a + n.length * lhN, 0) + Math.max(notes.length - 1, 0) * 2.5;
+    const h3 = notes.reduce((a,n) => a + n.length * lhN, 0) + Math.max(notes.length - 1, 0) * L.fNote * 0.3;
     it.h = Math.max(h1, imgH, h3) + L.pad * 2;
   });
-
-  // paginate
-  const headTitleLines = ftWrapRuns(mc, ftRuns('', model.title).map(r => ({...r, bold:true})), CW - (L.fHead * 1.5), `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`);
-  const head1H = L.fHead * 1.35 + L.fHead * 0.95 + (headTitleLines.length - 1) * L.fHead * 1.08 + L.fMeta * 1.9 + 8;
-  const headNH = L.fMeta * 2;
-  const bottom = PH - M - L.foot;
-  const pages = [];
-  let page = {items:[], y:M + head1H}; pages.push(page);
-  const newPage = () => { page = {items:[], y:M + headNH}; pages.push(page); };
-  model.groups.forEach(g => {
-    g.items.forEach((it, idx) => {
-      const needBanner = idx === 0;
-      const need = (needBanner ? L.banH + 4 : 0) + it.h;
-      if(page.y + need > bottom && page.items.length) newPage();
-      if(needBanner || (page.items.length === 0)){
-        page.items.push({kind:'banner', y:page.y, g, cont:!needBanner});
-        page.y += L.banH + 4;
-      }
-      page.items.push({kind:'row', y:page.y, it, g});
-      page.y += it.h;
-    });
-  });
-
-  // draw
-  const S = L.dpi / 72;
-  const out = [];
-  for(let pi = 0; pi < pages.length; pi++){
-    const cv = document.createElement('canvas');
-    cv.width = Math.round(PW * S); cv.height = Math.round(PH * S);
-    const ctx = cv.getContext('2d');
-    ctx.scale(S, S);
-    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PW, PH);
-    ctx.textBaseline = 'alphabetic';
-    // header
-    if(pi === 0){
-      const lg = L.fHead * 1.35;
-      if(logo){ ctx.save(); ftRoundRect(ctx, M, M, lg, lg, lg*0.18); ctx.clip(); ctx.drawImage(logo, M, M, lg, lg); ctx.restore(); }
-      else { ctx.fillStyle = '#F7FF00'; ftRoundRect(ctx, M, M, lg, lg, lg*0.18); ctx.fill(); }
-      ctx.fillStyle = '#0F172A'; ctx.font = `700 ${L.fMeta * 1.25}px ${PRINT_BODY_FONT}`;
-      ctx.fillText('FT2 COACHES', M + lg + 6, M + lg * 0.5);
-      ctx.fillStyle = '#64748B'; ctx.font = `400 ${L.fMeta}px ${PRINT_BODY_FONT}`;
-      ctx.fillText('Fast Tigers Futbol Training', M + lg + 6, M + lg * 0.5 + L.fMeta * 1.3);
-      let ty = M + lg + L.fHead * 0.95;
-      headTitleLines.forEach(line => { ftDrawLine(ctx, line, M, ty, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, `700 ${L.fHead}px ${PRINT_HEAD_FONT}`, '#0F172A'); ty += L.fHead * 1.08; });
-      ctx.fillStyle = '#334155'; ctx.font = `600 ${L.fMeta}px ${PRINT_BODY_FONT}`;
-      ctx.fillText(model.meta, M, ty + L.fMeta * 0.5);
-    } else {
-      ctx.fillStyle = '#64748B'; ctx.font = `700 ${L.fMeta}px ${PRINT_BODY_FONT}`;
-      ctx.fillText(`FT2 COACHES  ·  ${model.title}`, M, M + L.fMeta);
+  // Header band (like the FT2 sheet mock-up): a yellow slanted block with the logo on the left; to its right the title on
+  // row 1 and, on row 2, date | time range | length | age | location, each with a small icon, all on ONE line.
+  m.rowTitleH = L.fHead * 1.08; m.rowMetaH = L.fMeta * 1.7; m.padY = Math.max(M * 0.55, 4);
+  m.logo = m.rowTitleH + m.rowMetaH;
+  m.bandH = m.logo + m.padY * 2;
+  m.blockW = M + m.logo + M * 0.6;
+  m.slant = m.bandH * 0.28;
+  m.textX = m.blockW + L.fMeta * 0.7;
+  const availW = PW - m.textX - M;
+  let tf = L.fHead; mc.font = `700 ${tf}px ${PRINT_HEAD_FONT}`;
+  const tTitle = model.title.toUpperCase();
+  while(mc.measureText(tTitle).width > availW && tf > L.fHead * 0.62){ tf -= 0.25; mc.font = `700 ${tf}px ${PRINT_HEAD_FONT}`; }
+  let title = tTitle;
+  if(mc.measureText(title).width > availW){ while(title.length > 3 && mc.measureText(title + '\u2026').width > availW) title = title.slice(0, -1); title = title.trim() + '\u2026'; }
+  const infoWidth = f => model.info.reduce((a,it,i) => { mc.font = `600 ${f}px ${PRINT_BODY_FONT}`; return a + f*1.25 + f*0.35 + mc.measureText(it.text).width + (i ? f*1.4 : 0); }, 0);
+  let mf = L.fMeta;
+  while(infoWidth(mf) > availW && mf > L.fMeta * 0.55) mf -= 0.15;
+  m.titleFont = tf; m.titleText = title; m.metaFont = mf;
+  m.headH = m.bandH;
+  m.banGap = L.fMeta * 0.5;
+  m.total = m.headH + m.banGap + model.groups.reduce((a,g) => a + L.banH + m.banGap + g.items.reduce((x,it) => x + it.h, 0), 0);
+  m.bottom = PH - M - L.foot;
+  m.fits = m.total <= m.bottom;
+  return m;
+}
+async function ftRenderPages(s, layoutKey){
+  const L0 = PRINT_LAYOUTS[layoutKey];
+  try{
+    await Promise.all([document.fonts.load(`700 12px ${PRINT_HEAD_FONT}`), document.fonts.load(`400 12px ${PRINT_BODY_FONT}`), document.fonts.load(`700 12px ${PRINT_BODY_FONT}`)]);
+  }catch(e){}
+  const logo = await ftLoadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_MARK));
+  const base = ftPrintModel(s, L0, 0);
+  const imgs = await Promise.all(base.groups.flatMap(g => g.items).map(it => ftLoadImage(it.img)));
+  const mc = document.createElement('canvas').getContext('2d');
+  const floorK = L0.minNote / L0.fNote;
+  let chosen = null;
+  for(let level = 0; level < FT_TRIM_LEVELS.length && !chosen; level++){
+    const model = ftPrintModel(s, L0, level);
+    model.groups.flatMap(g => g.items).forEach((it, i) => { it.image = imgs[i]; });
+    for(let k = 1; k >= floorK - 0.001; k -= 0.025){
+      const kk = Math.max(k, floorK);
+      const L = ftScaled(L0, kk);
+      const dS = Math.max(0.45, Math.min(1, kk) * FT_DIAGRAM_K[level]);
+      const m = ftMeasure(model, L, mc, dS);
+      if(m.fits){ chosen = {model, L, m, level}; break; }
     }
-    // body
-    pages[pi].items.forEach(b => {
-      if(b.kind === 'banner'){
-        ctx.fillStyle = b.g.color; ftRoundRect(ctx, M, b.y, CW, L.banH, 3); ctx.fill();
-        ctx.fillStyle = b.g.dark ? '#0F172A' : '#FFFFFF'; ctx.font = `800 ${L.fBanner}px ${PRINT_BODY_FONT}`;
-        ctx.textAlign = 'left'; ctx.fillText(b.g.label.toUpperCase() + (b.cont ? ' (CONT.)' : ''), M + 6, b.y + L.banH * 0.5 + L.fBanner * 0.36);
-        ctx.textAlign = 'right'; ctx.fillText(`${b.g.mins} min`, M + CW - 6, b.y + L.banH * 0.5 + L.fBanner * 0.36); ctx.textAlign = 'left';
-        return;
-      }
-      const it = b.it, y0 = b.y + L.pad;
-      // separator
-      ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(M, b.y + it.h); ctx.lineTo(M + CW, b.y + it.h); ctx.stroke();
-      // number badge + title + timing
-      ctx.fillStyle = b.g.color; ctx.beginPath(); ctx.arc(x1 + badge/2, y0 + badge/2, badge/2, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = b.g.dark ? '#0F172A' : '#FFFFFF'; ctx.font = `800 ${L.fTitle * 0.95}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'center';
+    if(!chosen && level === FT_TRIM_LEVELS.length - 1){          // last resort: smallest type, shortest notes, smallest diagrams, tighter padding
+      const L = ftScaled(L0, floorK); L.pad = L.pad * 0.5; L.banH = L.banH * 0.85;
+      chosen = {model, L, m:ftMeasure(model, L, mc, 0.4), level};
+    }
+  }
+  const {model, L, m} = chosen;
+  const {PW, PH, M, CW, c1, c2, c3, fT, fN, fB, badge, lhT, lhN, imgH} = m;
+  const x1 = M, x2 = M + c1 + L.gap, x3 = x2 + c2 + L.gap;
+  const S = L0.dpi / 72;
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(PW * S); cv.height = Math.round(PH * S);
+  const ctx = cv.getContext('2d');
+  ctx.scale(S, S);
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PW, PH);
+  ctx.textBaseline = 'alphabetic';
+  // header band
+  ctx.fillStyle = '#F7FF00';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(m.blockW + m.slant, 0); ctx.lineTo(m.blockW, m.bandH); ctx.lineTo(0, m.bandH); ctx.closePath(); ctx.fill();
+  const lg = m.logo;
+  if(logo){ ctx.save(); ftRoundRect(ctx, M, m.padY, lg, lg, lg*0.14); ctx.clip(); ctx.drawImage(logo, M, m.padY, lg, lg); ctx.restore(); }
+  ctx.fillStyle = '#0F172A'; ctx.font = `700 ${m.titleFont}px ${PRINT_HEAD_FONT}`;
+  ctx.fillText(m.titleText, m.textX, m.padY + m.rowTitleH * 0.84);
+  // info row: icon + text, thin dividers between items
+  const mf = m.metaFont, iy = m.padY + m.rowTitleH + m.rowMetaH * 0.5;
+  let ix = m.textX;
+  model.info.forEach((it, i) => {
+    if(i){ ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(ix - mf*0.7, iy - mf*0.7); ctx.lineTo(ix - mf*0.7, iy + mf*0.7); ctx.stroke(); }
+    ftDrawIcon(ctx, it.icon, ix, iy - mf*0.62, mf*1.25, '#0F172A', 2);
+    ix += mf*1.25 + mf*0.35;
+    ctx.fillStyle = '#0F172A'; ctx.font = `600 ${mf}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'left';
+    ctx.fillText(it.text, ix, iy + mf*0.36);
+    ix += ctx.measureText(it.text).width + mf*1.4;
+  });
+  // body (stretch the leftover vertical space evenly across the rows so the page is filled, never overflowing)
+  let y = m.headH + m.banGap;
+  const rows = model.groups.reduce((a,g) => a + g.items.length, 0);
+  const extra = Math.max(0, m.bottom - m.total) / Math.max(rows, 1);
+  const extraCapped = Math.min(extra, L.fNote * 2.2);
+  model.groups.forEach(g => {
+    const gr = ctx.createLinearGradient(M, 0, M + CW, 0); gr.addColorStop(0, g.grad[0]); gr.addColorStop(1, g.grad[1]);
+    ctx.fillStyle = gr; ftRoundRect(ctx, M, y, CW, L.banH, 2.5); ctx.fill();
+    const by = y + L.banH * 0.5, bf = L.fBanner;
+    ftDrawIcon(ctx, g.label, M + 4, by - bf*0.7, bf*1.4, '#FFFFFF', 2.2);
+    ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'left'; ctx.font = `800 ${bf}px ${PRINT_BODY_FONT}`;
+    const lx = M + 4 + bf*1.4 + 4;
+    ctx.fillText(g.label.toUpperCase(), lx, by + bf*0.36);
+    const lw = ctx.measureText(g.label.toUpperCase()).width;
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(lx + lw + 5, by - bf*0.7); ctx.lineTo(lx + lw + 5, by + bf*0.7); ctx.stroke();
+    const tx = lx + lw + 10;
+    ftDrawIcon(ctx, 'clock', tx, by - bf*0.55, bf*1.1, '#FFFFFF', 2.2);
+    ctx.font = `700 ${bf*0.92}px ${PRINT_BODY_FONT}`;
+    ctx.fillText(`${g.mins} MIN${g.timeText ? ` (${g.timeText})` : ''}`, tx + bf*1.1 + 3, by + bf*0.33);
+    y += L.banH + m.banGap;
+    g.items.forEach(it => {
+      const rh = it.h + extraCapped, y0 = y + L.pad + extraCapped / 2;
+      ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 0.4; ctx.beginPath(); ctx.moveTo(M, y + rh); ctx.lineTo(M + CW, y + rh); ctx.stroke();
+      ctx.fillStyle = g.color; ctx.beginPath(); ctx.arc(x1 + badge/2, y0 + badge/2, badge/2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; ctx.font = `800 ${L.fTitle * 0.95}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'center';
       ctx.fillText(String(it.n), x1 + badge/2, y0 + badge/2 + L.fTitle * 0.34); ctx.textAlign = 'left';
-      let ty = y0 + L.fTitle * 0.95;
-      it.titleLines.forEach(line => { ftDrawLine(ctx, line, x1 + badge + 3, ty, fT, fT, '#0F172A'); ty += lhT; });
+      let ny0 = y0 + L.fTitle * 0.95;
+      it.titleLines.forEach(line => { ftDrawLine(ctx, line, x1 + badge + m.badgeGap, ny0, fT, fT, '#0F172A'); ny0 += lhT; });
       ctx.fillStyle = '#64748B'; ctx.font = `600 ${L.fTime}px ${PRINT_BODY_FONT}`;
-      ctx.fillText(`${it.mins} min`, x1 + badge + 3, Math.max(ty, y0 + badge) + L.fTime * 0.5);
-      // diagram
-      ctx.fillStyle = '#F1F5F9'; ftRoundRect(ctx, x2, y0, c2, imgH, 3); ctx.fill();
+      ctx.fillText(`${it.mins} min`, x1 + badge + m.badgeGap, Math.max(ny0, y0 + badge) + L.fTime * 0.4);
+      ctx.fillStyle = '#F1F5F9'; ftRoundRect(ctx, x2, y0, c2, imgH, 2.5); ctx.fill();
       if(it.image){
         const iw = it.image.naturalWidth || it.image.width, ih = it.image.naturalHeight || it.image.height;
         const k = Math.min(c2 / iw, imgH / ih), dw = iw * k, dh = ih * k;
-        ctx.save(); ftRoundRect(ctx, x2, y0, c2, imgH, 3); ctx.clip(); ctx.drawImage(it.image, x2 + (c2 - dw)/2, y0 + (imgH - dh)/2, dw, dh); ctx.restore();
+        ctx.save(); ftRoundRect(ctx, x2, y0, c2, imgH, 2.5); ctx.clip(); ctx.drawImage(it.image, x2 + (c2 - dw)/2, y0 + (imgH - dh)/2, dw, dh); ctx.restore();
       } else {
         ctx.fillStyle = '#94A3B8'; ctx.font = `600 ${L.fTime}px ${PRINT_BODY_FONT}`; ctx.textAlign = 'center';
         ctx.fillText(it.unavailable ? 'Unavailable' : 'No diagram', x2 + c2/2, y0 + imgH/2 + L.fTime * 0.35); ctx.textAlign = 'left';
       }
-      // notes
-      let ny = y0 + L.fNote * 0.95;
+      let ny = y0 + L.fNote * 0.9;
       it.noteLines.forEach(note => {
         note.forEach(line => { ftDrawLine(ctx, line, x3, ny, fN, fB, '#1E293B'); ny += lhN; });
-        ny += 2.5;
+        ny += L.fNote * 0.3;
       });
+      y += rh;
     });
-    // footer
-    ctx.fillStyle = '#94A3B8'; ctx.font = `400 ${L.fMeta * 0.9}px ${PRINT_BODY_FONT}`;
-    ctx.fillText('FT2 Coaches · Fast Tigers Futbol Training', M, PH - M * 0.55);
-    ctx.textAlign = 'right'; ctx.fillText(`Page ${pi + 1} of ${pages.length}`, PW - M, PH - M * 0.55); ctx.textAlign = 'left';
-    out.push(cv);
-  }
-  return {canvases:out, wPt:PW, hPt:PH};
+  });
+  // footer
+  ctx.fillStyle = '#94A3B8'; ctx.font = `400 ${Math.max(L.fMeta * 0.9, 4.5)}px ${PRINT_BODY_FONT}`;
+  ctx.fillText('FT2 Coaches · Fast Tigers Futbol Training', M, PH - M * 0.6);
+  ctx.textAlign = 'right'; ctx.fillText(model.dateText, PW - M, PH - M * 0.6); ctx.textAlign = 'left';
+  return {canvases:[cv], wPt:PW, hPt:PH, fit:{level:chosen.level, noteFont:Math.round(L.fNote*10)/10, fits:m.fits}};
 }
 const ftCanvasBlob = (cv, type, q) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('encode failed')), type, q));
 async function ftBuildPdf(canvases, wPt, hPt){
@@ -14119,7 +14276,8 @@ function openPrintSheet(id){
   state.printSheet = {sessionId:id, step:'options', format:'pdf', layout:'pocket', file:null, fileName:'', error:''};
   renderOverlay();
 }
-function closePrintSheet(){ state.printSheet = null; renderOverlay(); }
+function ftRevokePreview(ps){ if(ps && ps.previewUrl){ try{ URL.revokeObjectURL(ps.previewUrl); }catch(e){} ps.previewUrl = ''; } }
+function closePrintSheet(){ ftRevokePreview(state.printSheet); state.printSheet = null; renderOverlay(); }
 function setPrintFormat(v){ if(state.printSheet){ state.printSheet.format = v; renderOverlay(); } }
 function setPrintLayout(v){ if(state.printSheet){ state.printSheet.layout = v; renderOverlay(); } }
 async function createPrintFile(){
@@ -14132,16 +14290,15 @@ async function createPrintFile(){
     let blob, name;
     if(ps.format === 'pdf'){ blob = await ftBuildPdf(canvases, wPt, hPt); name = `${ftSlug(s.name)}-${ps.layout}.pdf`; }
     else { blob = await ftBuildImage(canvases); name = `${ftSlug(s.name)}-${ps.layout}.png`; }
+    // What the coach previews: the image itself, or (for a PDF) the same pages stacked as one picture.
+    const previewBlob = ps.format === 'image' ? blob : await ftBuildImage(canvases);
     if(state.printSheet !== ps) return;     // the coach closed the sheet meanwhile
+    ftRevokePreview(ps);
     ps.file = new File([blob], name, {type:blob.type});
     ps.fileName = name;
+    ps.previewUrl = URL.createObjectURL(previewBlob);
     ps.step = 'ready';
-    renderOverlay();
-    // Straight to the phone's own Print / Save to Files / AirDrop / Mail sheet where the browser allows it
-    // right after generating; otherwise the Ready screen's button does it from a fresh tap.
-    if(navigator.canShare && navigator.canShare({files:[ps.file]})){
-      try{ await navigator.share({files:[ps.file], title:s.name}); }catch(e){ /* cancelled or not allowed yet -- the Ready screen still offers it */ }
-    }
+    renderOverlay();     // the phone's share sheet opens from the Save / Send button below -- it needs its own tap
   }catch(err){
     console.warn('Print/export failed:', err && err.message);
     if(state.printSheet === ps){ ps.step = 'error'; renderOverlay(); }
@@ -14210,8 +14367,9 @@ function printSheetHtml(){
   } else if(ps.step === 'working'){
     body = `<div class="pe-state"><span class="gen-spinner" aria-hidden="true"></span><div class="pe-state-title">Creating your ${noun}…</div><div class="pe-state-sub">This takes a few seconds.</div></div>`;
   } else if(ps.step === 'ready'){
-    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Your ${noun} is ready</div><div class="pe-state-sub">${escHtml(ps.fileName)}</div></div>
-      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="sharePrintFile()">${ps.format==='pdf' ? 'Print / Save / Share' : 'Share / Save Image'}</button><button class="btn btn-ghost" onclick="downloadPrintFile()">Download</button><button class="btn btn-ghost" onclick="closePrintSheet()">Done</button></div>`;
+    body = `<div class="pe-ready-row"><span class="pe-check pe-check-sm">${ICONS.check}</span><span class="pe-ready-title">Your ${noun} is ready</span></div>
+      <div class="pe-preview" aria-label="Preview of your session">${ps.previewUrl ? `<img src="${escAttr(ps.previewUrl)}" alt="Preview of ${escAttr(ps.fileName)}">` : ''}</div>
+      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="sharePrintFile()">${ps.format==='pdf' ? 'Print / Save PDF' : 'Save / Send Image'}</button><button class="btn btn-outline" onclick="closePrintSheet()">Done</button></div>`;
   } else {
     body = `<div class="pe-state"><div class="pe-state-title">Unable to create ${noun === 'PDF' ? 'PDF' : 'image'}</div><div class="pe-state-sub">Your saved session is safe. Please try again.</div></div>
       <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Try Again</button></div>`;
@@ -14497,6 +14655,7 @@ function renderSharedSession(){
   const style = (CS_STYLES.find(x => x[0] === s.sessionStyle) || [])[1] || '';
   const meta = [
     ['Practice date', formatPracticeDateShort(s.practiceDate) || '—'],
+    s.startTime ? ['Start time', escHtml(timeLabel(s.startTime))] : null,
     ['Location', s.location === 'indoor' ? 'Indoor' : 'Outdoor'],
     focus ? ['Focus area', escHtml(focus)] : null,
     s.ageGroup ? ['Age group', escHtml(s.ageGroup)] : null,
@@ -14574,6 +14733,7 @@ function saveAppStateToStorage(){
       targetDuration: state.targetDuration,
       practiceLocation: state.practiceLocation,
       practiceDate: state.practiceDate,
+      practiceStartTime: state.practiceStartTime,
       activeTemplateId: state.activeTemplateId,
       savedSessions: state.savedSessions,
       bookmarks: [...state.bookmarks],
@@ -14605,7 +14765,7 @@ function saveAppStateToStorage(){
       replaceContext: state.replaceContext,
       customSessionStep: state.customSessionStep,
       csFocusAreaId: state.csFocusAreaId,
-      csTitle: state.csTitle, csTitleEdited: state.csTitleEdited, csDate: state.csDate,
+      csTitle: state.csTitle, csTitleEdited: state.csTitleEdited, csDate: state.csDate, csStartTime: state.csStartTime,
       csDuration: state.csDuration, csLocation: state.csLocation, csAgeGroup: state.csAgeGroup, csSessionStyle: state.csSessionStyle,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
@@ -14626,6 +14786,7 @@ function loadAppStateFromStorage(){
     if(typeof snap.targetDuration === 'number' && snap.targetDuration > 0) state.targetDuration = snap.targetDuration;
     if(snap.practiceLocation === 'indoor' || snap.practiceLocation === 'outdoor') state.practiceLocation = snap.practiceLocation;
     if(typeof snap.practiceDate === 'string' && snap.practiceDate) state.practiceDate = snap.practiceDate;
+    if(timeToMin(snap.practiceStartTime) !== null) state.practiceStartTime = snap.practiceStartTime;
     if(typeof snap.activeTemplateId === 'string' || snap.activeTemplateId === null) state.activeTemplateId = snap.activeTemplateId ?? null;
     if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
     if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
@@ -14636,6 +14797,7 @@ function loadAppStateFromStorage(){
       if(typeof snap.csTitle === 'string') state.csTitle = snap.csTitle;
       state.csTitleEdited = !!snap.csTitleEdited;
       if(typeof snap.csDate === 'string') state.csDate = snap.csDate;
+      if(timeToMin(snap.csStartTime) !== null) state.csStartTime = snap.csStartTime;
       state.csDuration = snap.csDuration ?? null;
       state.csLocation = snap.csLocation ?? null;
       state.csAgeGroup = snap.csAgeGroup ?? null;
