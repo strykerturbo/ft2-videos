@@ -467,7 +467,7 @@ rather than letting it get rediscovered next session.
   minutes -- target and actual are deliberately different things and never merged); then the Print PDF / Create Image and Share Session buttons
   side by side (`sessionDetailActionsHtml`, stack under 340px). The More menu (`sessionMoreSheetHtml`): Edit, Copy Session (= the existing
   "make a copy" duplicate flow), Make Private/Shared, Delete Session (existing confirm). Editing mode shows a check "Done" button and makes the
-  target number editable inside the metadata. Everything below the button row is unchanged.
+  target number editable inside the metadata. The old Practice date / Location / Added by / Start time cards under Rate this Session were removed (that info is in the header line); the start time can still be set while editing, via a "Start" field in the header. Everything else below the button row is unchanged.
 
 ## Where things live
 
