@@ -447,6 +447,10 @@ rather than letting it get rediscovered next session.
   a time cell otherwise -- and `startTimeText_()` reads either shape). The printed sheet's header (yellow slanted block + logo,
   title, then date | time range | length | age | location with icons) and each phase's "15 MIN (5:00 - 5:15 PM)" window come from it
   (`ftPrintModel`, phases laid end to end from the start time; the header range is start -> start + session length). No start
+  **Print always uses the LIVE exercise library**: `createPrintFile()` waits on `ensureExercisesSynced()` (2 tries, 15 s each) and shows
+  "Couldn't load the latest exercises" instead of drawing a session against the bundled copy (which lacks newer exercises and most diagrams).
+  The sheet header uses the square FT2-letters logo (`LOGO_LETTERS`, cropped to the letters and scaled to the two text rows). Every
+  exercise video needs a `thumbs/<name>.jpg` for its print diagram too (`ftImageUrl`).
   time = no clock times printed, nothing else changes. Needs the Apps Script redeployed as a new version.
   **Weekly schedule (`PRACTICE_SCHEDULE`)**: Mon 5:00-6:30 PM outdoor (90), Tue 6:00-7:00 PM indoor (60), Thu 5:00-6:15 PM outdoor (75).
   Picking one of those dates on Session Setup / Custom Session Step 2 pre-fills start time, length and location, except fields the
@@ -455,6 +459,9 @@ rather than letting it get rediscovered next session.
   grey grabber bar or the title strip under it; a long pull or quick flick "taps" the sheet's own `.sheet-backdrop`, so it closes through
   that sheet's normal close handler (a sheet that refuses, e.g. while a PDF is being made, springs back). New sheets only need the
   existing pattern: a `.sheet-backdrop` with an onclick immediately before the `.sheet`, with a `.sheet-handle` first inside it.
+- **Yellow needs a grey edge (2026-10).** Every solid-yellow button/box carries a light-grey border (`.btn-primary` 1.5px #B8C2CF, #64748B in dark;
+  also `.hm-start`, `#workflowFooter .btn-primary`) because yellow on white doesn't read on its own -- keep it on any new yellow control.
+  The bottom workflow CTA (`#workflowFooter`) has equal 12px white space above and below the button. Custom Session Step 1 always opens with nothing selected.
 
 ## Where things live
 
