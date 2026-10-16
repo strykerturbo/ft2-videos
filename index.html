@@ -726,8 +726,11 @@ a{color:inherit;text-decoration:none;}
 .sheet.is-open{transform:translateY(0);}
 .sheet-handle{
   width:36px;height:4px;background:var(--line);border-radius:3px;
-  margin:10px auto 14px;
+  margin:10px auto 14px;position:relative;touch-action:none;cursor:grab;
 }
+/* a generous invisible grab area around the little bar so it is easy to catch with a thumb */
+.sheet-handle::after{content:'';position:absolute;left:-70px;right:-70px;top:-14px;bottom:-14px;}
+.sheet > h3:first-of-type, .sheet > .sheet-handle + h3{touch-action:none;}
 .sheet h3{font-family:'Inter',sans-serif;font-size:var(--fs-xl);margin:14px 0 8px;text-transform:uppercase;letter-spacing:0.03em;color:var(--text-primary);}
 .sheet h3:first-of-type{margin-top:0;}
 .optrow{display:flex;gap:8px;flex-wrap:wrap;}
@@ -750,6 +753,8 @@ a{color:inherit;text-decoration:none;}
 .btn-primary{background:#F7FF00;color:#0B0F1A;}
 .btn-ghost{background:var(--chalk-dim);color:var(--ink);}
 /* A clearly-a-button secondary: dark outline (same family as the app's selected-option outline). */
+.btn-edge{border:1px solid var(--line);padding:14px 0;background-clip:padding-box;}   /* light-grey edge, same as the selectable option cards */
+.btn-ghost.btn-edge{background:transparent;}
 .btn-outline{background:var(--bg-surface);color:var(--ink);border:1.5px solid var(--ink);padding:13.5px 0;}
 /* An icon dropped straight into a .btn's text (e.g. "${ICONS.check} Save Exercise") had no size
    rule of its own, so it rendered at the SVG's unconstrained intrinsic size -- fixes that for
@@ -13931,11 +13936,11 @@ const PRINT_LAYOUTS = {
   // w / h = the exact page in inches. c1f / c2f = share of the content width for the title and diagram columns.
   // f* = font sizes in points at full size; ftRenderPages() shrinks (down to minNote) and then shortens the
   // notes until the WHOLE session fits on that one page.
-  pocket:{label:'Pocket', size:'4.25 \u00d7 5.5"', desc:'Compact field-side reference', w:4.25, h:5.5, dpi:240, m:11, c1f:0.21, c2f:0.27, gap:4,
+  pocket:{label:'Pocket', size:'4.25" \u00d7 5.5"', desc:'Compact field-side reference', w:4.25, h:5.5, dpi:240, m:11, c1f:0.21, c2f:0.27, gap:4,
           fTitle:7, fTime:5.6, fNote:6, fBanner:6.5, fHead:12, fMeta:5.8, banH:10.5, pad:3, foot:7, setupN:110, actN:170, coachN:110, minNote:4.6},
-  half:{label:'Half Page', size:'5.5 \u00d7 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:18, c1f:0.21, c2f:0.27, gap:6,
+  half:{label:'Half Page', size:'5.5" \u00d7 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:18, c1f:0.21, c2f:0.27, gap:6,
         fTitle:9, fTime:7, fNote:7.6, fBanner:8.5, fHead:18, fMeta:7.2, banH:13.5, pad:4.5, foot:9, setupN:150, actN:230, coachN:150, minNote:5.6},
-  full:{label:'Full Page', size:'8.5 \u00d7 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:30, c1f:0.2, c2f:0.27, gap:10,
+  full:{label:'Full Page', size:'8.5" \u00d7 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:30, c1f:0.2, c2f:0.27, gap:10,
         fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:28, fMeta:10, banH:18, pad:7, foot:14, setupN:200, actN:320, coachN:200, minNote:6.3},
 };
 const PRINT_BODY_FONT = '"Inter", "Helvetica Neue", Arial, sans-serif';
@@ -14343,7 +14348,7 @@ function printSheetHtml(){
   let body = '';
   if(ps.step === 'options'){
     body = `
-      <div class="pe-group-label">Make a</div>
+      <div class="pe-group-label">Format</div>
       <div class="pe-opts pe-opts-2">
         ${opt(ps.format==='pdf', "setPrintFormat('pdf')", 'Print PDF', 'To print or save')}
         ${opt(ps.format==='image', "setPrintFormat('image')", 'Create Image', 'To text or save to Photos')}
@@ -14352,7 +14357,7 @@ function printSheetHtml(){
       <div class="pe-opts">
         ${Object.entries(PRINT_LAYOUTS).map(([k, l]) => opt(ps.layout===k, `setPrintLayout('${k}')`, l.label, l.desc, l.size)).join('')}
       </div>
-      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Create ${ps.format==='pdf' ? 'PDF' : 'Image'}</button></div>`;
+      <div class="sheet-footer"><button class="btn btn-edge btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-edge btn-primary" onclick="createPrintFile()">Create ${ps.format==='pdf' ? 'PDF' : 'Image'}</button></div>`;
   } else if(ps.step === 'working'){
     body = `<div class="pe-state"><span class="gen-spinner" aria-hidden="true"></span><div class="pe-state-title">Creating your ${noun}…</div><div class="pe-state-sub">This takes a few seconds.</div></div>`;
   } else if(ps.step === 'ready'){
@@ -14361,7 +14366,7 @@ function printSheetHtml(){
       <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="sharePrintFile()">${ps.format==='pdf' ? 'Print / Save PDF' : 'Save / Send Image'}</button><button class="btn btn-outline" onclick="closePrintSheet()">Done</button></div>`;
   } else {
     body = `<div class="pe-state"><div class="pe-state-title">Unable to create ${noun === 'PDF' ? 'PDF' : 'image'}</div><div class="pe-state-sub">Your saved session is safe. Please try again.</div></div>
-      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Try Again</button></div>`;
+      <div class="sheet-footer"><button class="btn btn-edge btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-edge btn-primary" onclick="createPrintFile()">Try Again</button></div>`;
   }
   return `<div class="sheet-backdrop" onclick="${ps.step==='working' ? '' : 'closePrintSheet()'}"></div><div class="sheet"><div class="sheet-handle"></div><h3>Print PDF / Create Image</h3>${body}</div>`;
 }
@@ -14915,7 +14920,56 @@ function render(){
   scheduleSaveAppStateToStorage();
 }
 
+/* Every bottom sheet can be pulled down to dismiss: grab the little grey bar (or the title strip right under it) and drag
+   down. A long enough pull, or a quick flick, closes it by "tapping" its own backdrop, i.e. through the sheet's normal close
+   handler -- so anything that refuses to close (e.g. a PDF being made) simply springs back. */
+function initSheetDrag(){
+  const ov = document.getElementById('overlay'); if(!ov) return;
+  let d = null;
+  const reset = (sheet, backdrop) => {
+    sheet.style.transition = 'transform .2s ease'; sheet.style.transform = '';
+    if(backdrop){ backdrop.style.transition = ''; backdrop.style.opacity = ''; }
+    setTimeout(() => { sheet.style.transition = ''; }, 220);
+  };
+  ov.addEventListener('pointerdown', e => {
+    const sheet = e.target.closest && e.target.closest('.sheet');
+    if(!sheet || !ov.contains(sheet)) return;
+    if(e.target.closest('button,input,select,textarea,a,[contenteditable]')) return;
+    const r = sheet.getBoundingClientRect();
+    if(e.clientY - r.top > 60) return;                  // only the top strip (grabber + title) drags the sheet
+    const prev = sheet.previousElementSibling;
+    const backdrop = prev && prev.classList.contains('sheet-backdrop') ? prev : null;
+    d = {sheet, backdrop, startY:e.clientY, t:performance.now(), dy:0, id:e.pointerId, h:r.height};
+    sheet.style.transition = 'none'; if(backdrop) backdrop.style.transition = 'none';
+    try{ sheet.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  ov.addEventListener('pointermove', e => {
+    if(!d || e.pointerId !== d.id) return;
+    d.dy = Math.max(0, e.clientY - d.startY);
+    d.sheet.style.transform = `translateY(${d.dy}px)`;
+    if(d.backdrop) d.backdrop.style.opacity = String(Math.max(0, 1 - d.dy / d.h));
+    e.preventDefault();
+  });
+  const end = e => {
+    if(!d || e.pointerId !== d.id) return;
+    const {sheet, backdrop, dy, h} = d;
+    const dt = Math.max(performance.now() - d.t, 1);
+    d = null;
+    if(dy > Math.min(120, h * 0.3) || (dy / dt > 0.6 && dy > 24)){
+      sheet.style.transition = 'transform .18s ease-out'; sheet.style.transform = 'translateY(100%)';
+      if(backdrop){ backdrop.style.transition = 'opacity .18s'; backdrop.style.opacity = '0'; }
+      setTimeout(() => {
+        if(backdrop) backdrop.click();
+        if(document.body.contains(sheet)) reset(sheet, backdrop);      // the sheet declined to close -- put it back
+      }, 190);
+    } else reset(sheet, backdrop);
+  };
+  ov.addEventListener('pointerup', end);
+  ov.addEventListener('pointercancel', end);
+}
+
 initTheme();
+initSheetDrag();
 loadAppStateFromStorage();
 state.coachName = loadCoachName();
 initSharedLink();

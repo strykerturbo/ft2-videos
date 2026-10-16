@@ -451,6 +451,10 @@ rather than letting it get rediscovered next session.
   **Weekly schedule (`PRACTICE_SCHEDULE`)**: Mon 5:00-6:30 PM outdoor (90), Tue 6:00-7:00 PM indoor (60), Thu 5:00-6:15 PM outdoor (75).
   Picking one of those dates on Session Setup / Custom Session Step 2 pre-fills start time, length and location, except fields the
   coach already changed by hand (`setupTouched` / `csTouched`); other days keep the last-used values. Change the schedule there only.
+- **Bottom sheets pull down to dismiss (2026-10).** `initSheetDrag()` (delegated on `#overlay`) lets any `.sheet` be dragged down by its
+  grey grabber bar or the title strip under it; a long pull or quick flick "taps" the sheet's own `.sheet-backdrop`, so it closes through
+  that sheet's normal close handler (a sheet that refuses, e.g. while a PDF is being made, springs back). New sheets only need the
+  existing pattern: a `.sheet-backdrop` with an onclick immediately before the `.sheet`, with a `.sheet-handle` first inside it.
 
 ## Where things live
 
