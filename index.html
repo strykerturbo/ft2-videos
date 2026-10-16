@@ -1892,25 +1892,22 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 
 /* ---------- Create / Edit Template ---------- */
-.te-page .nav-page-title{margin-bottom:6px;}
+.te-page .nav-page-title{margin-bottom:4px;font-size:19px;padding-bottom:6px;}
+.te-page .nav-page-sub{font-size:var(--fs-sm);}
+.te-titlebar{margin-top:8px;}
 .te-card{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg-surface);}
-.te-two{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;}
-.te-two .te-card{margin-top:12px;min-width:0;}
+.te-compact{margin-top:6px;padding:10px 12px 12px;}
+.te-compact .te-label{font-size:var(--fs-sm);margin-bottom:4px;}
+.te-field{margin-top:8px;}
 .te-label{display:block;font-size:var(--fs-base);font-weight:800;color:var(--ink);margin-bottom:8px;}
 .te-opt{font-weight:600;color:var(--ink-soft);font-size:var(--fs-sm);}
-.te-input{width:100%;box-sizing:border-box;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-family:inherit;}
-.te-input:focus,.te-select:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
-.te-dur{display:flex;align-items:center;gap:8px;}
-.te-dur-icon{display:flex;color:var(--ink);flex-shrink:0;}
-.te-dur-icon svg{width:20px;height:20px;}
-.te-select{flex:1;min-width:0;min-height:48px;padding:0 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-weight:700;font-family:inherit;}
+.te-input{width:100%;box-sizing:border-box;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-family:inherit;}
+.te-input:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
 .te-seg{gap:6px;}
-.te-seg .su-seg-btn{height:auto;min-height:48px;font-size:var(--fs-base);border-radius:10px;}
+.te-seg .su-seg-btn{height:auto;min-height:44px;font-size:var(--fs-base);border-radius:10px;}
 .te-seg .su-seg-btn svg{width:15px;height:15px;}
-/* Selected = FT2 volt with fixed dark text (readable in both themes). */
-.te-seg .su-seg-btn.active{background:var(--cone);border-color:var(--cone);color:#0F172A;}
-.te-two .te-seg .su-seg-btn{padding:0 2px;font-size:var(--fs-sm);gap:4px;}
-.te-two .te-seg .su-seg-btn svg{width:13px;height:13px;}
+/* Selected = FT2 volt with a small dark outline (so it stands out from the grey card) and fixed dark text. */
+.te-seg .su-seg-btn.active{background:var(--cone);border:1.5px solid #0F172A;color:#0F172A;}
 .te-structure-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:22px;}
 .te-h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl,24px);margin:0;color:var(--ink);}
 .te-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;line-height:1.35;}
@@ -9355,7 +9352,8 @@ function commitTemplateCustomDuration(id, rawVal){
      what they have now (whole numbers, largest-remainder rounding, so the total can never drift);
    - minutes = total duration split by the same largest-remainder rule, so they always add up to the duration. */
 const TE_MIN_PCT = 5, TE_STEP = 5;
-const TE_DURATIONS = [45, 60, 75, 90, 105, 120];
+const TE_DURATIONS = [60, 75, 90];
+const TE_DEFAULT_AGE = 'U11';
 const TE_SECTION_DESC = {
   warmup:'Prepare the body and ball', athletic:'Get players moving and focused', duels:'1v1 and 2v2 situations',
   rondos:'Keep the ball and build possession', ssg:'Small-sided games', scrimmage:'Play and compete',
@@ -9398,9 +9396,9 @@ function teStartDraft(id){
     const t = getTemplate(id);
     d = JSON.parse(JSON.stringify(t));
   } else {
-    d = {id:'tmpl'+Date.now(), name:'', location:'outdoor', duration:75, ageGroup:CS_DEFAULT_AGE, isNew:true, sections:defaultTemplateSections()};
+    d = {id:'tmpl'+Date.now(), name:'', location:'outdoor', duration:75, ageGroup:TE_DEFAULT_AGE, isNew:true, sections:defaultTemplateSections()};
   }
-  if(!CS_AGE_GROUPS.includes(d.ageGroup)) d.ageGroup = CS_DEFAULT_AGE;
+  if(!CS_AGE_GROUPS.includes(d.ageGroup)) d.ageGroup = TE_DEFAULT_AGE;
   d.sections.forEach(x => { if(x.standard && !x.description) x.description = TE_SECTION_DESC[x.key] || ''; });
   teNormalize(d);
   state.templateDraft = d;
@@ -9488,7 +9486,7 @@ function teSaveTemplate(){
   try{
     const name = String(d.name||'').trim().replace(/\s+/g,' ');
     if(!name){ showToast('Name your template first'); const el = document.getElementById('teName'); if(el) el.focus(); return; }
-    if(!(Number(d.duration) > 0)){ showToast('Choose a session duration'); return; }
+    if(!TE_DURATIONS.includes(Number(d.duration))){ showToast('Choose 60, 75 or 90 minutes'); return; }
     if(d.location !== 'outdoor' && d.location !== 'indoor'){ showToast('Choose Outdoor or Indoor'); return; }
     if(!CS_AGE_GROUPS.includes(d.ageGroup)){ showToast('Choose an age group'); return; }
     if(!teEnabled(d).length){ showToast('Turn on at least one section'); return; }
@@ -9557,35 +9555,26 @@ function renderTemplateEditor(){
   const mins = teMinutes(d);
   const total = teTotalPct(d);
   const isNew = !!d.isNew;
-  const durations = TE_DURATIONS.includes(Number(d.duration)) ? TE_DURATIONS : [...TE_DURATIONS, Number(d.duration)].sort((a,b)=>a-b);
   return `
   <div class="section-pad te-page">
     <button class="back-pill-flat" onclick="closeTemplateEditor()">${ICONS.back} Back to Templates</button>
-    <div style="margin-top:14px;">${navPageTitleHtml(isNew ? 'Create New Template' : 'Edit Template', 'Set your template details and configure each section.')}</div>
+    <div class="te-titlebar">${navPageTitleHtml(isNew ? 'Create New Template' : 'Edit Template', 'Set the details, then adjust each section.')}</div>
 
-    <div class="te-card">
+    <div class="te-card te-compact">
       <label class="te-label" for="teName">Template Name</label>
       <input id="teName" class="te-input" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off">
-    </div>
-
-    <div class="te-two">
-      <div class="te-card">
+      <div class="te-field">
         <div class="te-label">Session Duration</div>
-        <div class="te-dur"><span class="te-dur-icon">${ICONS.clock}</span>
-          <select class="te-select" aria-label="Session duration" onchange="teSetDuration(this.value)">
-            ${durations.map(v => `<option value="${v}" ${Number(d.duration)===v?'selected':''}>${v} min</option>`).join('')}
-          </select>
-        </div>
+        ${teSegHtml(TE_DURATIONS.map(v => [String(v), v + ' min']), String(d.duration), 'teSetDuration')}
       </div>
-      <div class="te-card">
+      <div class="te-field">
         <div class="te-label">Location</div>
         ${teSegHtml([['outdoor','Outdoor',ICONS.sun],['indoor','Indoor',ICONS.home]], d.location, 'teSetLocation')}
       </div>
-    </div>
-
-    <div class="te-card">
-      <div class="te-label">Age Group</div>
-      ${teSegHtml(CS_AGE_GROUPS.map(a => [a,a]), d.ageGroup, 'teSetAge')}
+      <div class="te-field">
+        <div class="te-label">Age Group</div>
+        ${teSegHtml(CS_AGE_GROUPS.map(a => [a,a]), d.ageGroup, 'teSetAge')}
+      </div>
     </div>
 
     <div class="te-structure-head">

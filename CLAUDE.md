@@ -427,7 +427,7 @@ rather than letting it get rediscovered next session.
   enabled sections (`teRedistribute`, largest-remainder, whole numbers); minutes use the same rounding (`teMinutes`) so
   they always add up to the session length. The + / - buttons are real 48x48 targets -- don't shrink them. Templates
   now also store `ageGroup`, per-section `description` and `minutes`. Section names are the app's own (Athletic, SSG),
-  not the mockup's "Activate", since Activate means Warmup + Athletic everywhere else. Warmup stays first (no grip).
+  not the mockup's "Activate", since Activate means Warmup + Athletic everywhere else. Warmup stays first (no grip). Details are all toggle groups (no dropdowns): duration 60 / 75 / 90 only (`TE_DURATIONS`), Outdoor / Indoor, U8-U12 with U11 the default (`TE_DEFAULT_AGE`); the selected one is volt with a small dark outline.
 - **Print / Export vs Share Session (2026-10).** Three separate actions, never merged: Save Session (library), Print / Export
   (PDF or image, always exactly ONE page of the chosen size in `PRINT_LAYOUTS`: Pocket 4.25x5.5in / Half Page 5.5x8.5in /
   Full Page 8.5x11in; `ftRenderPages()` draws on canvas and auto-fits -- full size first, then smaller type down to each layout's
