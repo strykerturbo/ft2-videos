@@ -1965,18 +1965,36 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 
 /* ---------- Print / Export + Share sheets ---------- */
-.sa-group{margin-top:18px;}
+.sa-section{margin:4px 0 18px;}
+.sa-h2{font-family:'Inter',sans-serif;font-size:var(--fs-base);font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink);margin:0 0 8px;}
+.sa-items{display:flex;flex-direction:column;gap:8px;}
+.sa-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;min-height:56px;border-radius:12px;background:var(--bg-surface);border:1.5px solid var(--line);color:var(--ink);}
+@supports (color: color-mix(in srgb, red, blue)){ .sa-item{border-color:color-mix(in srgb, var(--ink) 28%, transparent);} }
+.sa-item:active{background:var(--chalk-dim);}
+.sa-ico{width:38px;height:38px;border-radius:10px;background:var(--turf-dim);color:#0F766E;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sa-ico svg{width:19px;height:19px;}
+.sa-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.sa-title{font-size:var(--fs-md);font-weight:800;color:var(--ink);}
+.sa-desc{font-size:var(--fs-sm);color:var(--ink-soft);}
+.sa-chev{display:flex;color:var(--ink-soft);flex-shrink:0;}
+.sa-chev svg{width:16px;height:16px;}
 .pe-intro{font-size:var(--fs-base);color:var(--ink-soft);margin:-2px 0 12px;line-height:1.45;}
 .pe-group-label{font-size:var(--fs-sm);font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink);margin:12px 0 6px;}
 .pe-opts{display:flex;flex-direction:column;gap:8px;}
 .pe-opts-2{flex-direction:row;}
 .pe-opts-2 .pe-opt{flex:1;min-width:0;}
-.pe-opt{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink);min-height:56px;}
-.pe-opt.active{border-color:var(--cone);background:var(--cone-dim);color:#0F172A;}
+/* Selected = the app-wide look: a dark outline around the box (same as Session Setup's selected option). */
+.pe-opt{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10.5px 12.5px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);min-height:56px;}
+.pe-opt.selected{border:1.5px solid var(--ink);padding:10px 12px;}
 .pe-opt-title{font-size:var(--fs-md);font-weight:800;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
-.pe-opt-size{font-size:var(--fs-sm);font-weight:700;opacity:0.7;}
+.pe-opt-size{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
 .pe-opt-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.35;}
-.pe-opt.active .pe-opt-desc{color:#475569;}
+.share-flash{position:absolute;left:50%;top:84px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;background:#0F172A;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.3);max-width:calc(100% - 36px);}
+.share-flash b{display:block;font-size:var(--fs-md);}
+.share-flash small{display:block;font-size:var(--fs-sm);opacity:0.8;margin-top:1px;}
+.share-flash-ic{width:30px;height:30px;border-radius:50%;background:var(--turf);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.share-flash-ic svg{width:16px;height:16px;color:#fff;}
+.share-flash.fail{background:#7A1F1F;}
 .pe-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:18px 4px 4px;}
 .pe-state-title{font-size:var(--fs-lg);font-weight:800;color:var(--ink);}
 .pe-state-sub{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.4;word-break:break-word;}
@@ -8908,6 +8926,9 @@ const state = {
   sharedToken: null,          // the share-link token this page load was opened with (?s=...); never persisted
   sharedSession: null,        // the read-only session fetched for that token; never added to savedSessions
   sharedStatus: 'idle',       // idle | loading | ready | unavailable | offline | unsupported
+  shareReady: {},             // sessionId -> {url,message,title} prepared in the background so Share Session is one tap
+  sharePrepping: {},
+  shareFlash: null,           // 'ok' | 'fail' -- the "Session Link Copied" confirmation
   shareSheet: null,           // Share Session sheet: {sessionId, status:'preparing'|'ready'|'error'|'copied'|'manual', url, message, title, errorText}
   printSheet: null,           // Print / Export sheet: {sessionId, step:'options'|'working'|'ready'|'error', format:'pdf'|'image', layout:'pocket'|'full', file, fileName}
   saveFirstSheet: null,       // 'print' | 'share' -- Session Review tapped one of them before saving
@@ -11591,6 +11612,7 @@ function renderOverlay(){
   }
   html += saveFirstSheetHtml();
   html += shareSheetHtml();
+  html += shareFlashHtml();
   html += printSheetHtml();
   if(state.confirmDiscardTemplateOpen){
     html += `
@@ -13424,7 +13446,7 @@ function renderPracticeSetup(){
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
-function openSessionDetail(id){ state.editingSessionDetail = false; nav('sessionDetail', {viewingSessionId:id}); }
+function openSessionDetail(id){ state.editingSessionDetail = false; nav('sessionDetail', {viewingSessionId:id}); prefetchShareLink(id); }
 function toggleEditSessionDetail(){ state.editingSessionDetail = !state.editingSessionDetail; render(); }
 function renameSavedSession(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
@@ -13752,6 +13774,7 @@ function renderSessionDetail(){
     <div class="sd-saved-caption">Saved ${formatWhen(s.createdAt)}</div>
   </div>
   <div class="section-pad">
+    ${editing ? '' : sessionActionRowsHtml(`openPrintSheet('${escJsAttr(s.id)}')`, isOwner ? `shareSavedSession('${escJsAttr(s.id)}')` : '')}
     <div class="rate-session-box">
       <div class="rate-session-title">Rate this Session</div>
       <div class="star-row">
@@ -13769,8 +13792,6 @@ function renderSessionDetail(){
     <div class="sd-meta-row" style="margin-top:10px;">
       <div class="sd-meta"><div class="smnum">${s.createdBy}</div><div class="smlbl">Added by</div></div>
     </div>
-
-    ${editing ? '' : sessionActionRowsHtml(`openPrintSheet('${escJsAttr(s.id)}')`, isOwner ? `shareSavedSession('${escJsAttr(s.id)}')` : '')}
 
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
 
@@ -13831,6 +13852,8 @@ function renderSessionDetail(){
 const PRINT_LAYOUTS = {
   pocket:{label:'Pocket', size:'4 × 5.5"', desc:'Compact field-side reference', w:4, h:5.5, dpi:220, m:14, cols:[62,76], gap:6,
           fTitle:8.5, fTime:7, fNote:7, fBanner:8.5, fHead:17, fMeta:7.5, banH:15, pad:5, foot:10, setupN:130, actN:190, coachN:130},
+  half:{label:'Half Page', size:'5.5 × 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:22, cols:[82,100], gap:8,
+        fTitle:9.5, fTime:7.5, fNote:8, fBanner:9.5, fHead:22, fMeta:8.5, banH:17, pad:6, foot:12, setupN:160, actN:240, coachN:160},
   full:{label:'Full Page', size:'8.5 × 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:36, cols:[125,150], gap:10,
         fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:30, fMeta:11, banH:20, pad:8, foot:16, setupN:200, actN:320, coachN:200},
 };
@@ -14151,34 +14174,36 @@ function saveFirstSheetSave(){
 }
 function sessionActionRowsHtml(onPrint, onShare){
   return `
-    <div class="settings-group sa-group">
-      <button class="settings-row" onclick="${onPrint}">
-        <span class="settings-row-icon blue">${ICONS.printer}</span>
-        <span class="settings-row-text"><span class="settings-row-title">Print / Export</span><span class="settings-row-desc">Create a field-ready PDF or image</span></span>
-        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
-      </button>
-      ${onShare ? `<button class="settings-row" onclick="${onShare}">
-        <span class="settings-row-icon teal">${ICONS.share}</span>
-        <span class="settings-row-text"><span class="settings-row-title">Share Session</span><span class="settings-row-desc">Send this session to another coach</span></span>
-        <span class="settings-row-chevron">${ICONS.chevronRight}</span>
-      </button>` : ''}
-    </div>`;
+    <section class="sa-section">
+      <h2 class="sa-h2">Print &amp; Share</h2>
+      <div class="sa-items">
+        <button class="sa-item" onclick="${onPrint}">
+          <span class="sa-ico">${ICONS.printer}</span>
+          <span class="sa-txt"><span class="sa-title">Print PDF / Create Image</span><span class="sa-desc">A field-ready copy of this session</span></span>
+          <span class="sa-chev">${ICONS.chevronRight}</span>
+        </button>
+        ${onShare ? `<button class="sa-item" onclick="${onShare}">
+          <span class="sa-ico">${ICONS.share}</span>
+          <span class="sa-txt"><span class="sa-title">Share Session</span><span class="sa-desc">Copy the link and send it to another coach</span></span>
+          <span class="sa-chev">${ICONS.chevronRight}</span>
+        </button>` : ''}
+      </div>
+    </section>`;
 }
 function printSheetHtml(){
   const ps = state.printSheet; if(!ps) return '';
-  const opt = (sel, onclick, title, desc, extra) => `<button class="pe-opt ${sel?'active':''}" aria-pressed="${sel}" onclick="${onclick}"><span class="pe-opt-title">${title}${extra ? `<span class="pe-opt-size">${extra}</span>` : ''}</span><span class="pe-opt-desc">${desc}</span></button>`;
+  const opt = (sel, onclick, title, desc, extra) => `<button class="pe-opt ${sel?'selected':''}" aria-pressed="${sel}" onclick="${onclick}"><span class="pe-opt-title">${title}${extra ? `<span class="pe-opt-size">${extra}</span>` : ''}</span><span class="pe-opt-desc">${desc}</span></button>`;
   const noun = ps.format === 'pdf' ? 'PDF' : 'image';
   let body = '';
   if(ps.step === 'options'){
     body = `
-      <div class="pe-intro">Create a field-ready version of this session.</div>
-      <div class="pe-group-label">Format</div>
-      <div class="pe-opts">
-        ${opt(ps.format==='pdf', "setPrintFormat('pdf')", 'Print-ready PDF', 'Best for printing or saving a detailed session plan.')}
-        ${opt(ps.format==='image', "setPrintFormat('image')", 'Shareable Image', 'Save to Photos or send as an image.')}
+      <div class="pe-group-label">Make a</div>
+      <div class="pe-opts pe-opts-2">
+        ${opt(ps.format==='pdf', "setPrintFormat('pdf')", 'Print PDF', 'To print or save')}
+        ${opt(ps.format==='image', "setPrintFormat('image')", 'Create Image', 'To text or save to Photos')}
       </div>
       <div class="pe-group-label">Layout</div>
-      <div class="pe-opts pe-opts-2">
+      <div class="pe-opts">
         ${Object.entries(PRINT_LAYOUTS).map(([k, l]) => opt(ps.layout===k, `setPrintLayout('${k}')`, l.label, l.desc, l.size)).join('')}
       </div>
       <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Create ${ps.format==='pdf' ? 'PDF' : 'Image'}</button></div>`;
@@ -14191,29 +14216,31 @@ function printSheetHtml(){
     body = `<div class="pe-state"><div class="pe-state-title">Unable to create ${noun === 'PDF' ? 'PDF' : 'image'}</div><div class="pe-state-sub">Your saved session is safe. Please try again.</div></div>
       <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePrintSheet()">Cancel</button><button class="btn btn-primary" onclick="createPrintFile()">Try Again</button></div>`;
   }
-  return `<div class="sheet-backdrop" onclick="${ps.step==='working' ? '' : 'closePrintSheet()'}"></div><div class="sheet"><div class="sheet-handle"></div><h3>Print / Export Session</h3>${body}</div>`;
+  return `<div class="sheet-backdrop" onclick="${ps.step==='working' ? '' : 'closePrintSheet()'}"></div><div class="sheet"><div class="sheet-handle"></div><h3>Print PDF / Create Image</h3>${body}</div>`;
 }
 function shareSheetHtml(){
   const sh = state.shareSheet; if(!sh) return '';
   let body = '';
   if(sh.status === 'preparing'){
-    body = `<div class="pe-intro">Send this session to another coach.</div>
-      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" disabled>Getting your link ready…</button><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
+    body = `<div class="pe-state"><span class="gen-spinner" aria-hidden="true"></span><div class="pe-state-title">Getting your link ready…</div><div class="pe-state-sub">One moment.</div></div>
+      <div class="sheet-footer"><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
   } else if(sh.status === 'ready'){
-    body = `<div class="pe-intro">Send this session to another coach.</div>
-      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="copySessionLink()">${ICONS.copy} Copy Session</button><button class="btn btn-ghost" onclick="moreSharingOptions()">More Sharing Options</button><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
+    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Your link is ready</div><div class="pe-state-sub">Tap once to copy it and choose how to send it.</div></div>
+      <div class="sheet-footer" style="flex-direction:column;"><button class="btn btn-primary" onclick="shareFromSheet()">Share Session</button><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button></div>`;
   } else if(sh.status === 'copied'){
-    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Session link copied</div><div class="pe-state-sub">You can now paste it into Messages or another app.</div></div>
-      <div class="sheet-footer"><button class="btn btn-primary" onclick="closeShareSheet()">Done</button></div>`;
-  } else if(sh.status === 'manual'){
-    body = `<div class="pe-intro">Press and hold the message below, choose Copy, then paste it into Messages.</div>
-      <textarea class="te-input" readonly rows="5" onfocus="this.select()" style="font-size:var(--fs-sm);">${escHtml(sh.message)}</textarea>
+    body = `<div class="pe-state"><span class="pe-check">${ICONS.check}</span><div class="pe-state-title">Session Link Copied</div><div class="pe-state-sub">Paste it into Messages or another app.</div></div>
       <div class="sheet-footer"><button class="btn btn-primary" onclick="closeShareSheet()">Done</button></div>`;
   } else {
     body = `<div class="pe-state"><div class="pe-state-title">Unable to create share link</div><div class="pe-state-sub">${escHtml(sh.errorText || 'Please try again.')} Your saved session is safe.</div></div>
       <div class="sheet-footer"><button class="btn btn-ghost" onclick="closeShareSheet()">Cancel</button><button class="btn btn-primary" onclick="prepareShareLink('${escJsAttr(sh.sessionId)}')">Try Again</button></div>`;
   }
   return `<div class="sheet-backdrop" onclick="closeShareSheet()"></div><div class="sheet"><div class="sheet-handle"></div><h3>Share Session</h3>${body}</div>`;
+}
+function shareFlashHtml(){
+  if(!state.shareFlash) return '';
+  return state.shareFlash === 'ok'
+    ? `<div class="share-flash" role="status"><span class="share-flash-ic">${ICONS.check}</span><span><b>Session Link Copied</b><small>Now choose how to send it</small></span></div>`
+    : `<div class="share-flash fail" role="status"><span><b>Couldn’t copy the link</b><small>Use the share options to send it</small></span></div>`;
 }
 function saveFirstSheetHtml(){
   const k = state.saveFirstSheet; if(!k) return '';
@@ -14313,18 +14340,51 @@ function sessionMetaPlain(s){
 function shareMessageFor(s, url){
   return `${s.name}\n${sessionMetaPlain(s)}\n\nView this session in FT2 Coaches:\n${url}`;
 }
+// One tap on Share Session: the link was already prepared in the background when the session opened, so this tap
+// copies the message to the clipboard, flashes "Session Link Copied", and opens the phone's share sheet -- all inside
+// the one tap (browsers only allow clipboard + share from a direct tap, so nothing here may wait on the network).
+function copyTextNow(text){
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => false); }catch(e){}
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly',''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return Promise.resolve(!!ok);
+  }catch(e){ return Promise.resolve(false); }
+}
+function flashShareCopied(ok){
+  state.shareFlash = ok === false ? 'fail' : 'ok';
+  renderOverlay();
+  clearTimeout(flashShareCopied._t);
+  flashShareCopied._t = setTimeout(() => { state.shareFlash = null; renderOverlay(); }, 2600);
+}
+function shareNow(r){
+  const s = state.savedSessions.find(x => x.id === r.sessionId);
+  const copied = copyTextNow(r.message);                       // started inside the tap
+  flashShareCopied(true);
+  copied.then(ok => { if(!ok) flashShareCopied(false); });
+  if(navigator.share){
+    navigator.share({title:r.title, text:s ? `${s.name}\n${sessionMetaPlain(s)}` : r.title, url:r.url}).catch(() => {});
+  } else {
+    state.shareSheet = {sessionId:r.sessionId, status:'copied', url:r.url, message:r.message, title:r.title, errorText:''};   // desktop: no share sheet to open
+    renderOverlay();
+  }
+}
 async function shareSavedSession(id){
   const s = state.savedSessions.find(x => x.id === id);
   if(!s || s.createdBy !== state.coachName) return;
+  const r = state.shareReady[id];
+  if(r){ shareNow(r); return; }
+  // Link not ready yet (just opened, slow connection, or an earlier try failed): get it, then ask for one more tap.
   state.shareSheet = {sessionId:id, status:'preparing', url:'', message:'', title:'', errorText:''};
   renderOverlay();
   await prepareShareLink(id);
 }
-async function prepareShareLink(id){
+async function buildShareLink(id){
   const s = state.savedSessions.find(x => x.id === id);
-  const sh = state.shareSheet;
-  if(!s || !sh || sh.sessionId !== id) return;
-  sh.status = 'preparing'; renderOverlay();
+  if(!s) return {ok:false, errorText:'Session not found.'};
   try{
     // The link has to exist on the server before it is handed out, so push the token first and
     // then confirm the server can actually serve it back; otherwise the friend would get a dead link.
@@ -14333,48 +14393,43 @@ async function prepareShareLink(id){
       await pushSessionToSheet(s);
     }
     const check = await fetchSharedSession(s.shareToken);
-    if(!state.shareSheet || state.shareSheet !== sh) return;
-    if(check.status !== 'ready'){
-      sh.status = 'error';
-      sh.errorText = check.status === 'unsupported' ? 'Sharing isn’t switched on yet.' : 'Check your connection and try again.';
-      renderOverlay(); return;
-    }
+    if(check.status !== 'ready') return {ok:false, errorText: check.status === 'unsupported' ? 'Sharing isn’t switched on yet.' : 'Check your connection and try again.'};
     const url = shareUrlFor(s.shareToken);
     const focus = (csFocusArea(s.focusArea) || {}).title;
-    sh.url = url;
-    sh.message = shareMessageFor(s, url);
-    sh.title = 'FT2 Coaches — ' + (focus ? focus + ' Session' : s.name);
-    sh.status = 'ready';
-    renderOverlay();
+    return {ok:true, r:{sessionId:id, url, message:shareMessageFor(s, url), title:'FT2 Coaches — ' + (focus ? focus + ' Session' : s.name)}};
   }catch(err){
-    if(state.shareSheet === sh){ sh.status = 'error'; sh.errorText = 'Check your connection and try again.'; renderOverlay(); }
+    return {ok:false, errorText:'Check your connection and try again.'};
   }
 }
-function closeShareSheet(){ state.shareSheet = null; renderOverlay(); }
-async function copySessionLink(){
-  const sh = state.shareSheet; if(!sh || !sh.message) return;
-  let ok = false;
-  try{ await navigator.clipboard.writeText(sh.message); ok = true; }catch(e){}
-  if(!ok){
-    try{
-      const ta = document.createElement('textarea');
-      ta.value = sh.message; ta.setAttribute('readonly',''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, sh.message.length);
-      ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-    }catch(e){}
+// Quiet background preparation when a coach opens one of their own saved sessions (no UI unless they tap Share first).
+async function prefetchShareLink(id){
+  const s = state.savedSessions.find(x => x.id === id);
+  if(!s || s.createdBy !== state.coachName || state.shareReady[id] || state.sharePrepping[id]) return;
+  state.sharePrepping[id] = true;
+  const res = await buildShareLink(id);
+  state.sharePrepping[id] = false;
+  if(res.ok){
+    state.shareReady[id] = res.r;
+    // The coach tapped Share while this was still working: show the one-tap "ready" button.
+    if(state.shareSheet && state.shareSheet.sessionId === id && state.shareSheet.status === 'preparing'){ state.shareSheet.status = 'ready'; renderOverlay(); }
   }
-  sh.status = ok ? 'copied' : 'manual';
+}
+async function prepareShareLink(id){
+  const sh = state.shareSheet;
+  if(!sh || sh.sessionId !== id) return;
+  sh.status = 'preparing'; renderOverlay();
+  const res = await buildShareLink(id);
+  if(state.shareSheet !== sh) return;
+  if(res.ok){ state.shareReady[id] = res.r; sh.status = 'ready'; }
+  else { sh.status = 'error'; sh.errorText = res.errorText; }
   renderOverlay();
 }
-async function moreSharingOptions(){
-  const sh = state.shareSheet; if(!sh || !sh.url) return;
-  const s = state.savedSessions.find(x => x.id === sh.sessionId);
-  if(navigator.share){
-    try{ await navigator.share({title:sh.title, text:s ? `${s.name}\n${sessionMetaPlain(s)}` : sh.title, url:sh.url}); return; }
-    catch(err){ if(err && err.name === 'AbortError') return; }
-  }
-  copySessionLink();
+function closeShareSheet(){ state.shareSheet = null; renderOverlay(); }
+function shareFromSheet(){
+  const sh = state.shareSheet; if(!sh) return;
+  const r = state.shareReady[sh.sessionId]; if(!r) return;
+  state.shareSheet = null;
+  shareNow(r);
 }
 async function copyShareLink(url, title){
   let ok = false;

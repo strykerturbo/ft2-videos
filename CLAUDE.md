@@ -432,9 +432,12 @@ rather than letting it get rediscovered next session.
   (PDF or one tall image in `PRINT_LAYOUTS` Pocket 4x5.5in / Full Page 8.5x11in, drawn on canvas by `ftRenderPages()`;
   the PDF is a hand-written container of JPEG page images, `ftBuildPdf()`; page text comes from the exercise
   repository trimmed by `ftBrief()`, diagrams from the same-origin repo files / `thumbs/*.jpg` so the canvas stays
-  exportable), and Share Session (sheet -> `Copy Session` copies "name / 75 min - U10 - Outdoor / View this session in FT2
-  Coaches: link"; the link is prepared BEFORE the tap so clipboard writes stay inside the user's tap). Both appear on
-  Saved Session Detail and (below the content, Save Session stays the footer CTA) on Session Review; on Review an unsaved
+  exportable), and Share Session (ONE tap: the link is prepared in the background when a saved session opens -- `prefetchShareLink()`, cached in
+  `state.shareReady` -- so the tap itself synchronously copies the "name / 75 min - U10 - Outdoor / View this session in FT2
+  Coaches: link" message, flashes "Session Link Copied" and opens the phone's share sheet; browsers only allow clipboard +
+  share straight from a tap, so nothing in that tap may wait on the network; if the link isn't ready yet a sheet gets it and
+  asks for one more tap). The Print & Share section sits at the top of Saved Session Detail and (bottom, Save Session stays
+  the footer CTA) on Session Review; layouts are Pocket / Half Page / Full Page; on Review an unsaved
   draft only gets the "Save your session first" sheet, never a file or link. A new layout is one more `PRINT_LAYOUTS` entry.
 
 ## Where things live
