@@ -444,8 +444,8 @@ rather than letting it get rediscovered next session.
 - **Start time (2026-10).** Sessions now carry a `startTime` ("HH:MM", 24h, '' = none): set on Session Setup and Custom Session
   Step 2 (`practiceStartTime` / `setupStartTime` / `csStartTime`, last used is remembered, default 5:00 PM), editable on Saved Session
   Detail in edit mode, stored in a new Sessions-tab `startTime` column (Apps Script keeps it as plain text -- Sheets turns "17:00" into
-  a time cell otherwise -- and `startTimeText_()` reads either shape). The printed sheet's header (yellow slanted block + logo,
-  title, then date | time range | length | age | location with icons) and each phase's "15 MIN (5:00 - 5:15 PM)" window come from it
+  a time cell otherwise -- and `startTimeText_()` reads either shape). The printed sheet's header (black square tiger logo on plain white,
+  title, then date | time range | length | age | location with icons) and each phase bar's (no icons, just the name) "15 MIN (5:00 - 5:15 PM)" window come from it
   (`ftPrintModel`, phases laid end to end from the start time; the header range is start -> start + session length). No start
   **Print always uses the LIVE exercise library**: `createPrintFile()` waits on `ensureExercisesSynced()` (2 tries, 15 s each) and shows
   "Couldn't load the latest exercises" instead of drawing a session against the bundled copy (which lacks newer exercises and most diagrams).
@@ -467,7 +467,7 @@ rather than letting it get rediscovered next session.
   minutes -- target and actual are deliberately different things and never merged); then the Print PDF / Create Image and Share Session buttons
   side by side (`sessionDetailActionsHtml`, stack under 340px). The More menu (`sessionMoreSheetHtml`): Edit, Copy Session (= the existing
   "make a copy" duplicate flow), Make Private/Shared, Delete Session (existing confirm). Editing mode shows a check "Done" button and makes the
-  target number editable inside the metadata. The old Practice date / Location / Added by / Start time cards under Rate this Session were removed (that info is in the header line); the start time can still be set while editing, via a "Start" field in the header. Everything else below the button row is unchanged.
+  target number editable inside the metadata. The old Practice date / Location / Added by / Start time cards under Rate this Session were removed (that info is in the header line); the start time can still be set while editing, via a "Start" field in the header. Rate this Session now sits at the very bottom of the page (after the Training Profile); filled stars are solid (the star icon's inner <g fill="none"> must be overridden on the shape, not the svg). Everything else below the button row is unchanged.
 
 ## Where things live
 

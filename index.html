@@ -2535,7 +2535,10 @@ input.section-title-input:focus{border-color:var(--turf);}
 .star-row{display:flex;gap:6px;margin-bottom:10px;}
 .star-btn{background:none;border:none;padding:2px;display:flex;}
 .star-btn svg{width:26px;height:26px;color:var(--line);}
-.star-btn.filled svg{color:var(--turf);fill:var(--turf);}
+.star-btn.filled svg{color:var(--turf);}
+/* the star icon's own <g fill="none"> would hide a fill set on the <svg>, so the solid fill goes on the shape itself */
+.star-btn.filled svg g,.star-btn:active svg g{fill:var(--turf);}
+.star-btn:active svg{color:var(--turf);}
 .rate-comment{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--text-primary);padding:10px;font-family:inherit;font-size:var(--fs-input);resize:vertical;}
 .rate-comment:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
 .sd-phases .phase-title{font-size:var(--fs-md);}
@@ -13922,16 +13925,6 @@ function renderSessionDetail(){
   </div>
   <div class="section-pad">
     ${editing ? '' : sessionDetailActionsHtml(s, isOwner)}
-    <div class="rate-session-box">
-      <div class="rate-session-title">Rate this Session</div>
-      <div class="star-row">
-        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" ${isOwner?`onclick="setSessionRating('${escJsAttr(s.id)}',${n})"`:'style="cursor:default;"'}>${ICONS.star}</button>`).join('')}
-      </div>
-      ${isOwner
-        ? `<textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${escJsAttr(s.id)}', this.value)">${escHtml(s.comment||'')}</textarea>`
-        : (s.comment ? `<div class="rate-comment" style="min-height:auto;color:var(--ink-soft);">${escHtml(s.comment)}</div>` : '')}
-    </div>
-
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
 
     <div class="phase-strip sd-phases" style="margin-top:22px;">
@@ -13977,6 +13970,16 @@ function renderSessionDetail(){
       ${trainingProfileInfoPanelHtml()}
       <div class="pprof-rows">${practiceProfile.map(practiceProfileRowHtml).join('')}</div>
       <div class="pprof-interpretation">${practiceProfileInterpretation(practiceProfile)}</div>
+    </div>
+
+    <div class="rate-session-box" style="margin-top:22px;margin-bottom:0;">
+      <div class="rate-session-title">Rate this Session</div>
+      <div class="star-row">
+        ${[1,2,3,4,5].map(n=>`<button class="star-btn ${s.rating>=n?'filled':''}" ${isOwner?`onclick="setSessionRating('${escJsAttr(s.id)}',${n})"`:'style="cursor:default;"'}>${ICONS.star}</button>`).join('')}
+      </div>
+      ${isOwner
+        ? `<textarea class="rate-comment" rows="3" placeholder="Add any notes about how this session went..." onblur="setSessionComment('${escJsAttr(s.id)}', this.value)">${escHtml(s.comment||'')}</textarea>`
+        : (s.comment ? `<div class="rate-comment" style="min-height:auto;color:var(--ink-soft);">${escHtml(s.comment)}</div>` : '')}
     </div>
   </div>`;
 }
@@ -14151,16 +14154,14 @@ function ftMeasure(model, L, mc, dS){
   });
   // Header band (like the FT2 sheet mock-up): a yellow slanted block with the logo on the left; to its right the title on
   // row 1 and, on row 2, date | time range | length | age | location, each with a small icon, all on ONE line.
-  m.rowTitleH = L.fHead * 1.08; m.rowMetaH = L.fMeta * 1.7; m.padY = Math.max(M * 0.55, 4);
+  m.rowTitleH = L.fHead * 1.08; m.rowMetaH = L.fMeta * 1.7; m.padY = M;                  // the logo sits on plain white now, so it gets the same top margin as everything else
   m.logo = m.rowTitleH + m.rowMetaH;
-  m.bandH = m.logo + m.padY * 2;
+  m.bandH = m.logo + m.padY + Math.max(M * 0.4, 3);
   // The square logo is as tall as the two text rows (title + info line), top-aligned with the band's padding.
   m.logoTop = m.padY;
   m.logoH = m.logo;
   m.logoW = m.logoH;
-  m.blockW = M + m.logoW + M * 0.8;
-  m.slant = m.bandH * 0.28;
-  m.textX = m.blockW + m.slant + L.fMeta * 0.5;   // clear of the block's slanted edge
+  m.textX = M + m.logoW + M * 0.9 + L.fMeta * 0.4;
   const availW = PW - m.textX - M;
   let tf = L.fHead; mc.font = `700 ${tf}px ${PRINT_HEAD_FONT}`;
   const tTitle = model.title.toUpperCase();
@@ -14214,9 +14215,7 @@ async function ftRenderPages(s, layoutKey){
   ctx.scale(S, S);
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PW, PH);
   ctx.textBaseline = 'alphabetic';
-  // header band
-  ctx.fillStyle = '#F7FF00';
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(m.blockW + m.slant, 0); ctx.lineTo(m.blockW, m.bandH); ctx.lineTo(0, m.bandH); ctx.closePath(); ctx.fill();
+  // header: the black square logo on plain white, then the title and the details line
   if(logo) ctx.drawImage(logo, 3, 0, 622, 622, M, m.logoTop, m.logoW, m.logoH);   // 622 x 622 = the logo's square part
   ctx.fillStyle = '#0F172A'; ctx.font = `700 ${m.titleFont}px ${PRINT_HEAD_FONT}`;
   ctx.fillText(m.titleText, m.textX, m.padY + m.rowTitleH * 0.84);
@@ -14240,9 +14239,8 @@ async function ftRenderPages(s, layoutKey){
     const gr = ctx.createLinearGradient(M, 0, M + CW, 0); gr.addColorStop(0, g.grad[0]); gr.addColorStop(1, g.grad[1]);
     ctx.fillStyle = gr; ftRoundRect(ctx, M, y, CW, L.banH, 2.5); ctx.fill();
     const by = y + L.banH * 0.5, bf = L.fBanner;
-    ftDrawIcon(ctx, g.label, M + 4, by - bf*0.7, bf*1.4, '#FFFFFF', 2.2);
     ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'left'; ctx.font = `800 ${bf}px ${PRINT_BODY_FONT}`;
-    const lx = M + 4 + bf*1.4 + 4;
+    const lx = M + 6;
     ctx.fillText(g.label.toUpperCase(), lx, by + bf*0.36);
     const lw = ctx.measureText(g.label.toUpperCase()).width;
     ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(lx + lw + 5, by - bf*0.7); ctx.lineTo(lx + lw + 5, by + bf*0.7); ctx.stroke();
@@ -14400,7 +14398,7 @@ function sessionDetailActionsHtml(s, isOwner){
   const id = escJsAttr(s.id);
   const btn = (onclick, icon, title, sub) => `<button class="sd-act" onclick="${onclick}"><span class="sd-act-ic">${icon}</span><span class="sd-act-t">${title}</span><span class="sd-act-s">${sub}</span></button>`;
   return `<div class="sd-actions ${isOwner ? '' : 'one'}">
-    ${btn(`openPrintSheet('${id}')`, ICONS.printer, 'Print PDF / Create Image', 'A field-ready copy of this session')}
+    ${btn(`openPrintSheet('${id}')`, ICONS.printer, 'Print PDF /<br>Create Image', 'A field-ready copy of this session')}
     ${isOwner ? btn(`shareSavedSession('${id}')`, ICONS.share, 'Share Session', 'Copy the link and send it to another coach') : ''}
   </div>`;
 }
