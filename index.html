@@ -2112,9 +2112,6 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .su-date-value{font-size:var(--fs-lg);font-weight:700;color:var(--ink);}
 .su-date-chev{display:flex;color:var(--ink-soft);}
 .su-date-chev svg{width:16px;height:16px;}
-.sd-mi-edit{grid-column:1 / -1;border-left:none !important;padding-left:0 !important;}
-.sd-mi-edit label{display:flex;align-items:center;gap:8px;}
-.sd-mi-edit .sd-time-input{width:auto;min-height:36px;color:#0F172A;background:#fff;}
 .sd-time-input{width:100%;box-sizing:border-box;min-height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-weight:700;padding:0 6px;font-family:inherit;}
 .su-date-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:none;cursor:pointer;}
 .su-seg{display:flex;gap:6px;}
@@ -13950,7 +13947,6 @@ function renderSessionDetail(){
         : `${s.targetDuration} min session`}</span></span>
       <span class="sd-mi">${ICONS.mapPin}<span>${s.location==='indoor'?'Indoor':'Outdoor'}</span></span>
       <span class="sd-mi">${ICONS.user}<span>${escHtml(s.createdBy)}</span></span>
-      ${editing ? `<span class="sd-mi sd-mi-edit">${ICONS.clock}<label>Start <input type="time" class="sd-time-input" value="${escAttr(s.startTime||'')}" aria-label="Start time" onchange="setSavedSessionStartTime('${escJsAttr(s.id)}', this.value)"></label></span>` : ''}
     </div>
     <div class="sd-summary">
       <div class="sd-sum"><span class="sd-sum-ic">${ICONS.ballOutline}</span><div><div class="sd-sum-val">${s.exCount}</div><div class="sd-sum-lbl">Exercises</div></div></div>
