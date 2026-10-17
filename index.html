@@ -2184,13 +2184,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    (text -> step label/title). The link's own 14px padding is its touch target, so the extra top
    space is trimmed from the page padding instead -- only on pages whose first element is the link. */
 .section-pad:has(> .nav-back-link:first-child),
-.section-pad:has(> .nav-sticky-back:first-child){padding-top:11px;}
+.section-pad:has(> .nav-sticky-back:first-child){padding-top:3px;}   /* the sticky wrapper brings its own 8px above the pill */
 /* Find Exercises only: the back link stays pinned at the top while the exercise list scrolls, with
    the sticky session-stats box (see renderSessionBuilderBox) pinned directly beneath it -- that
    box's inline top:36px is this wrapper's 52px height minus the 16px of its own top padding. */
 .nav-sticky-back{
   position:sticky;top:0;z-index:12;background:var(--chalk);
-  margin:0 -18px;padding:0 18px 8px;
+  margin:0 -20px;padding:8px 20px 8px;   /* same space above the pill as below it, and edge to edge so nothing shows through at the sides */
 }
 .nav-sticky-back .nav-back-link{margin-bottom:0;}
 /* Exercise Detail: the wrapper sits directly in the scroll area (not inside a padded block), so it
@@ -2201,6 +2201,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    format / difficulty) scrolls away. top:62px tucks 1px under the Back link's own 63px so no seam shows. */
 .detail-header.dh-dock{position:sticky;top:62px;z-index:11;padding-bottom:12px;}
 .detail-header.dh-dock h1{margin:0;}
+.detail-header.dh-dock .detail-eyebrow,.detail-header.dh-dock h1{padding-right:52px;}   /* room for the bookmark in the corner */
+.dh-bm{position:absolute;top:10px;right:12px;width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;}
+.dh-bm svg{width:20px;height:20px;}
 .detail-header.dh-stats{padding-top:0;margin-top:-1px;} /* hides a sub-pixel hairline between the two halves */
 .nav-page-title{
   font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:23px;
@@ -8999,6 +9002,7 @@ const state = {
   sharedToken: null,          // the share-link token this page load was opened with (?s=...); never persisted
   sharedSession: null,        // the read-only session fetched for that token; never added to savedSessions
   sharedStatus: 'idle',       // idle | loading | ready | unavailable | offline | unsupported
+  savedSheet: null,           // the "Session saved" confirmation that follows Save Session: {sessionId, renamedFrom}
   sessionMoreId: null,        // Saved Session Detail's More (...) menu: the session id it is open for
   shareReady: {},             // sessionId -> {url,message,title} prepared in the background so Share Session is one tap
   sharePrepping: {},
@@ -11700,6 +11704,7 @@ function renderOverlay(){
       </div>
     </div>`;
   }
+  html += savedSheetHtml();
   html += sessionMoreSheetHtml();
   html += saveFirstSheetHtml();
   html += shareSheetHtml();
@@ -11978,6 +11983,7 @@ function renderDetail(){
   </div>
   <div class="detail-header dh-dock" style="background:${st.bg};">
     ${isDraft ? `<div class="dpill draft-pill">${ICONS.pencil} New — not saved yet</div>` : ''}
+    <button class="dh-bm" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};background:${st.textOn==='dark'?'rgba(16,20,31,0.14)':'rgba(255,255,255,0.22)'};" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')" aria-label="${isBookmarked?'Remove bookmark':'Bookmark this exercise'}" aria-pressed="${isBookmarked}">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
     <div class="detail-eyebrow" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
       ${st.icon}
       <select onchange="updateExerciseField('${escJsAttr(ex.id)}','section',this.value)" style="color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};">
@@ -12021,7 +12027,6 @@ function renderDetail(){
   </div>` : ''}
 
   <div class="detail-actions">
-    <button class="iconbtn-lg ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
     <button class="add-session-btn ${inPhase?'added':''}" onclick="detailToggle('${escJsAttr(ex.id)}')">
       ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add to Session`}
     </button>
@@ -12549,7 +12554,7 @@ function renderSessionBuilderBox(pickingLabel){
   // active chip below already communicates the current section.
   const NAV_CHIP_LABEL = {warmup:'Warmup', athletic:'Ath', duels:'Duels', rondos:'Rondos', ssg:'SSG', scrimmage:'Scrim'};
   return `
-  <div class="sbb-sticky-wrap" style="top:36px;">
+  <div class="sbb-sticky-wrap" style="top:44px;">
   <div class="session-builder-box">
     <div class="sbb-compact-row2" style="margin-top:0;">
       <div class="sbb-compact-count">${count} exercise${count===1?'':'s'}</div>
@@ -12876,7 +12881,7 @@ function renderBuild(){
     // Empty phases start (and stay) collapsed -- there's nothing to expand yet, so no chevron is
     // shown at all. Once the first exercise is added, a chevron appears and the card defaults to
     // expanded so the coach immediately sees what they just added.
-    const isCollapsed = isEmpty ? true : state.collapsedPhases.has(p.key);
+    const isCollapsed = isEmpty;       // exercises are always shown once a section has some (no collapse arrow any more)
     const suggested = sectionPlannedMinutes(p.key); // reuses the coach's own existing Settings > Training Session split -- see PHASE TIME GUIDANCE in the batch 69 report for why this, not a second hardcoded distribution
     const over = mins > suggested;
     // "Current" also covers the very first empty phase on a brand-new session (isFirstPhaseWhileEmpty)
@@ -12911,7 +12916,7 @@ function renderBuild(){
       <div class="phase-row" style="background:${barBg};">
         <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
         <div class="phase-row-content">
-          <div class="phase-row-main" onclick="togglePhaseCollapsed('${p.key}')">
+          <div class="phase-row-main" style="cursor:default;">
             <div class="phase-row-body">
               <div class="phase-row-title">${p.label}</div>
               <div class="phase-row-sub">${subHtml}</div>
@@ -12919,7 +12924,6 @@ function renderBuild(){
             </div>
           </div>
           <button class="pcard-add-pill" style="background:color-mix(in srgb, ${st.color} 24%, transparent);color:${st.color};" onclick="pickForPhase('${p.key}')"><span class="pcard-add-plus">+</span><span class="pcard-add-text"><span>Add</span><span>Exercise</span></span></button>
-          ${isEmpty ? `<span class="phase-collapse-btn" style="visibility:hidden;" aria-hidden="true">${ICONS.chevronRight}</span>` : `<button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${p.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(p.label)}">${ICONS.chevronRight}</button>`}
         </div>
       </div>
       ${isCollapsed ? '' : (ids.length ? `<div class="build-ex-list" data-list-key="${p.key}">${ids.map(id=>buildExRowHtml(id, p.key, `removeFromPhase('${p.key}','${id}')`, ids.length>1)).join('')}</div>` : '')}
@@ -12928,7 +12932,7 @@ function renderBuild(){
 
   const extraBoxHtml = (s) => {
     const mins = s.exercises.reduce((a,id)=>a+(exById(id)?.duration||10),0);
-    const isCollapsed = state.collapsedPhases.has(s.key);
+    const isCollapsed = false;
     const planned = extraSectionPlannedMinutes(s);
     const over = planned ? mins > planned : false;
     const isCurrent = state.pickingPhase === s.key;
@@ -12937,7 +12941,6 @@ function renderBuild(){
       <div class="phase-box-header">
         <div class="phase-box-toprow">
           <input class="extra-box-title-input" value="${escAttr(s.label)}" onblur="renameExtraSection('${s.key}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">
-          <button class="phase-collapse-btn ${isCollapsed?'collapsed':''}" onclick="togglePhaseCollapsed('${s.key}')" title="${isCollapsed?'Expand':'Collapse'} ${escAttr(s.label)}">${ICONS.chevronRight}</button>
         </div>
         <div class="phase-box-subrow">
           <div class="phase-box-time">${planned ? `${mins} / ${planned} min${over?` <span class="phase-over-tag">Over</span>`:''}` : `${mins}m`}</div>
@@ -12957,7 +12960,7 @@ function renderBuild(){
 
   return `
   <div class="section-pad">
-    ${navBackRowHtml('Session Setup', 'editPracticeSetup()')}
+    <div class="nav-sticky-back">${navBackRowHtml('Session Setup', 'editPracticeSetup()')}</div>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
       <h1 class="nav-page-title" data-step="STEP 2 OF 3">Build Session</h1>
       <div class="session-state-tag ${count>0?'inprogress':'new'}" style="flex-shrink:0;margin-top:3px;">${count>0?'In Progress':'New'}</div>
@@ -13029,7 +13032,7 @@ function uniqueSessionName(name, excludeId){
   while(taken.has(sessionNameKey(`${base} (${n})`))) n++;
   return `${base} (${n})`;
 }
-function completeSession(){
+function completeSession(opts){
   const {total, count} = currentTotalMinutes();
   if(count===0){ showToast('Add at least one exercise first'); return; }
   const phasesSnapshot = [];
@@ -13061,11 +13064,11 @@ function completeSession(){
     targetDuration: state.targetDuration, phases: phasesSnapshot,
     practiceDate: state.practiceDate, startTime: state.practiceStartTime || '', location: state.practiceLocation, templateId: state.activeTemplateId,
     rating: 0, comment: '', favorited: false, visibility: 'shared',
+    shareToken: newShareToken(),   // minted now so the very first save already carries it (Share Session is then one tap)
     // Only a Custom Session knows these; they let a shared link show "Play Forward - U10 - Balanced".
     focusArea: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.focusArea) || '',
     ageGroup: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.ageGroup) || '',
     sessionStyle: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.sessionStyle) || '',
-    shareToken: '',
   };
   state.savedSessions.push(newSession);
   // reset builder
@@ -13081,9 +13084,41 @@ function completeSession(){
   state.csReviewNotes = [];
   state.csReviewExplain = null;
   state.csPlannedByPhase = null;
-  showToast(name !== wantedName.replace(/\s+/g,' ') ? `Saved as “${name}” — that name was taken` : 'Session saved!');
   nav('home');
   pushSessionToSheet(newSession);
+  if(opts && opts.skipConfirm){
+    showToast(name !== wantedName.replace(/\s+/g,' ') ? `Saved as \u201c${name}\u201d \u2014 that name was taken` : 'Session saved!');
+  } else {
+    // Tell the coach it's saved, where to find it, and offer Print / Share right away.
+    state.savedSheet = {sessionId:id, renamedFrom: name !== wantedName.replace(/\s+/g,' ') ? name : ''};
+    renderOverlay();
+    prefetchShareLink(id);      // get the share link ready in the background so Share Session is one tap
+  }
+}
+function closeSavedSheet(){ state.savedSheet = null; renderOverlay(); }
+function savedSheetDo(action){
+  const sh = state.savedSheet; if(!sh) return;
+  state.savedSheet = null; renderOverlay();
+  if(action === 'print') openPrintSheet(sh.sessionId);
+  else if(action === 'share') shareSavedSession(sh.sessionId);
+  else if(action === 'view') openSessionDetail(sh.sessionId);
+}
+function savedSheetHtml(){
+  const sh = state.savedSheet; if(!sh) return '';
+  const s = state.savedSessions.find(x => x.id === sh.sessionId); if(!s) return '';
+  const btn = (action, icon, title, sub) => `<button class="sd-act" onclick="savedSheetDo('${action}')"><span class="sd-act-ic">${icon}</span><span class="sd-act-t">${title}</span><span class="sd-act-s">${sub}</span></button>`;
+  return `<div class="sheet-backdrop" onclick="closeSavedSheet()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <div class="pe-state" style="padding-top:2px;"><span class="pe-check">${ICONS.check}</span>
+      <div class="pe-state-title">Session saved</div>
+      <div class="pe-state-sub"><b>${escHtml(s.name)}</b>${sh.renamedFrom ? ' (that name was taken, so it was numbered)' : ''}<br>Find it any time under <b>Sessions</b> \u203a My Sessions.</div>
+    </div>
+    <div class="pe-group-label" style="margin-top:16px;">Want to share it?</div>
+    <div class="sd-actions" style="margin-bottom:0;">
+      ${btn('print', ICONS.printer, 'Print PDF /<br>Create Image', 'A field-ready copy of this session')}
+      ${btn('share', ICONS.share, 'Share Session', 'Copy the link and send it to another coach')}
+    </div>
+    <div class="sheet-footer"><button class="btn btn-edge btn-ghost" onclick="savedSheetDo('view')">View Session</button><button class="btn btn-edge btn-primary" onclick="closeSavedSheet()">Done</button></div>
+  </div>`;
 }
 function dayName(){
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
@@ -14389,7 +14424,7 @@ function closeSaveFirstSheet(){ state.saveFirstSheet = null; renderOverlay(); }
 function saveFirstSheetSave(){
   state.saveFirstSheet = null;
   const before = state.savedSessions.length;
-  completeSession();
+  completeSession({skipConfirm:true});
   if(state.savedSessions.length > before) openSessionDetail(state.savedSessions[state.savedSessions.length - 1].id);   // land where Print / Share live
   renderOverlay();
 }

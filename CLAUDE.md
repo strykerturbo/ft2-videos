@@ -468,6 +468,14 @@ rather than letting it get rediscovered next session.
   side by side (`sessionDetailActionsHtml`, stack under 340px). The More menu (`sessionMoreSheetHtml`): Edit, Copy Session (= the existing
   "make a copy" duplicate flow), Make Private/Shared, Delete Session (existing confirm). Editing mode shows a check "Done" button and makes the
   target number editable inside the metadata. The old Practice date / Location / Added by / Start time cards under Rate this Session were removed (that info is in the header line); the start time can still be set while editing, via a "Start" field in the header. Rate this Session now sits at the very bottom of the page (after the Training Profile); filled stars are solid (the star icon's inner <g fill="none"> must be overridden on the shape, not the svg). Everything else below the button row is unchanged.
+- **Sticky Back pills + Build/Detail tweaks (2026-10).** `.nav-sticky-back` (Find Exercises, Build Session) pins the Back pill with 8px above and below; Find Exercises' pinned
+  session box sits at top:44px = that wrapper's height (60px) minus 16 -- change both together. Build Session no longer has collapse arrows: a section's exercises
+  always show once it has any, and "+ Add Exercise" sits at the far right (`state.collapsedPhases` is now unused). On Exercise Detail the bookmark lives in the top-right
+  corner of the coloured card (`.dh-bm`), not beside "Add to Session".
+- **"Session saved" confirmation (2026-10).** `completeSession()` (Save Session on Review / Custom Review) now lands on Home and opens `savedSheetHtml()`: "Session saved",
+  where to find it (Sessions > My Sessions), and "Want to share it?" with the Print PDF / Create Image and Share Session buttons plus View Session / Done. New sessions are
+  minted with a `shareToken` at save time and the share link is prefetched, so Share is one tap right away. The "Save your session first" path calls
+  `completeSession({skipConfirm:true})` and goes straight to the saved session instead.
 
 ## Where things live
 
