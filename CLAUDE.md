@@ -476,6 +476,11 @@ rather than letting it get rediscovered next session.
   where to find it (Sessions > My Sessions), and "Want to share it?" with the Print PDF / Create Image and Share Session buttons plus View Session / Done. New sessions are
   minted with a `shareToken` at save time and the share link is prefetched, so Share is one tap right away. The "Save your session first" path calls
   `completeSession({skipConfirm:true})` and goes straight to the saved session instead.
+- **Sticky Back everywhere in the Custom flow + Add Exercise return (2026-10).** Every Back pill on Home -> Intent -> Session Setup -> Building -> Review (and the normal
+  Review) now uses `navStickyBackHtml()` (same `.nav-sticky-back` wrapper as Find Exercises), so it docks while scrolling. `.section-pad:has(> .nav-sticky-back:first-child)`
+  is `padding-top:1px` so the space above the pill reads equal to the space below. Editing a SAVED session -> "+ Add Exercise" opens the plain Exercises library with
+  `editingSavedSessionId` set; that screen now shows "Back to Saved Session" (`backToSavedSessionFromPicker()`, returns in edit mode), and Exercise Detail opened from it goes back
+  to that list (`backFromDetail`/`detailBackLabel` check `fromSavedSession && editingSavedSessionId` first). The "Session Link Copied" flash has a 2px white border, `top:27%`.
 
 ## Where things live
 

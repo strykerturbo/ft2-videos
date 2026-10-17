@@ -1997,7 +1997,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .pe-opt-title{font-size:var(--fs-md);font-weight:800;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
 .pe-opt-size{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
 .pe-opt-desc{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.35;}
-.share-flash{position:absolute;left:50%;top:21%;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;background:#0F172A;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.3);width:max-content;max-width:calc(100% - 36px);}
+.share-flash{position:absolute;left:50%;top:27%;border:2px solid #fff;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;background:#0F172A;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.3);width:max-content;max-width:calc(100% - 36px);}
 .share-flash b{display:block;font-size:var(--fs-md);}
 .share-flash small{display:block;font-size:var(--fs-sm);opacity:0.8;margin-top:1px;}
 .share-flash-ic{width:30px;height:30px;border-radius:50%;background:var(--turf);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -2181,7 +2181,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    (text -> step label/title). The link's own 14px padding is its touch target, so the extra top
    space is trimmed from the page padding instead -- only on pages whose first element is the link. */
 .section-pad:has(> .nav-back-link:first-child),
-.section-pad:has(> .nav-sticky-back:first-child){padding-top:3px;}   /* the sticky wrapper brings its own 8px above the pill */
+.section-pad:has(> .nav-sticky-back:first-child){padding-top:1px;}   /* the sticky wrapper brings its own 8px above the pill; +1px reads equal to the space below (the title's step label has a little leading of its own) */
 /* Find Exercises only: the back link stays pinned at the top while the exercise list scrolls, with
    the sticky session-stats box (see renderSessionBuilderBox) pinned directly beneath it -- that
    box's inline top:36px is this wrapper's 52px height minus the 16px of its own top padding. */
@@ -8957,6 +8957,8 @@ function backFromDetail(){
   }
   if(state.fromSharedSession){ nav('sharedSession', {fromSharedSession:false}); return; }
   if(state.fromReview){ nav(state.fromCustomReview ? 'customSessionReview' : 'review'); return; }
+  // Adding to a saved session from the library: Back returns to that library list, not past it.
+  if(state.fromSavedSession && state.editingSavedSessionId){ nav('exercises'); return; }
   if(state.fromSavedSession){ nav('sessionDetail', {viewingSessionId: state.fromSavedSessionId, fromSavedSession:false, editingSavedSessionId:null}); return; }
   if(state.fromHome){ nav('home', {fromHome:false}); return; }
   if(state.fromBuildList){ nav('build', {fromBuildList:false}); return; }
@@ -8972,6 +8974,7 @@ function backFromDetail(){
 function detailBackLabel(){
   if(state.fromSharedSession) return 'Shared Session';
   if(state.fromReview) return 'Session Review';
+  if(state.fromSavedSession && state.editingSavedSessionId) return 'Exercises';
   if(state.fromSavedSession) return 'Saved Session';
   if(state.fromHome) return 'Home';
   if(state.fromBuildList) return 'Build Session';
@@ -10773,6 +10776,10 @@ function generateCustomSession(cfg){
 function navBackRowHtml(label, onclick){
   return `<button class="nav-back-link" onclick="${onclick}">${ICONS.back}<span>Back to ${escHtml(label)}</span></button>`;
 }
+// Same pill, pinned at the top of the page while the rest scrolls (equal space above and below it).
+function navStickyBackHtml(label, onclick){
+  return `<div class="nav-sticky-back">${navBackRowHtml(label, onclick)}</div>`;
+}
 function navPageTitleHtml(title, subtitle, step){
   return `<h1 class="nav-page-title"${step ? ` data-step="${escAttr(step)}"` : ''}>${escHtml(title).replace(/\n/g, '<br>')}</h1>${subtitle ? `<div class="nav-page-sub">${escHtml(subtitle)}</div>` : ''}`;
 }
@@ -11157,7 +11164,7 @@ function renderQuickStartCustom(){
   }).join('');
   return `
   <div class="section-pad cs-page">
-    ${navBackRowHtml('Home', "nav('home')")}
+    ${navStickyBackHtml('Home', "nav('home')")}
     ${navPageTitleHtml("What do you want\nto work on?", "Pick the focus FT2 should build today’s session around.", 'STEP 1 OF 4')}
     <div class="cs-list" role="radiogroup" aria-label="Focus areas">${cards}</div>
   </div>`;
@@ -11182,7 +11189,7 @@ function renderCustomSessionSetup(){
     </label>`;
   return `
   <div class="section-pad su-page cs-page">
-    ${navBackRowHtml('Intent', 'csBackToStep1()')}
+    ${navStickyBackHtml('Intent', 'csBackToStep1()')}
     ${navPageTitleHtml('Session Setup', 'Set the details for your session. These help FT2 find the best exercises for your needs.', 'STEP 2 OF 4')}
     <div class="cs-carry">
       <span class="cs-cat-icon" style="background:${f.bg};">${ICONS[f.icon]}</span>
@@ -11224,7 +11231,7 @@ function renderCustomSessionGenerating(){
   }).join('');
   return `
   <div class="section-pad cs-page">
-    ${navBackRowHtml('Session Setup', 'csBackToStep2()')}
+    ${navStickyBackHtml('Session Setup', 'csBackToStep2()')}
     ${navPageTitleHtml('Building Your Session', '', 'STEP 3 OF 4')}
     <div class="nav-page-sub">Finding the best exercises for<br>${escHtml(f.title)}...</div>
     ${failed ? `
@@ -11329,6 +11336,7 @@ function renderExercises(){
       ${navPageTitleHtml('Find Exercises', '', pickerReturnsToCustomReview() ? '' : 'STEP 2 OF 3')}
     </div>
     ` : ''}
+    ${(!pickingLabel && state.editingSavedSessionId) ? navStickyBackHtml('Saved Session', 'backToSavedSessionFromPicker()') : ''}
     ${renderSessionBuilderBox(pickingLabel)}
     ${replacingEx ? `
       <div class="info-banner replace-banner">
@@ -13321,7 +13329,7 @@ function renderReview(custom){
   if(count===0){
     return custom ? `
     <div class="section-pad">
-      ${navBackRowHtml('Session Setup', 'csBackToStep2()')}
+      ${navStickyBackHtml('Session Setup', 'csBackToStep2()')}
       <div class="empty-state">
         ${ICONS.empty}
         <p>No exercises in this session.<br>Generate it again to get a new suggestion.</p>
@@ -13329,7 +13337,7 @@ function renderReview(custom){
       <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="csGoToGenerate()">Generate Session</button>
     </div>` : `
     <div class="section-pad">
-      ${navBackRowHtml('Build Session', "nav('build')")}
+      ${navStickyBackHtml('Build Session', "nav('build')")}
       <div class="empty-state">
         ${ICONS.empty}
         <p>No exercises added yet.<br>Head to Build a Session to get started.</p>
@@ -13343,7 +13351,7 @@ function renderReview(custom){
 
   return `
   <div class="section-pad">
-    ${custom ? navBackRowHtml('Session Setup', 'csBackToStep2()') : navBackRowHtml('Build Session', "nav('build')")}
+    ${custom ? navStickyBackHtml('Session Setup', 'csBackToStep2()') : navStickyBackHtml('Build Session', "nav('build')")}
     ${navPageTitleHtml('Session Review', '', custom ? 'STEP 4 OF 4' : 'STEP 3 OF 3')}
     <div style="margin-top:10px;">
       <div class="eyebrow">${state.sessionName.trim() ? escHtml(state.sessionName) : 'New Training Session'} (unsaved)</div>
@@ -13707,6 +13715,10 @@ function isExerciseInSavedSession(sessionId, exerciseId){
 // Enter "add an exercise to this saved session" mode -- browses the exercise library scoped to
 // nothing in particular (unlike the guided Build flow's pickForPhase, a saved session's phase
 // cards can span multiple real phases, so there's no single section to filter to up front).
+function backToSavedSessionFromPicker(){
+  const id = state.editingSavedSessionId || state.fromSavedSessionId;
+  nav('sessionDetail', {viewingSessionId:id, fromSavedSession:false, editingSavedSessionId:null});
+}
 function addExerciseToSavedSessionFlow(sessionId){
   nav('exercises', {editingSavedSessionId:sessionId, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null, search:'', quickFilterValue:null});
 }
