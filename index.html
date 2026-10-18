@@ -1918,7 +1918,6 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 
 
 /* ---------- Create / Edit Template ---------- */
-.te-page .nav-page-title{margin-bottom:4px;font-size:19px;padding-bottom:6px;}
 .te-page .nav-page-sub{font-size:var(--fs-sm);}
 .te-titlebar{margin-top:8px;}
 .te-card{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg-surface);}
@@ -1931,13 +1930,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .te-input:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
 .sd-edit-note{display:flex;gap:10px;align-items:center;background:var(--chalk-dim);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:var(--fs-sm);color:var(--ink);line-height:1.35;}
 .sd-edit-note svg{width:16px;height:16px;flex-shrink:0;color:var(--ink-soft);}
-.te-input.has-error{border-color:var(--warn);}
+.te-input.has-error,.su-title-input.has-error{border-color:var(--warn);}
 .te-name-err{color:var(--warn);font-size:var(--fs-sm);font-weight:700;margin:6px 2px 0;}
-.te-seg{gap:6px;}
-.te-seg .su-seg-btn{height:auto;min-height:44px;font-size:var(--fs-base);border-radius:10px;}
-.te-seg .su-seg-btn svg{width:15px;height:15px;}
-/* Selected = FT2 volt with a small dark outline (so it stands out from the grey card) and fixed dark text. */
-.te-seg .su-seg-btn.active{background:var(--cone);border:1.5px solid #0F172A;color:#0F172A;}
 .te-structure-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:22px;}
 .te-h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--fs-xl,24px);margin:0;color:var(--ink);}
 .te-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:2px;line-height:1.35;}
@@ -9627,7 +9621,7 @@ function teSaveTemplate(){
   }
 }
 function teSegHtml(options, current, fn){
-  return `<div class="su-seg te-seg">${options.map(([v,l,icon]) => `<button class="su-seg-btn ${current===v?'active':''}" aria-pressed="${current===v}" onclick="${fn}('${v}')">${icon||''}${escHtml(l)}</button>`).join('')}</div>`;
+  return `<div class="su-seg cs-seg">${options.map(([v,l,icon]) => `<button class="su-seg-btn ${current===v?'active':''}" aria-pressed="${current===v}" onclick="${fn}('${v}')">${icon||''}${escHtml(l)}</button>`).join('')}</div>`;
 }
 function teRowHtml(s, mins){
   const off = s.enabled === false;
@@ -9664,26 +9658,15 @@ function renderTemplateEditor(){
   const total = teTotalPct(d);
   const isNew = !!d.isNew;
   return `
-  <div class="section-pad te-page">
-    <button class="back-pill-flat" onclick="closeTemplateEditor()">${ICONS.back} Back to Templates</button>
+  <div class="section-pad su-page te-page">
+    ${navStickyBackHtml('Templates', 'closeTemplateEditor()')}
     <div class="te-titlebar">${navPageTitleHtml(isNew ? 'Create New Template' : 'Edit Template', 'Set the details, then adjust each section.')}</div>
 
-    <div class="te-card te-compact">
-      <label class="te-label" for="teName">Template Name</label>
-      <input id="teName" class="te-input ${state.templateNameError ? 'has-error' : ''}" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off" ${state.templateNameError ? 'aria-invalid="true"' : ''}>
-      ${state.templateNameError ? '<div class="te-name-err" role="alert">Add a title for your template.</div>' : ''}
-      <div class="te-field">
-        <div class="te-label">Session Duration</div>
-        ${teSegHtml(TE_DURATIONS.map(v => [String(v), v + ' min']), String(d.duration), 'teSetDuration')}
-      </div>
-      <div class="te-field">
-        <div class="te-label">Location</div>
-        ${teSegHtml([['outdoor','Outdoor',ICONS.sun],['indoor','Indoor',ICONS.home]], d.location, 'teSetLocation')}
-      </div>
-      <div class="te-field">
-        <div class="te-label">Age Group</div>
-        ${teSegHtml(CS_AGE_GROUPS.map(a => [a,a]), d.ageGroup, 'teSetAge')}
-      </div>
+    <div class="su-group te-su">
+      ${setupRowHtml(ICONS.pencil, 'Template Name', `<input id="teName" class="su-title-input ${state.templateNameError ? 'has-error' : ''}" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off" aria-label="Template name" ${state.templateNameError ? 'aria-invalid="true"' : ''}>${state.templateNameError ? '<div class="te-name-err" role="alert">Add a title for your template.</div>' : ''}`)}
+      ${setupRowHtml(ICONS.clock, 'Duration (min)', teSegHtml(TE_DURATIONS.map(v => [String(v), String(v)]), String(d.duration), 'teSetDuration'))}
+      ${setupRowHtml(ICONS.mapPin, 'Location', teSegHtml([['outdoor','Outdoor',ICONS.sun],['indoor','Indoor',ICONS.home]], d.location, 'teSetLocation'))}
+      ${setupRowHtml(ICONS.user, 'Age Group', teSegHtml(CS_AGE_GROUPS.map(a => [a,a]), d.ageGroup, 'teSetAge'))}
     </div>
 
     <div class="te-structure-head">
@@ -13695,7 +13678,7 @@ function renderPracticeSetup(){
 
   return `
   <div class="section-pad su-page">
-    ${navBackRowHtml('Home', "nav('home')")}
+    ${navStickyBackHtml('Home', "nav('home')")}
     ${navPageTitleHtml('Session Setup', '', 'STEP 1 OF 3')}
     <div class="su-group">
       ${setupRowHtml(ICONS.pencil, 'Title', titleCtl)}

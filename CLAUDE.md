@@ -510,6 +510,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 - **Template name error + Save Changes on saved sessions (2026-10).** Save Template with no name -> `state.templateNameError`: toast + red inline "Add a title for your template." under the name field, page scrolls to top, field focused; clears when typing.
   Editing a saved session shows a `.sd-edit-note` and a bottom `Save Changes` CTA (`workflowFooterHtml`, owner only) -> `saveSavedSessionChanges()` (also the header check). GOTCHA: the saved-session title is CSS-uppercased, so read it with `textContent`, never `innerText`
   (innerText returned CAPS and silently renamed sessions to all caps; fixed in the title's onblur too). Tests: SS-024, TM-003 extended.
+- **Template editor now mirrors Session Setup (2026-10).** The top is `setupRowHtml` rows (Template Name `.su-title-input`, Duration, Location, Age Group) with the standard black-selected `.su-seg cs-seg` buttons (the yellow `.te-seg` styling and the smaller page title are gone);
+  Back is the sticky pill (`navStickyBackHtml`). Start New Session's Back pill is the same sticky wrapper, so space above = space below (9px / 8px).
 
 ## Where things live
 
