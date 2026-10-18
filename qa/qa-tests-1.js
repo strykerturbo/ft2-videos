@@ -596,5 +596,21 @@ add('SS-022', C.vis, 'Saved Session', 'Saved Session top section: dark header, a
   type: 'Manual', severity: 'Polish', tags: ['saved', 'visual'],
   steps: ['Open a saved session on a phone, light and dark.'], exp: 'Header is tidy, buttons are tappable and clearly labelled, nothing is clipped.', run: null});
 
+add('SS-023', C.core, 'Saved Session', 'Edit mode: exercises can be dragged into a new order inside a phase, the new order is saved, synced and survives reopening.', {
+  severity: 'Major', tags: ['saved', 'persistence', 'print'], timeout: 30000, steps: ['More > Edit, long-press the grip of an exercise and drag it below another.', 'Leave edit mode, reopen the app.'], exp: 'Order changes in the phase, totals unchanged, same order after reopening (and in prints).',
+  async run(env){
+    const sb = await env.boot({live: true}); sb.fn('resetBuilderDraft'); const ex = (sec, n) => sb.exercises().filter(e => e.section === sec).slice(0, n).map(e => e.id);
+    Object.assign(sb.S.phaseData, {warmup: ex('Warmup', 1), athletic: ex('Athletic', 2), duels: ex('Duels', 1), rondos: ex('Rondos', 1), ssg: ex('SSGs', 1), scrimmage: ex('Scrimmage', 1)});
+    sb.S.sessionName = 'Reorder QA'; sb.fn('completeSession', {skipConfirm: true}); const s = sb.S.savedSessions[0]; const names = key => sb.fn('sessionDetailPhaseGroups', s).find(g => g.key === key).items.map(e => e.name);
+    sb.fn('openSessionDetail', s.id); eq(sb.qa('#content .build-ex-grip').length, 0, 'Drag handles outside edit mode'); sb.fn('toggleEditSessionDetail'); assert(sb.qa('#content .build-ex-grip').length >= 5, 'No drag handles in edit mode');
+    const before = names('develop'), total = [s.totalMin, s.exCount]; const rows = sb.qa('.phase-exlist[data-saved-key="develop"] .phase-ex-item'); const grip = rows[0].querySelector('.build-ex-grip'), gr = grip.getBoundingClientRect(), last = rows[rows.length - 1].getBoundingClientRect();
+    const pe = (t, y) => new sb.win.PointerEvent(t, {bubbles: true, clientX: gr.left + 5, clientY: y, pointerId: 1});
+    grip.dispatchEvent(pe('pointerdown', gr.top + gr.height / 2)); await sb.sleep(400);
+    for(const y of [gr.top + 40, gr.top + 90, last.top + last.height]){ sb.doc.dispatchEvent(pe('pointermove', y)); await sb.sleep(40); }
+    sb.doc.dispatchEvent(pe('pointerup', last.top + last.height)); await sb.sleep(450);
+    const after = names('develop'); assert(after.join() !== before.join(), 'The order did not change'); eq(after[after.length - 1], before[0], 'Dragged exercise should now be last'); QA.deepEq([s.totalMin, s.exCount], total, 'Totals changed by a reorder');
+    assert(sb.ctx.backend.sessions.get(s.id), 'Not synced to the server'); sb.flushState(); const sb2 = await sb.reboot(); eq(sb2.fn('sessionDetailPhaseGroups', sb2.S.savedSessions[0]).find(g => g.key === 'develop').items.map(e => e.name).join(), after.join(), 'Order after reopening');
+  }});
+
 QA.register(tests);
 })();

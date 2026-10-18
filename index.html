@@ -469,7 +469,7 @@ a{color:inherit;text-decoration:none;}
 .ex-section-heading{display:flex;align-items:baseline;gap:6px;margin:14px 0 10px;}
 .ex-section-heading .esh-name{font-family:'Inter',sans-serif;font-weight:800;font-size:var(--fs-md);text-transform:uppercase;letter-spacing:0.03em;color:var(--text-primary);}
 .ex-section-heading .esh-count{font-size:var(--fs-sm);font-weight:600;color:var(--ink-soft);}
-.qp-customize-btn{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--line) !important;}
+.qp-customize-btn{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--btn-edge) !important;}
 .qp-customize-btn svg{width:15px;height:15px;flex-shrink:0;}
 .qp-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .qp-info-btn{
@@ -758,6 +758,14 @@ a{color:inherit;text-decoration:none;}
 .btn-edge{border:1px solid var(--line);padding:14px 0;background-clip:padding-box;}   /* light-grey edge, same as the selectable option cards */
 .btn-ghost.btn-edge{background:transparent;}
 .btn-outline{background:var(--bg-surface);color:var(--ink);border:1.5px solid var(--ink);padding:13.5px 0;}
+/* Pop-ups: every action button (footer buttons, the Print/Share tiles, menu rows, Add buttons, alert buttons) carries the SAME light-grey
+   edge as the "Print / Save PDF" button -- one token, so they can never drift apart again. */
+:root{--btn-edge:#B8C2CF;}
+:root[data-theme="dark"]{--btn-edge:#64748B;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--btn-edge:#64748B;} }
+#overlay .btn,#overlay .btn-edge,#overlay .btn-outline{border:1.5px solid var(--btn-edge);padding-top:13.5px;padding-bottom:13.5px;}
+#overlay .sd-act,#overlay .more-item,#overlay .balance-add-btn{border:1.5px solid var(--btn-edge);}
+#overlay .ios-alert-btn{border:1.5px solid var(--btn-edge);padding:11.5px 0;}
 /* An icon dropped straight into a .btn's text (e.g. "${ICONS.check} Save Exercise") had no size
    rule of its own, so it rendered at the SVG's unconstrained intrinsic size -- fixes that for
    every .btn everywhere, not just the new Setup CTA that exposed it. */
@@ -1122,7 +1130,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-ex-item.dragging{position:relative;z-index:5;box-shadow:0 12px 28px -10px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.14);cursor:grabbing;}
 .phase-ex-remove{background:none;border:none;color:var(--ink-soft);opacity:0.5;padding:6px;display:flex;flex-shrink:0;}
 .phase-ex-remove:active{opacity:0.8;}
-.phase-ex-remove svg{width:15px;height:15px;}
+.phase-ex-remove svg{width:18px;height:18px;}
 .pei-thumb{
   width:64px;height:48px;border-radius:8px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
@@ -1136,7 +1144,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-ex-item .peiname.peiname-missing{font-style:italic;font-weight:500;color:var(--ink-soft);}
 .phase-ex-item .peidur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;}
 .phase-ex-item button{background:none;border:none;color:var(--ink-soft);padding:8px;display:flex;margin:-8px;}
-.phase-ex-item button svg{width:15px;height:15px;}
+.phase-ex-item button svg{width:18px;height:18px;}
 .addsection-row{margin-top:6px;}
 .addsection-btn{
   width:100%;border:1px solid var(--line);background:var(--chalk-dim);border-radius:10px;
@@ -1275,6 +1283,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 }
 .phase-row-wrap.current{border-color:var(--turf);box-shadow:0 0 0 1.5px var(--turf);}
 .phase-row-wrap.current .phase-row-title{color:var(--turf);}
+/* A brand-new session: Warmup carries only the green outline (no green title, no "Start here" text). */
+.phase-row-wrap.first-cue .phase-row-title{color:var(--ink);}
 .phase-row{display:flex;align-items:stretch;width:100%;}
 .phase-row-content{display:flex;align-items:center;gap:14px;flex:1;min-width:0;padding:16px 14px;}
 .phase-row-main{display:flex;align-items:center;gap:14px;flex:1;min-width:0;cursor:pointer;}
@@ -1353,8 +1363,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 /* Duration + Replace + Remove all sit in one top-aligned row, evenly spaced -- previously the two
    icon buttons were absolutely positioned in a fixed top-right corner, which could drift out of
    line with the title/duration text and left them crowded together with no breathing room. */
-.build-ex-actions{display:flex;align-items:flex-start;gap:10px;flex-shrink:0;}
-.build-ex-dur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;padding-top:2px;}
+.build-ex-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}   /* minutes + replace + trash share one centre line */
+.build-ex-dur{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;flex-shrink:0;white-space:nowrap;}
 .build-ex-bullets{margin:0;padding-left:15px;}
 .build-ex-bullets li{font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.45;margin-bottom:2px;}
 .build-ex-grip{width:20px;align-self:stretch;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex-shrink:0;touch-action:none;cursor:grab;margin-left:-4px;}
@@ -1362,15 +1372,15 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .build-ex-row.dragging{position:relative;z-index:5;opacity:1;background:var(--bg-surface);border-radius:10px;box-shadow:0 12px 28px -10px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.14);cursor:grabbing;}
 .build-ex-remove{
   background:none;border:none;color:var(--ink-soft);flex-shrink:0;
-  opacity:0.38;padding:8px;margin:-8px -6px 0 0;display:flex;
+  opacity:0.38;padding:8px;margin:-8px -6px -8px 0;display:flex;
 }
-.build-ex-remove svg{width:13px;height:13px;}
+.build-ex-remove svg{width:17px;height:17px;}
 .build-ex-remove:active{opacity:0.75;}
 .build-ex-row .build-ex-replace{
   background:none;border:none;color:var(--turf);flex-shrink:0;
-  opacity:0.6;padding:8px;margin:-8px 0 0;display:flex;
+  opacity:0.6;padding:8px;margin:-8px 0;display:flex;
 }
-.build-ex-row .build-ex-replace svg{width:13px;height:13px;}
+.build-ex-row .build-ex-replace svg{width:17px;height:17px;}
 .build-ex-row .build-ex-replace:active{opacity:0.9;}
 .phase-ex-item .build-ex-replace{color:var(--turf);}
 .build-ex-empty{font-size:var(--fs-sm);color:var(--ink-soft);text-align:center;padding:14px 0 10px;font-style:italic;}
@@ -10932,14 +10942,14 @@ function renderQuickStartPractices(){
    It has its own step state (customSessionStep) -- never the Start New Session workflow's.
    The route name quickStartCustom is the existing Custom Session entry point and is now Step 1. */
 const FOCUS_AREAS = [
-  {id:'keep_the_ball', title:'Keep the Ball', descriptor:'Possession • passing • support', icon:'ballOutline', bg:'var(--sky-dim)'},
-  {id:'play_forward', title:'Play Forward', descriptor:'Penetrate • break lines • progress', icon:'arrowRight', bg:'var(--mint-dim)'},
-  {id:'create_and_score', title:'Create & Score', descriptor:'Chances • combination • finishing', icon:'target', bg:'var(--cone-dim)'},
-  {id:'beat_players', title:'Beat Players', descriptor:'1v1 attacking • dribbling', icon:'swords', bg:'var(--claret-dim)'},
-  {id:'defend_together', title:'Defend Together', descriptor:'Pressure • cover • compactness', icon:'shield', bg:'var(--set-purple-dim)'},
-  {id:'win_it_back', title:'Win It Back', descriptor:'Pressing • tackling • regaining', icon:'circleArrows', bg:'var(--turf-dim)'},
-  {id:'transition_quickly', title:'Transition Quickly', descriptor:'React • attack • defend', icon:'bolt', bg:'var(--sky-dim)'},
-  {id:'master_the_ball', title:'Master the Ball', descriptor:'Dribbling • first touch • technique', icon:'ball', bg:'var(--mint-dim)'},
+  {id:'keep_the_ball', title:'Keep the Ball', descriptor:'Possession • Passing • Support', icon:'ballOutline', bg:'var(--sky-dim)'},
+  {id:'play_forward', title:'Play Forward', descriptor:'Penetrate • Break Lines • Progress', icon:'arrowRight', bg:'var(--mint-dim)'},
+  {id:'create_and_score', title:'Create & Score', descriptor:'Chances • Combination • Finishing', icon:'target', bg:'var(--cone-dim)'},
+  {id:'beat_players', title:'Beat Players', descriptor:'1v1 Attacking • Dribbling', icon:'swords', bg:'var(--claret-dim)'},
+  {id:'defend_together', title:'Defend Together', descriptor:'Pressure • Cover • Compactness', icon:'shield', bg:'var(--set-purple-dim)'},
+  {id:'win_it_back', title:'Win It Back', descriptor:'Pressing • Tackling • Regaining', icon:'circleArrows', bg:'var(--turf-dim)'},
+  {id:'transition_quickly', title:'Transition Quickly', descriptor:'React • Attack • Defend', icon:'bolt', bg:'var(--sky-dim)'},
+  {id:'master_the_ball', title:'Master the Ball', descriptor:'Dribbling • First Touch • Technique', icon:'ball', bg:'var(--mint-dim)'},
 ];
 // Accepts the id or the exact repository Focus Area name.
 function csFocusArea(idOrTitle){ return FOCUS_AREAS.find(a => a.id === idOrTitle || a.title === idOrTitle) || null; }
@@ -11712,7 +11722,7 @@ function renderOverlay(){
       <div style="font-size:var(--fs-base);color:var(--ink-soft);margin:-4px 0 4px;">This removes every exercise you've added to this draft session. This can't be undone.</div>
       <div class="sheet-footer">
         <button class="btn btn-ghost" onclick="cancelDiscardSession()">Keep editing</button>
-        <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDiscardSession()">Discard practice</button>
+        <button class="btn btn-primary" style="background:var(--warn);" onclick="confirmDiscardSession()">Discard practice</button>
       </div>
     </div>`;
   }
@@ -11860,7 +11870,7 @@ function renderOverlay(){
       <div style="font-size:var(--fs-base);color:var(--ink-soft);margin:-4px 0 4px;">This can't be undone.</div>
       <div class="sheet-footer">
         <button class="btn btn-ghost" onclick="cancelDeleteSession()">Keep it</button>
-        <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDeleteSessionNow()">Delete session</button>
+        <button class="btn btn-primary" style="background:var(--warn);" onclick="confirmDeleteSessionNow()">Delete session</button>
       </div>
     </div>`;
   }
@@ -11874,7 +11884,7 @@ function renderOverlay(){
       <div style="font-size:var(--fs-base);color:var(--ink-soft);margin:-4px 0 4px;">This can't be undone.</div>
       <div class="sheet-footer">
         <button class="btn btn-ghost" onclick="cancelDeleteTemplate()">Keep it</button>
-        <button class="btn btn-primary" style="background:var(--warn);border-color:var(--warn);" onclick="confirmDeleteTemplateNow()">Delete template</button>
+        <button class="btn btn-primary" style="background:var(--warn);" onclick="confirmDeleteTemplateNow()">Delete template</button>
       </div>
     </div>`;
   }
@@ -12793,6 +12803,7 @@ function makeDragReorderController(config){
   }
 
   function up(){
+    if(drag && drag.longPressed && config.onDrop) config.onDrop(drag.ctx);      // the drag is finished: let the page save the final order once
     const settling = drag && drag.longPressed && drag.row && drag.row.isConnected;
     if(settling){
       const row = drag.row;
@@ -12868,6 +12879,65 @@ function reviewExGripMove(e){ reviewDragCtl.move(e); }
 function reviewExGripCancel(){ reviewDragCtl.cancel(); }
 function reviewExGripUp(){ reviewDragCtl.up(); }
 
+/* Saved Session (edit mode): the same long-press-and-drag reorder, scoped by a display group ("activate" / "develop" / "play") or a
+   custom section ("extra-<n>"). The saved session keeps its exercises as per-section lists in s.phases, so a new order inside a group
+   is written back as consecutive runs of same-section exercises (e.g. Duels, Rondos, Duels becomes three entries) -- every reader
+   (Session Detail, Print, Share, Duplicate) already walks s.phases in order, so nothing else needs to know. */
+function savedGroupItems(s, groupKey){
+  if(groupKey.indexOf('extra-') === 0){
+    const p = s.phases.filter(x => !PHASES.some(ph => ph.section === x.section))[parseInt(groupKey.slice(6), 10)];
+    return p ? p.exercises : [];
+  }
+  const g = sessionDetailPhaseGroups(s).find(x => x.key === groupKey);
+  return g ? g.items : [];
+}
+function setSavedGroupOrder(s, groupKey, ordered){
+  if(groupKey.indexOf('extra-') === 0){
+    const p = s.phases.filter(x => !PHASES.some(ph => ph.section === x.section))[parseInt(groupKey.slice(6), 10)];
+    if(p) p.exercises = ordered;
+    return;
+  }
+  const group = PHASE_GROUPS.find(g => g.key === groupKey); if(!group) return;
+  const meta = new Map();
+  s.phases.forEach(p => p.exercises.forEach(e => meta.set(e, {section:p.section, label:p.label})));
+  const inGroup = p => { const ph = PHASES.find(x => x.section === p.section); return !!(ph && group.phaseKeys.includes(ph.key)); };
+  const out = []; let placed = false;
+  s.phases.forEach(p => {
+    if(!inGroup(p)){ out.push(p); return; }
+    if(placed) return;
+    placed = true;
+    let run = null;
+    ordered.forEach(e => {
+      const m = meta.get(e);
+      if(!run || run.section !== m.section){ run = {label:m.label, section:m.section, exercises:[]}; out.push(run); }
+      run.exercises.push(e);
+    });
+  });
+  s.phases = out;
+}
+const savedDragCtl = makeDragReorderController({
+  containerSelector: key => `.phase-exlist[data-saved-key="${CSS.escape(key)}"]`,
+  rowSelector: (key, id) => `.phase-exlist[data-saved-key="${CSS.escape(key)}"] .phase-ex-item[data-ex-id="${CSS.escape(id)}"]`,
+  rowSelectorAll: '.phase-ex-item',
+  onSwap(key, draggedId, neighborId){
+    const s = state.savedSessions.find(x => x.id === state.viewingSessionId); if(!s || s.createdBy !== state.coachName) return;
+    const items = savedGroupItems(s, key).slice();
+    const from = items.findIndex(e => e.id === draggedId), to = items.findIndex(e => e.id === neighborId);
+    if(from < 0 || to < 0) return;
+    const [moved] = items.splice(from, 1);
+    items.splice(to, 0, moved);
+    setSavedGroupOrder(s, key, items);
+  },
+  onDrop(){
+    const s = state.savedSessions.find(x => x.id === state.viewingSessionId);
+    if(s && s.createdBy === state.coachName) pushSessionToSheet(s);
+  },
+});
+function savedExGripDown(e, key, id){ savedDragCtl.down(e, key, id); }
+function savedExGripMove(e){ savedDragCtl.move(e); }
+function savedExGripCancel(){ savedDragCtl.cancel(); }
+function savedExGripUp(){ savedDragCtl.up(); }
+
 function renderBuild(){
   const presets = [60,75,90];
   const isCustomActive = !presets.includes(state.targetDuration);
@@ -12913,8 +12983,6 @@ function renderBuild(){
     let subHtml = `${ids.length} exercise${ids.length===1?'':'s'}`;
     if(!isEmpty){
       subHtml = `<span class="${over ? 'phase-over-tag' : ''}" title="${over ? 'Over the suggested time' : 'Planned vs suggested time'}">${mins}/${suggested} min</span>`;
-    } else if(isFirstPhaseWhileEmpty){
-      subHtml = `<span class="prs-starthere">Start here</span>`;
     }
 
     // Tapping the icon/title area expands or collapses this phase's already-added exercises
@@ -12924,7 +12992,7 @@ function renderBuild(){
     // picker. An empty phase has nothing to expand, so it shows no chevron -- only the pill does
     // anything until the first exercise lands.
     return `
-    <div class="phase-row-wrap ${isCurrent?'current':''}" style="${filledBorder}">
+    <div class="phase-row-wrap ${isCurrent?'current':''} ${isFirstPhaseWhileEmpty && state.pickingPhase !== p.key ? 'first-cue' : ''}" style="${filledBorder}">
       <div class="phase-row" style="background:${barBg};">
         <div class="phase-row-icon" style="background:${st.bg};color:${iconColor};">${st.icon}</div>
         <div class="phase-row-content">
@@ -13742,7 +13810,7 @@ function sessionRowHtml(s){
           <div class="srname">${escHtml(s.name)}</div>
           <div class="srmeta">${ICONS.user} ${isOwner?'You':escHtml(s.createdBy)} &middot; ${formatWhen(s.createdAt)}${s.visibility==='private'?` &middot; ${ICONS.lock} Private`:''}</div>
           <div class="srmeta">${s.totalMin} min &middot; ${s.exCount} exercises${s._syncPending?' &middot; <span style="color:var(--warn);">Not synced yet</span>':''}</div>
-          ${s.phases && s.phases.length ? `<div class="srmeta structure">${escHtml(s.phases.map(p=>p.label).join(' → '))}</div>` : ''}
+          ${s.phases && s.phases.length ? `<div class="srmeta structure">${escHtml([...new Set(s.phases.map(p=>p.label))].join(' → '))}</div>` : ''}
         </div>
         ${isOwner ? `<button class="session-fav-btn ${s.favorited?'on':''}" onclick="event.stopPropagation(); toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
         ${isOwner ? `<button class="session-del-btn" onclick="event.stopPropagation(); requestDeleteSession('${escJsAttr(s.id)}')" title="Delete session">${ICONS.trash}</button>` : ''}
@@ -13929,6 +13997,11 @@ function sessionDetailPhaseGroups(s){
     return {...group, items, mins};
   }).filter(group => group.items.length);
 }
+// One exercise row on a saved session; in edit mode it gets a drag handle (when its group has 2+ exercises) and the trash button.
+function savedExRowHtml(s, e, editing, groupKey, showGrip){
+  const sid = escJsAttr(s.id);
+  return `<div class="phase-ex-item" data-ex-id="${escAttr(e.id)}" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${sid}','${escJsAttr(e.name)}')" style="cursor:pointer;">${editing && showGrip ? `<span class="build-ex-grip" onpointerdown="savedExGripDown(event,'${escJsAttr(groupKey)}','${escJsAttr(e.id)}')" onclick="event.stopPropagation();" title="Long-press and drag to reorder">${ICONS.grip}</span>` : ''}${peiThumbHtml(resolveSavedExercise(e))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${sid}','${escJsAttr(e.id)}','${escJsAttr(e.name)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`;
+}
 function renderSessionDetail(){
   const s = state.savedSessions.find(s=>s.id===state.viewingSessionId);
   if(!s) return `<div class="empty-state">${ICONS.empty}<p>Session not found.</p></div>`;
@@ -13990,8 +14063,8 @@ function renderSessionDetail(){
               <div class="phase-time">${g.mins} min</div>
             </div>
             <div class="phase-group-sub">${escHtml(g.sublabel)}</div>
-            <div class="phase-exlist">
-              ${g.items.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}','${escJsAttr(e.name)}')" style="cursor:pointer;">${peiThumbHtml(resolveSavedExercise(e))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}','${escJsAttr(e.name)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+            <div class="phase-exlist" data-saved-key="${g.key}">
+              ${g.items.map(e => savedExRowHtml(s, e, editing, g.key, g.items.length > 1)).join('')}
             </div>
             ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>
@@ -14001,8 +14074,8 @@ function renderSessionDetail(){
           <div class="phase-line"><div class="phase-num">${groups.length+i+1}</div></div>
           <div class="phase-content">
             <div class="phase-title-row"><div class="phase-title">${p.label}</div><div class="phase-time">${p.exercises.reduce((a,e)=>a+e.duration,0)} min</div></div>
-            <div class="phase-exlist">
-              ${p.exercises.map(e=>`<div class="phase-ex-item" onclick="openDetailFromSavedSession('${escJsAttr(e.id)}','${escJsAttr(s.id)}','${escJsAttr(e.name)}')" style="cursor:pointer;">${peiThumbHtml(resolveSavedExercise(e))}<span class="peiname">${e.name}</span><span class="peidur">${e.duration}m</span>${editing?`<button class="phase-ex-remove" onclick="event.stopPropagation(); removeExerciseFromSavedSession('${escJsAttr(s.id)}','${escJsAttr(e.id)}','${escJsAttr(e.name)}')" title="Discard ${escAttr(e.name)}">${ICONS.trash}</button>`:''}</div>`).join('')}
+            <div class="phase-exlist" data-saved-key="extra-${i}">
+              ${p.exercises.map(e => savedExRowHtml(s, e, editing, 'extra-' + i, p.exercises.length > 1)).join('')}
             </div>
             ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
           </div>

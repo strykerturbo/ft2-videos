@@ -497,6 +497,12 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   A hidden browser pane throttles timers (runs look slow) - keep the pane visible when running. **Baseline record:** `qa/BASELINE-2026-10-18.md` (+ `qa/baseline-2026-10-18.json` with per-test statuses) is the reference to compare later runs against. Baseline pass (2026-10): smoke 47/47; full 274 pass / 1 fail / 14 partial / 15 manual not tested. Fixed: PR-005 (a very full Pocket print overflowed because the narrowed title column left no room --
   `ftRenderPages` now tries the narrow column first and widens it by 0.03 only if nothing fits) and RS-001 (Custom Step 4 scrolled sideways at 320-360px -- `.phase-content{min-width:0}` + a <=370px row squeeze).
   Still open (Minor): wrong-shaped saved data blanks the app (P-009), plus the Partial notes (small tap targets, unlabelled icon buttons, no confirm when removing an exercise from a saved session, "Practice"/"Session" wording).
+- **Row icons / first-phase cue / focus descriptors (2026-10).** Exercise-row Replace + Trash icons are 17px (Build rows, `.build-ex-actions` now `align-items:center`) / 18px (Review, Step 4, Saved Session edit rows) and share a centre line with the minutes.
+  On a brand-new empty session Warmup carries ONLY the green outline (`.first-cue`: no "Start here" text, title stays ink; the green title still shows while actually picking into a phase). Focus-area descriptors are Title Case ("Possession • Passing • Support").
+- **Saved Session reorder + pop-up button borders (2026-10).** Edit mode on a saved session shows a drag grip per exercise (2+ in a group): `savedDragCtl` (same engine as Review) -> `setSavedGroupOrder()` rewrites `s.phases` as runs of same-section
+  exercises inside the display group (activate/develop/play or `extra-<n>`); one `pushSessionToSheet` on drop (`onDrop` hook in `makeDragReorderController`). Print/Share/Duplicate just walk `s.phases` in order. Pop-ups: every action
+  button in `#overlay` (`.btn`, `.btn-edge`, `.btn-outline`, `.sd-act`, `.more-item`, `.balance-add-btn`, `.ios-alert-btn`, `.qp-customize-btn`) uses `border:1.5px solid var(--btn-edge)` (#B8C2CF, #64748B dark) = the "Print / Save PDF" border.
+  The red Delete/Discard buttons no longer have a red border (they were already yellow). New QA tests: SS-023 (reorder), CN-009 (pop-up borders).
 
 ## Where things live
 
