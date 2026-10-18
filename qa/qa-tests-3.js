@@ -15,6 +15,8 @@ Object.assign(L, {
   },
   async recipient(env, sb, token, o){ return env.boot(Object.assign({backend: sb.ctx.backend, coach: null, query: '?s=' + token, fetchMode: 'mock'}, o || {})); },
   tmplDraft(sb){ sb.fn('createTemplateFromSessions'); return sb.S.templateDraft; },
+  /* bring a template draft back to exactly 100% the way a coach would: +/- 1% on the biggest section until it adds up */
+  tmplSettle(sb){ for(let i = 0; i < 400; i++){ const d = sb.S.templateDraft, t = sb.fn('teTotalPct', d); if(t === 100) return; const en = sb.fn('teEnabled', d).slice().sort((a, b) => b.pct - a.pct); sb.fn('teAdjust', (t > 100 ? en[0] : en[en.length - 1]).key, t > 100 ? -1 : 1); } },
   prng(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; },
 });
 
@@ -34,23 +36,28 @@ add('TM-004', C.core, 'Template editor', 'Template length choices are exactly 60
 add('TM-005', C.core, 'Template editor', 'Location toggles between Outdoor and Indoor and the age group can be set U8-U12.', {
   severity: 'Minor', tags: ['templates'], steps: ['Change location and age.'], exp: 'Both stored on the draft.',
   async run(env){ const sb = await env.boot(); L.tmplDraft(sb); sb.fn('teSetLocation', 'indoor'); sb.fn('teSetAge', 'U8'); eq(sb.S.templateDraft.location, 'indoor', 'Location'); eq(sb.S.templateDraft.ageGroup, 'U8', 'Age'); }});
-add('TM-006', C.core, 'Template editor', 'Section percentages always add up to 100% however the coach adjusts them (random +/- / switch / remove stress test).', {
-  severity: 'Critical', tags: ['templates', 'math'], steps: ['Tap + and - on sections, switch sections on and off, many times.'], exp: 'Total is 100% after every single action.',
+add('TM-006', C.core, 'Template editor', '+ and - move ONE section by exactly 1% and leave the others alone; the total may go over (or under) 100% but is shown in red ("Over 100%") and the template cannot be saved until it adds up to 100%.', {
+  severity: 'Critical', tags: ['templates', 'math'], steps: ['Tap + and - on sections many times.', 'Push the total over 100% and try to save.'], exp: 'Only that section changes, by 1%; red "Over 100%" next to Total; Save Template is off and nothing is saved.',
   async run(env){
-    const sb = await env.boot(); L.tmplDraft(sb); const rnd = L.prng(7); let n = 0;
-    for(let i = 0; i < 600; i++){
-      const d = sb.S.templateDraft, secs = d.sections, k = secs[Math.floor(rnd() * secs.length)].key, r = rnd();
-      if(r < 0.45) sb.fn('teAdjust', k, 1); else if(r < 0.8) sb.fn('teAdjust', k, -1); else if(r < 0.95) sb.fn('teToggle', k); else sb.fn('teSetPct', k, Math.round(rnd() * 100));
-      eq(sb.fn('teTotalPct', sb.S.templateDraft), 100, `Total % after action ${i + 1}`); n++;
+    const sb = await env.boot(); L.tmplDraft(sb); sb.fn('teSetName', 'Stress'); const rnd = L.prng(7); let over = 0, under = 0;
+    for(let i = 0; i < 400; i++){
+      const d = sb.S.templateDraft, secs = d.sections, k = secs[Math.floor(rnd() * secs.length)].key, dir = rnd() < 0.5 ? 1 : -1; const before = JSON.stringify(secs.map(x => [x.key, x.pct])); const was = secs.find(x => x.key === k).pct;
+      sb.fn('teAdjust', k, dir); const after = sb.S.templateDraft.sections; const now = after.find(x => x.key === k).pct;
+      assert(Math.abs(now - was) <= 1, `${k} moved by ${now - was}%`); eq(JSON.stringify(after.filter(x => x.key !== k).map(x => [x.key, x.pct])), JSON.stringify(JSON.parse(before).filter(x => x[0] !== k)), 'Another section changed when ' + k + ' was adjusted');
+      const t = sb.fn('teTotalPct', sb.S.templateDraft); const bar = sb.text('#content .te-total-bar');
+      if(t > 100){ over++; assert(/Over 100%/.test(bar), 'No red "Over 100%" at ' + t + '%'); assert(sb.q('#content .te-save').disabled, 'Save is on at ' + t + '%'); const n = sb.S.practiceTemplates.length; sb.fn('teSaveTemplate'); eq(sb.S.practiceTemplates.length, n, 'A template over 100% was saved'); }
+      else if(t < 100){ under++; assert(/Under 100%/.test(bar) && sb.q('#content .te-save').disabled, 'Under-100% state wrong at ' + t); }
+      else assert(!sb.q('#content .te-save').disabled && !/Over|Under/.test(bar), 'Exactly 100% should look normal and be saveable');
     }
-    return `${n} random actions, always 100%.`;
+    assert(over > 5 && under > 5, 'The stress run never went over/under 100%'); return `400 +/- taps: ${over} states over 100%, ${under} under, never saved.`;
   }});
 add('TM-007', C.core, 'Template editor', 'Every switched-on section keeps at least 5%.', {
   severity: 'Major', tags: ['templates', 'math'], steps: ['Push a section down repeatedly.'], exp: 'It stops at 5%.',
   async run(env){ const sb = await env.boot(); L.tmplDraft(sb); const rnd = L.prng(11); for(let i = 0; i < 300; i++){ const secs = sb.S.templateDraft.sections; sb.fn(rnd() < 0.5 ? 'teAdjust' : 'teToggle', secs[Math.floor(rnd() * secs.length)].key, -1); sb.fn('teSetPct', secs[0].key, Math.round(rnd() * 100)); sb.fn('teEnabled', sb.S.templateDraft).forEach(x => assert(x.pct >= 5, `${x.label} fell to ${x.pct}%`)); } }});
-add('TM-008', C.core, 'Template editor', 'Section minutes always add up exactly to the session length (60 / 75 / 90).', {
-  severity: 'Critical', tags: ['templates', 'math'], steps: ['Change percentages and the length.'], exp: 'Minutes across sections = length.',
-  async run(env){ const sb = await env.boot(); L.tmplDraft(sb); const rnd = L.prng(3); for(let i = 0; i < 300; i++){ sb.fn('teSetDuration', [60, 75, 90][i % 3]); const secs = sb.S.templateDraft.sections; sb.fn('teAdjust', secs[Math.floor(rnd() * secs.length)].key, rnd() < 0.5 ? 1 : -1); const d = sb.S.templateDraft; eq(Object.values(sb.fn('teMinutes', d)).reduce((a, b) => a + b, 0), d.duration, 'Minutes at step ' + i); } }});
+add('TM-008', C.core, 'Template editor', 'Once the total is exactly 100%, section minutes add up exactly to the session length (60 / 75 / 90), and a saved template keeps that.', {
+  severity: 'Critical', tags: ['templates', 'math'], steps: ['Change percentages and the length, settle on 100%.'], exp: 'Minutes across sections = length.',
+  async run(env){ const sb = await env.boot(); L.tmplDraft(sb); sb.fn('teSetName', 'Mins'); const rnd = L.prng(3); for(let i = 0; i < 120; i++){ sb.fn('teSetDuration', [60, 75, 90][i % 3]); const secs = sb.S.templateDraft.sections; for(let k = 0; k < 4; k++) sb.fn('teAdjust', secs[Math.floor(rnd() * secs.length)].key, rnd() < 0.5 ? 1 : -1); L.tmplSettle(sb); const d = sb.S.templateDraft; eq(sb.fn('teTotalPct', d), 100, 'Settled total'); eq(Object.values(sb.fn('teMinutes', d)).reduce((a, b) => a + b, 0), d.duration, 'Minutes at step ' + i); }
+    sb.fn('teSaveTemplate'); const t = sb.S.practiceTemplates.find(x => x.name === 'Mins'); assert(t, 'A 100% template did not save'); eq(t.sections.reduce((a, x) => a + (x.minutes || 0), 0), t.duration, 'Saved minutes'); }});
 add('TM-009', C.core, 'Template editor', 'A section can be switched off (its time goes to the others) but the last one cannot.', {
   severity: 'Major', tags: ['templates'], steps: ['Switch sections off one by one.'], exp: 'At least one stays on.',
   async run(env){ const sb = await env.boot(); L.tmplDraft(sb); const keys = sb.S.templateDraft.sections.map(s => s.key); keys.forEach(k => sb.fn('teToggle', k)); eq(sb.fn('teEnabled', sb.S.templateDraft).length, 1, 'Sections left on'); eq(sb.fn('teTotalPct', sb.S.templateDraft), 100, 'Total'); }});

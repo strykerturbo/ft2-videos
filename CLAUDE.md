@@ -512,6 +512,10 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   (innerText returned CAPS and silently renamed sessions to all caps; fixed in the title's onblur too). Tests: SS-024, TM-003 extended.
 - **Template editor now mirrors Session Setup (2026-10).** The top is `setupRowHtml` rows (Template Name `.su-title-input`, Duration, Location, Age Group) with the standard black-selected `.su-seg cs-seg` buttons (the yellow `.te-seg` styling and the smaller page title are gone);
   Back is the sticky pill (`navStickyBackHtml`). Start New Session's Back pill is the same sticky wrapper, so space above = space below (9px / 8px).
+- **Template editor percentages (2026-10) -- RULE CHANGE.** `TE_STEP` is 1. +/- and the slider (`teSetPct`) change ONLY that section (min 5%, max 100%); nothing is redistributed any more, so the total can be over/under 100% while editing.
+  The structure header and a new bottom `.te-total-bar` show the total in red with "Over 100%" / "Under 100%", `Save Template` is `disabled` unless the total is exactly 100 (and `teSaveTemplate` still refuses with a toast), and `teMinutes` shows each
+  section's raw share while the total isn't 100. Toggling a section on/off and adding/removing a custom section still re-balance to 100 (unchanged). `.te-page{margin-bottom:-30px}` makes the space under the last button equal the 14px above it.
+  QA: TM-006/TM-008 rewritten for this rule; DI-011/012 settle to 100 (`QA.lib.tmplSettle`) before saving.
 
 ## Where things live
 

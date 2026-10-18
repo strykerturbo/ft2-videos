@@ -1939,6 +1939,9 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .te-total-min{font-weight:800;font-size:var(--fs-md);color:var(--ink);white-space:nowrap;}
 .te-total-pct{font-size:var(--fs-sm);font-weight:700;color:var(--ink-soft);}
 .te-total-pct.bad{color:var(--warn);}
+.te-over{color:var(--warn);font-weight:800;margin-left:4px;}
+.te-total-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);font-weight:800;font-size:var(--fs-md);color:var(--ink);}
+.te-total-bar.bad{border-color:var(--warn);}
 .te-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
 .te-row{background:var(--bg-surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px 10px;}
 .te-row.off .te-row-top > :not(.te-switch-hit):not(.te-grip):not(.te-grip-spacer){opacity:0.45;}
@@ -1984,6 +1987,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .te-addrow-chev{display:flex;color:var(--ink-soft);}
 .te-addrow-chev svg{width:16px;height:16px;}
 .te-save{width:100%;margin-top:14px;min-height:52px;font-size:var(--fs-lg);}
+.te-page{margin-bottom:-30px;}   /* the page's last button clears the bottom bar by the same 14px as the gap above it (the page's own bottom padding was 30px too generous) */
 .te-error{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--cone-dim);color:#7A1F1F;border:1px solid var(--warn);font-size:var(--fs-sm);font-weight:700;}
 
 
@@ -9439,7 +9443,7 @@ function commitTemplateCustomDuration(id, rawVal){
    - changing one section re-splits the REMAINING percentage over the other enabled sections in proportion to
      what they have now (whole numbers, largest-remainder rounding, so the total can never drift);
    - minutes = total duration split by the same largest-remainder rule, so they always add up to the duration. */
-const TE_MIN_PCT = 5, TE_STEP = 5;
+const TE_MIN_PCT = 5, TE_STEP = 1;      // +/- and the slider move ONE section by 1%; nothing else changes (the total may go over 100% while editing -- it just can't be saved)
 const TE_DURATIONS = [60, 75, 90];
 const TE_DEFAULT_AGE = 'U11';
 const TE_SECTION_DESC = {
@@ -9466,6 +9470,11 @@ function teRedistribute(secs, target){
 function teEnabled(d){ return d.sections.filter(x => x.enabled !== false); }
 function teMinutes(d){
   const en = teEnabled(d);
+  if(teTotalPct(d) !== 100){            // mid-edit: each section's own % of the session length (not rescaled), so over/under is visible
+    const raw = {}; d.sections.forEach(x => { raw[x.key] = 0; });
+    en.forEach(x => { raw[x.key] = Math.round((Number(d.duration)||0) * x.pct / 100); });
+    return raw;
+  }
   const mins = teSplit(Number(d.duration)||0, en.map(x => x.pct));
   const map = {}; d.sections.forEach(x => { map[x.key] = 0; });
   en.forEach((x,i)=>{ map[x.key] = mins[i]; });
@@ -9507,13 +9516,11 @@ function teSetAge(v){ if(state.templateDraft){ state.templateDraft.ageGroup = v;
 function teSetPct(key, want){
   const d = state.templateDraft; if(!d) return;
   const s = d.sections.find(x => x.key === key); if(!s || s.enabled === false) return;
-  const others = teEnabled(d).filter(x => x !== s);
-  if(!others.length){ showToast('Turn on another section to change this one'); render(); return; }
-  const max = 100 - TE_MIN_PCT * others.length;
-  const next = Math.max(TE_MIN_PCT, Math.min(max, Math.round(want)));
-  if(next === s.pct){ showToast(want < s.pct ? `Each section keeps at least ${TE_MIN_PCT}%` : 'The other sections need at least 5% each'); render(); return; }
+  // Only THIS section changes. The other sections stay exactly as they are, so the total can drift over (or under) 100% while the
+  // coach is working -- the page says so in red and Save Template stays off until it adds up to exactly 100%.
+  const next = Math.max(TE_MIN_PCT, Math.min(100, Math.round(want)));
+  if(next === s.pct){ if(want < s.pct) showToast(`Each section keeps at least ${TE_MIN_PCT}%`); render(); return; }
   s.pct = next;
-  teRedistribute(others, 100 - next);
   render();
 }
 function teAdjust(key, dir){
@@ -9592,7 +9599,7 @@ function teSaveTemplate(){
     if(d.location !== 'outdoor' && d.location !== 'indoor'){ showToast('Choose Outdoor or Indoor'); return; }
     if(!CS_AGE_GROUPS.includes(d.ageGroup)){ showToast('Choose an age group'); return; }
     if(!teEnabled(d).length){ showToast('Turn on at least one section'); return; }
-    if(teTotalPct(d) !== 100){ showToast('Section percentages must add up to 100%'); return; }
+    if(teTotalPct(d) !== 100){ const t = teTotalPct(d); showToast(t > 100 ? `Over 100% (${t}%) \u2014 lower a section to save` : `Under 100% (${t}%) \u2014 raise a section to save`); return; }
     const mins = teMinutes(d);
     if(Object.values(mins).reduce((a,b)=>a+b,0) !== Number(d.duration)){ showToast('Section minutes don’t add up to the session length'); return; }
     const saved = JSON.parse(JSON.stringify(d));
@@ -9674,7 +9681,7 @@ function renderTemplateEditor(){
         <h2 class="te-h2">Session Structure</h2>
         <div class="te-sub">Include the sections you want and adjust the time allocation.</div>
       </div>
-      <div class="te-total"><div class="te-total-min">Total: ${Number(d.duration)} min</div><div class="te-total-pct ${total===100?'':'bad'}">${total}%</div></div>
+      <div class="te-total"><div class="te-total-min">Total: ${Number(d.duration)} min</div><div class="te-total-pct ${total===100?'':'bad'}">${total}%${total>100?' <span class="te-over">Over 100%</span>':(total<100?' <span class="te-over">Under 100%</span>':'')}</div></div>
     </div>
 
     <div class="te-list">${d.sections.map(x => teRowHtml(x, mins)).join('')}</div>
@@ -9685,7 +9692,8 @@ function renderTemplateEditor(){
       <span class="te-addrow-chev">${ICONS.chevronRight}</span>
     </button>
 
-    <button class="btn btn-primary te-save" onclick="teSaveTemplate()">Save Template</button>
+    <div class="te-total-bar ${total===100?'':'bad'}"><span class="te-total-bar-l">Total</span><span class="te-total-bar-r">${total}%${total>100?' <span class="te-over">Over 100%</span>':(total<100?' <span class="te-over">Under 100%</span>':'')}</span></div>
+    <button class="btn btn-primary te-save" ${total===100?'':'disabled'} onclick="teSaveTemplate()">Save Template</button>
     ${isNew ? '' : `<button class="discard-session-btn tmpl-del-btn" style="margin-top:12px;" onclick="requestDeleteTemplate('${escJsAttr(d.id)}')">${ICONS.trash} Delete this template</button>`}
   </div>`;
 }
