@@ -14038,11 +14038,11 @@ const PRINT_LAYOUTS = {
   // w / h = the exact page in inches. c1f / c2f = share of the content width for the title and diagram columns.
   // f* = font sizes in points at full size; ftRenderPages() shrinks (down to minNote) and then shortens the
   // notes until the WHOLE session fits on that one page.
-  pocket:{label:'Pocket', size:'4.25" \u00d7 5.5"', desc:'Compact field-side reference', w:4.25, h:5.5, dpi:240, m:11, c1f:0.21, c2f:0.27, gap:4,
+  pocket:{label:'Pocket', size:'4.25" \u00d7 5.5"', desc:'Compact field-side reference', w:4.25, h:5.5, dpi:240, m:11, c1f:0.18, c2f:0.27, gap:4,
           fTitle:7, fTime:5.6, fNote:6, fBanner:6.5, fHead:12, fMeta:5.8, banH:10.5, pad:3, foot:7, setupN:110, actN:170, coachN:110, minNote:4.6},
-  half:{label:'Half Page', size:'5.5" \u00d7 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:18, c1f:0.21, c2f:0.27, gap:6,
+  half:{label:'Half Page', size:'5.5" \u00d7 8.5"', desc:'Easy to read on a clipboard', w:5.5, h:8.5, dpi:210, m:18, c1f:0.18, c2f:0.27, gap:6,
         fTitle:9, fTime:7, fNote:7.6, fBanner:8.5, fHead:18, fMeta:7.2, banH:13.5, pad:4.5, foot:9, setupN:150, actN:230, coachN:150, minNote:5.6},
-  full:{label:'Full Page', size:'8.5" \u00d7 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:30, c1f:0.2, c2f:0.27, gap:10,
+  full:{label:'Full Page', size:'8.5" \u00d7 11"', desc:'Detailed coaching plan', w:8.5, h:11, dpi:200, m:30, c1f:0.17, c2f:0.27, gap:10,
         fTitle:11, fTime:9, fNote:9.5, fBanner:11, fHead:28, fMeta:10, banH:18, pad:7, foot:14, setupN:200, actN:320, coachN:200, minNote:6.3},
 };
 const PRINT_BODY_FONT = '"Inter", "Helvetica Neue", Arial, sans-serif';
@@ -14180,9 +14180,18 @@ function ftScaled(L, k){
 }
 function ftMeasure(model, L, mc, dS){
   const PW = L.w*72, PH = L.h*72, M = L.m, CW = PW - 2*M;
-  const c1 = CW * L.c1f, c2 = CW * L.c2f * dS, c3 = CW - c1 - c2 - 2*L.gap;   // dS shrinks the diagram column (and gives the notes the room)
-  const fT = `700 ${L.fTitle}px ${PRINT_BODY_FONT}`, fN = `400 ${L.fNote}px ${PRINT_BODY_FONT}`, fB = `700 ${L.fNote}px ${PRINT_BODY_FONT}`;
-  const badge = L.fTitle * 1.7, lhT = L.fTitle * 1.2, lhN = L.fNote * 1.22, imgH = c2 * 0.62;
+  const fN = `400 ${L.fNote}px ${PRINT_BODY_FONT}`, fB = `700 ${L.fNote}px ${PRINT_BODY_FONT}`;
+  const badge = L.fTitle * 1.7, badgeGap0 = Math.max(3.5, L.fTitle * 0.6);
+  // The title column is narrow on purpose. A single long word can't wrap, so if it won't fit the narrow column the title type
+  // eases down (to 84% at most) rather than running under the diagram; only if it still doesn't fit does the column widen a bit.
+  const words = model.groups.flatMap(g => g.items).flatMap(it => String(it.name).split(/\s+/).filter(Boolean));
+  const wordW = tk => { mc.font = `700 ${L.fTitle*tk}px ${PRINT_BODY_FONT}`; return Math.max(0, ...words.map(w => mc.measureText(w).width)); };
+  let tk = 1;
+  while(tk > 0.84 && wordW(tk) + badge + badgeGap0 + 1 > CW * L.c1f) tk -= 0.02;
+  const fT = `700 ${L.fTitle*tk}px ${PRINT_BODY_FONT}`, lhT = L.fTitle * tk * 1.2, lhN = L.fNote * 1.22;
+  const c1 = Math.min(Math.max(CW * L.c1f, wordW(tk) + badge + badgeGap0 + 1), CW * 0.25);
+  const c2 = CW * L.c2f * dS, c3 = CW - c1 - c2 - 2*L.gap;   // dS shrinks the diagram column (and gives the notes the room)
+  const imgH = c2 * 0.62;
   const m = {PW, PH, M, CW, c1, c2, c3, fT, fN, fB, badge, lhT, lhN, imgH, badgeGap:Math.max(3.5, L.fTitle * 0.6)};   // room between the number circle and the title
   const items = model.groups.flatMap(g => g.items);
   items.forEach(it => {
@@ -14204,7 +14213,7 @@ function ftMeasure(model, L, mc, dS){
   m.logoTop = m.padY;
   m.logoH = m.logo;
   m.logoW = m.logoH;
-  m.textX = M + m.logoW + M * 0.9 + L.fMeta * 0.4;
+  m.textX = M + m.logoW + L.fMeta * 0.9;   // title + details sit close beside the logo
   const availW = PW - m.textX - M;
   let tf = L.fHead; mc.font = `700 ${tf}px ${PRINT_HEAD_FONT}`;
   const tTitle = model.title.toUpperCase();

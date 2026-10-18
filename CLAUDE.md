@@ -481,6 +481,9 @@ rather than letting it get rediscovered next session.
   is `padding-top:1px` so the space above the pill reads equal to the space below. Editing a SAVED session -> "+ Add Exercise" opens the plain Exercises library with
   `editingSavedSessionId` set; that screen now shows "Back to Saved Session" (`backToSavedSessionFromPicker()`, returns in edit mode), and Exercise Detail opened from it goes back
   to that list (`backFromDetail`/`detailBackLabel` check `fromSavedSession && editingSavedSessionId` first). The "Session Link Copied" flash has a 2px white border, `top:27%`.
+- **Print: narrower title column + closer header (2026-10).** `PRINT_LAYOUTS.c1f` is 0.18/0.18/0.17 (title column); the diagram column keeps its width so the notes column gets the freed space. A single long
+  word can't wrap, so `ftMeasure` eases the title type down (min 84%) to fit it in the narrow column, and only widens the column (cap 25%) if that still isn't enough. Header text starts at
+  `M + logoW + fMeta*0.9` (was `+ M*0.9 + fMeta*0.4`) so the title/details sit right beside the logo.
 
 ## Where things live
 
