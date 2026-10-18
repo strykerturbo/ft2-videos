@@ -494,8 +494,9 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 - **Smoke suite** (47 tests, ~30 s) = run after every code change before committing. **Full QA** (~2 min) = periodically / before a release; manual + hybrid items then need a person.
 - When behaviour changes on purpose, update the affected test in the same commit (IDs stay stable; comparison between runs is keyed on them).
 - Gotchas: the sandbox patches `appBaseUrl`/`initSharedLink`/`GEN_MIN_DISPLAY_MS` in memory only - if those lines are renamed, `QA.loadSource().patches` shrinks and share-link / generation-timing tests should be revisited.
-  A hidden browser pane throttles timers (runs look slow) - keep the pane visible when running. First full run (2026-10) found real issues: print of 12 exercises on Pocket overflows (PR-005),
-  Custom Step 4 scrolls sideways at 320-360px (RS-001), wrong-shaped saved data blanks the app (P-009).
+  A hidden browser pane throttles timers (runs look slow) - keep the pane visible when running. **Baseline record:** `qa/BASELINE-2026-10-18.md` (+ `qa/baseline-2026-10-18.json` with per-test statuses) is the reference to compare later runs against. Baseline pass (2026-10): smoke 47/47; full 274 pass / 1 fail / 14 partial / 15 manual not tested. Fixed: PR-005 (a very full Pocket print overflowed because the narrowed title column left no room --
+  `ftRenderPages` now tries the narrow column first and widens it by 0.03 only if nothing fits) and RS-001 (Custom Step 4 scrolled sideways at 320-360px -- `.phase-content{min-width:0}` + a <=370px row squeeze).
+  Still open (Minor): wrong-shaped saved data blanks the app (P-009), plus the Partial notes (small tap targets, unlabelled icon buttons, no confirm when removing an exercise from a saved session, "Practice"/"Session" wording).
 
 ## Where things live
 

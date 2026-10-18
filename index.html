@@ -1084,7 +1084,14 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .phase-connector{
   flex:1;width:2px;background:var(--line);margin-top:2px;
 }
-.phase-content{flex:1;padding-top:2px;}
+.phase-content{flex:1;min-width:0;padding-top:2px;}
+/* Very small phones (320-370px): the exercise row (grip + thumbnail + name + minutes + replace + trash) is wider than the space
+   beside the phase number and made the whole Custom Step 4 page scroll sideways, so the thumbnail and gaps shrink a little there. */
+@media (max-width:370px){
+  .phase-ex-item{gap:7px;}
+  .pei-thumb{width:46px;height:40px;}
+  .phase-ex-item .peiname{min-width:0;overflow-wrap:anywhere;}
+}
 .phase-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .phase-title{font-family:'Inter',sans-serif;font-weight:700;font-size:var(--fs-lg);text-transform:uppercase;letter-spacing:0.02em;}
 .phase-time{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;flex-shrink:0;}
@@ -14241,22 +14248,28 @@ async function ftRenderPages(s, layoutKey){
   const imgs = await Promise.all(base.groups.flatMap(g => g.items).map(it => ftLoadImage(it.img)));
   const mc = document.createElement('canvas').getContext('2d');
   const floorK = L0.minNote / L0.fNote;
-  let chosen = null;
-  for(let level = 0; level < FT_TRIM_LEVELS.length && !chosen; level++){
-    const model = ftPrintModel(s, L0, level);
-    model.groups.flatMap(g => g.items).forEach((it, i) => { it.image = imgs[i]; });
-    for(let k = 1; k >= floorK - 0.001; k -= 0.025){
-      const kk = Math.max(k, floorK);
-      const L = ftScaled(L0, kk);
-      const dS = Math.max(0.45, Math.min(1, kk) * FT_DIAGRAM_K[level]);
-      const m = ftMeasure(model, L, mc, dS);
-      if(m.fits){ chosen = {model, L, m, level}; break; }
+  // Try the narrow title column first; only if even the smallest type can't fit the whole session on the page, widen it back
+  // (a few very full Pocket sessions) before the last-resort squeeze.
+  const attempt = (LB, lastResort) => {
+    let found = null;
+    for(let level = 0; level < FT_TRIM_LEVELS.length && !found; level++){
+      const model = ftPrintModel(s, LB, level);
+      model.groups.flatMap(g => g.items).forEach((it, i) => { it.image = imgs[i]; });
+      for(let k = 1; k >= floorK - 0.001; k -= 0.025){
+        const kk = Math.max(k, floorK);
+        const L = ftScaled(LB, kk);
+        const dS = Math.max(0.45, Math.min(1, kk) * FT_DIAGRAM_K[level]);
+        const m = ftMeasure(model, L, mc, dS);
+        if(m.fits){ found = {model, L, m, level}; break; }
+      }
+      if(!found && lastResort && level === FT_TRIM_LEVELS.length - 1){          // last resort: smallest type, shortest notes, smallest diagrams, tighter padding
+        const L = ftScaled(LB, floorK); L.pad = L.pad * 0.5; L.banH = L.banH * 0.85;
+        found = {model, L, m:ftMeasure(model, L, mc, 0.4), level};
+      }
     }
-    if(!chosen && level === FT_TRIM_LEVELS.length - 1){          // last resort: smallest type, shortest notes, smallest diagrams, tighter padding
-      const L = ftScaled(L0, floorK); L.pad = L.pad * 0.5; L.banH = L.banH * 0.85;
-      chosen = {model, L, m:ftMeasure(model, L, mc, 0.4), level};
-    }
-  }
+    return found;
+  };
+  let chosen = attempt(L0, false) || attempt({...L0, c1f:L0.c1f + 0.03}, true);
   const {model, L, m} = chosen;
   const {PW, PH, M, CW, c1, c2, c3, fT, fN, fB, badge, lhT, lhN, imgH} = m;
   const x1 = M, x2 = M + c1 + L.gap, x3 = x2 + c2 + L.gap;

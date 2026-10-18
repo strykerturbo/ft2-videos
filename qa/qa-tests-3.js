@@ -238,7 +238,7 @@ add('P-010', C.err, 'Persistence', 'If the phone blocks storage (private browsin
 add('P-011', C.data, 'Persistence', 'Phase choices from Settings (which phases are on, their order, default percentages) persist.', { severity: 'Minor', tags: ['persistence', 'settings'], steps: ['Turn a phase off, reopen.'], exp: 'Still off.',
   async run(env){ const sb = await env.boot(); sb.S.enabledPhaseKeys.delete('athletic'); sb.fn('render'); const sb2 = await L.reopen(sb); assert(!sb2.S.enabledPhaseKeys.has('athletic'), 'Phase came back on'); }});
 add('P-012', C.data, 'Persistence', 'Launching from the Home Screen icon always opens Home but keeps all the data.', { severity: 'Minor', tags: ['persistence', 'home'], steps: ['Leave the app on Review, launch from the icon.'], exp: 'Home, draft still there.',
-  async run(env){ const sb = await L.toReview(env); sb.flushState(); const store = sb.ctx.store; sb.destroy(); const sb2 = await env.boot({store, standalone: true}); eq(sb2.screen, 'home', 'Screen in Home Screen mode'); eq(sb2.fn('currentTotalMinutes').count, 6, 'Draft kept'); const sb3 = await env.boot({store, standalone: false}); eq(sb3.screen, 'review', 'Screen in a normal browser tab'); }});
+  async run(env){ const sb = await L.toReview(env); sb.flushState(); const store = sb.ctx.store; sb.destroy(); const sb2 = await env.boot({store: new Map(store), standalone: true}); eq(sb2.screen, 'home', 'Screen in Home Screen mode'); eq(sb2.fn('currentTotalMinutes').count, 6, 'Draft kept'); const sb3 = await env.boot({store: new Map(store), standalone: false}); eq(sb3.screen, 'review', 'Screen in a normal browser tab'); }});
 
 QA.register(tests);
 })();

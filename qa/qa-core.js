@@ -223,6 +223,7 @@ class Sandbox {
   generate(cfg){ return this.fn('generateCustomSession', cfg); }
   destroy(){
     try{ this.frame.remove(); }catch(e){}
+    QA.sandboxes.delete(this);
   }
   async reboot(opts){
     const store = this.ctx.store, backend = this.ctx.backend;
@@ -231,6 +232,7 @@ class Sandbox {
   }
 }
 QA.Sandbox = Sandbox;
+QA.sandboxes = new Set();      // every sandbox still alive; a test that opens several (e.g. "close and reopen the app") never leaks them
 
 /* Boot a fresh, isolated copy of the app. Options:
    coach        name stored as "who's coaching" (null = leave it unset so the app shows its who-are-you screen)
@@ -304,6 +306,7 @@ QA.boot = async function(opts){
   const sb = new Sandbox(frame, ctx, win);
   // sanity: the app booted and our isolation is in place
   if(typeof win.render !== 'function') throw new Error('The app script did not run in the sandbox (syntax error?). Errors: ' + ctx.errors.join(' | '));
+  QA.sandboxes.add(sb);
   sb.isolated = (function(){ try{ win.localStorage.setItem('__qa_probe', '1'); const ok = store.get('__qa_probe') === '1'; win.localStorage.removeItem('__qa_probe'); return ok; }catch(e){ return false; } })();
   if(!sb.isolated){ sb.destroy(); throw new Error('Sandbox isolation failed -- refusing to run tests against real browser storage.'); }
   sb.libraryLive = false;
@@ -399,7 +402,8 @@ async function runOne(t, ctx){
     if(err instanceof QAFail && err.qaKind === 'partial'){ rec.status = 'Partial'; rec.actual = err.message; }
     else { rec.status = 'Fail'; rec.actual = (err && err.message) || String(err); rec.details = (err && err.stack) ? String(err.stack).split('\n').slice(0, 4).join('\n') : ''; }
   }finally{
-    if(sb){ rec.sandboxErrors = sb.errors.slice(0, 5); sb.destroy(); }
+    if(sb){ rec.sandboxErrors = sb.errors.slice(0, 5); }
+    [...QA.sandboxes].forEach(x => x.destroy());
   }
   // Hybrid tests: the automated part can fail the test or pass it "so far"; a person still has to confirm the human-judgement part.
   if(t.type === 'Hybrid' && rec.status === 'Pass'){ rec.status = 'Partial'; rec.actual += ' (automated checks passed -- a person still needs to confirm the visual / judgement part)'; rec.awaitingHuman = true; }
