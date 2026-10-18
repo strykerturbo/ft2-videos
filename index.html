@@ -1929,6 +1929,10 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .te-opt{font-weight:600;color:var(--ink-soft);font-size:var(--fs-sm);}
 .te-input{width:100%;box-sizing:border-box;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-main);color:var(--ink);font-size:var(--fs-input);font-family:inherit;}
 .te-input:focus{border-color:var(--turf);box-shadow:var(--ring-focus);outline:none;}
+.sd-edit-note{display:flex;gap:10px;align-items:center;background:var(--chalk-dim);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:var(--fs-sm);color:var(--ink);line-height:1.35;}
+.sd-edit-note svg{width:16px;height:16px;flex-shrink:0;color:var(--ink-soft);}
+.te-input.has-error{border-color:var(--warn);}
+.te-name-err{color:var(--warn);font-size:var(--fs-sm);font-weight:700;margin:6px 2px 0;}
 .te-seg{gap:6px;}
 .te-seg .su-seg-btn{height:auto;min-height:44px;font-size:var(--fs-base);border-radius:10px;}
 .te-seg .su-seg-btn svg{width:15px;height:15px;}
@@ -9101,6 +9105,7 @@ const state = {
   templateSectionModal: null,    // Add/Edit Custom Section sheet: {mode,key,name,desc,pct,error}
   confirmDiscardTemplateOpen: false,
   templateSaveBusy: false,
+  templateNameError: false,   // true after tapping Save Template with no name: shows the inline "add a title" message
   editingTemplateId: null,        // which template Settings is currently editing -- null shows the library list
   editingTemplateDurationId: null,// id of the template whose custom-duration input is currently active
   confirmDeleteTemplateId: null,  // id of the template pending delete confirmation (sheet)
@@ -9491,9 +9496,17 @@ function teStartDraft(id){
   d.sections.forEach(x => { if(x.standard && !x.description) x.description = TE_SECTION_DESC[x.key] || ''; });
   teNormalize(d);
   state.templateDraft = d;
+  state.templateNameError = false;
   state.templateDraftOrig = JSON.stringify(d);
 }
-function teSetName(v){ if(state.templateDraft) state.templateDraft.name = v; }
+function teSetName(v){
+  if(state.templateDraft) state.templateDraft.name = v;
+  if(state.templateNameError && String(v).trim()){      // they started typing a title: clear the message without redrawing (keeps the keyboard open)
+    state.templateNameError = false;
+    document.querySelectorAll('.te-name-err').forEach(e => e.remove());
+    const el = document.getElementById('teName'); if(el) el.classList.remove('has-error');
+  }
+}
 function teSetDuration(v){ if(state.templateDraft){ state.templateDraft.duration = parseInt(v,10) || 75; render(); } }
 function teSetLocation(v){ if(state.templateDraft){ state.templateDraft.location = v; render(); } }
 function teSetAge(v){ if(state.templateDraft){ state.templateDraft.ageGroup = v; render(); } }
@@ -9574,7 +9587,13 @@ function teSaveTemplate(){
   state.templateSaveBusy = true;
   try{
     const name = String(d.name||'').trim().replace(/\s+/g,' ');
-    if(!name){ showToast('Name your template first'); const el = document.getElementById('teName'); if(el) el.focus(); return; }
+    if(!name){
+      // Back to the top where the name field is, with a clear message under it (a toast alone is easy to miss at the bottom of the page).
+      state.templateNameError = true; showToast('Add a title for your template first'); render();
+      const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+      setTimeout(() => { const el = document.getElementById('teName'); if(el){ try{ el.focus({preventScroll:true}); }catch(e){ el.focus(); } } }, 60);
+      return;
+    }
     if(!TE_DURATIONS.includes(Number(d.duration))){ showToast('Choose 60, 75 or 90 minutes'); return; }
     if(d.location !== 'outdoor' && d.location !== 'indoor'){ showToast('Choose Outdoor or Indoor'); return; }
     if(!CS_AGE_GROUPS.includes(d.ageGroup)){ showToast('Choose an age group'); return; }
@@ -9651,7 +9670,8 @@ function renderTemplateEditor(){
 
     <div class="te-card te-compact">
       <label class="te-label" for="teName">Template Name</label>
-      <input id="teName" class="te-input" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off">
+      <input id="teName" class="te-input ${state.templateNameError ? 'has-error' : ''}" type="text" value="${escAttr(d.name)}" placeholder="My U10 Training Template" oninput="teSetName(this.value)" autocomplete="off" ${state.templateNameError ? 'aria-invalid="true"' : ''}>
+      ${state.templateNameError ? '<div class="te-name-err" role="alert">Add a title for your template.</div>' : ''}
       <div class="te-field">
         <div class="te-label">Session Duration</div>
         ${teSegHtml(TE_DURATIONS.map(v => [String(v), v + ' min']), String(d.duration), 'teSetDuration')}
@@ -10822,6 +10842,11 @@ function workflowFooterHtml(){
   }
   if(state.screen === 'customSessionSetup' && csFocusArea(state.csFocusAreaId)){
     return navNextCtaHtml('Generate Session', 'csGoToGenerate()');
+  }
+  if(state.screen === 'sessionDetail' && state.editingSessionDetail){
+    const s = state.savedSessions.find(x => x.id === state.viewingSessionId);
+    // Editing a saved session: the same bottom button as Save Session when building. (onmousedown keeps a half-typed title from blurring and redrawing the page under the tap.)
+    if(s && s.createdBy === state.coachName) return `<button class="btn btn-primary" onmousedown="event.preventDefault()" onclick="saveSavedSessionChanges()">Save Changes</button>`;
   }
   if((state.screen === 'review' || state.screen === 'customSessionReview') && currentTotalMinutes().count > 0){
     // No CTA at all for the count===0 empty-review state -- that screen already shows its own
@@ -13702,6 +13727,19 @@ function renderPracticeSetup(){
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
 function openSessionDetail(id){ state.editingSessionDetail = false; nav('sessionDetail', {viewingSessionId:id}); prefetchShareLink(id); }
+// Save Changes (bottom button / header check): commits a title still being typed, syncs the session and leaves edit mode. Everything else
+// (exercises added / removed / reordered, length, rating) is already stored the moment it is changed.
+function saveSavedSessionChanges(){
+  const s = state.savedSessions.find(x => x.id === state.viewingSessionId);
+  if(!s) return;
+  const h = document.querySelector('#content .editable-title');
+  const typed = h ? String(h.textContent || '').trim().replace(/\s+/g, ' ') : '';   // textContent, not innerText: the title is CSS-uppercased and innerText would return the CAPS
+  if(typed && typed !== s.name) renameSavedSession(s.id, typed);
+  state.editingSessionDetail = false;
+  pushSessionToSheet(s);
+  if(!typed || s.name === typed) showToast('Changes saved'); else render();   // a renamed-for-uniqueness note is already showing
+  const c = document.getElementById('content'); if(c) c.scrollTop = 0;
+}
 function toggleEditSessionDetail(){ state.editingSessionDetail = !state.editingSessionDetail; render(); }
 function renameSavedSession(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
@@ -13794,8 +13832,12 @@ function backToSavedSessionFromPicker(){
   const id = state.editingSavedSessionId || state.fromSavedSessionId;
   nav('sessionDetail', {viewingSessionId:id, fromSavedSession:false, editingSavedSessionId:null});
 }
-function addExerciseToSavedSessionFlow(sessionId){
-  nav('exercises', {editingSavedSessionId:sessionId, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:null, search:'', quickFilterValue:null});
+// groupKey (optional) = which phase's "+ Add Exercise" was tapped: the library opens already filtered to that phase's first section
+// (Activate -> Warmup, Develop -> Duels, Play -> Scrimmage); the section chips at the top switch to its other sections (e.g. Athletic).
+function addExerciseToSavedSessionFlow(sessionId, groupKey){
+  const g = groupKey ? PHASE_GROUPS.find(x => x.key === groupKey) : null;
+  const first = g ? PHASES.find(p => p.key === g.phaseKeys[0]) : null;
+  nav('exercises', {editingSavedSessionId:sessionId, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, pickingPhase:null, sectionFilter:first ? first.section : null, search:'', quickFilterValue:null});
 }
 
 // 'mine' = every session you created (Shared or Private); 'community' = every Shared session
@@ -14025,12 +14067,12 @@ function renderSessionDetail(){
       </div>
       <div class="sd-top-right">
         ${isOwner ? `<button class="dh-icon-btn ${s.favorited?'on':''}" onclick="toggleSessionFavorite('${escJsAttr(s.id)}')" title="${s.favorited?'Remove favorite':'Favorite this session'}" aria-label="${s.favorited?'Remove favorite':'Favorite this session'}">${s.favorited?ICONS.bookmarkFilled:ICONS.bookmark}</button>` : ''}
-        ${editing ? `<button class="dh-icon-btn" onclick="toggleEditSessionDetail()" title="Done editing" aria-label="Done editing">${ICONS.check}</button>` : ''}
+        ${editing ? `<button class="dh-icon-btn" onclick="saveSavedSessionChanges()" title="Save changes" aria-label="Save changes">${ICONS.check}</button>` : ''}
         <button class="dh-icon-btn" onclick="openSessionMore('${escJsAttr(s.id)}')" title="More" aria-label="More options">${ICONS.more}</button>
       </div>
     </div>
     ${editing
-      ? `<h1 class="editable-title" contenteditable="true" onblur="renameSavedSession('${escJsAttr(s.id)}', this.innerText)">${escHtml(s.name)}</h1>`
+      ? `<h1 class="editable-title" contenteditable="true" onblur="renameSavedSession('${escJsAttr(s.id)}', this.textContent)">${escHtml(s.name)}</h1>`
       : `<h1>${escHtml(s.name)}</h1>`}
     <div class="sd-metaline">
       <span class="sd-mi">${ICONS.calendar}<span>${escHtml(formatPracticeDateShort(s.practiceDate) || sessionShortDate(s))}</span></span>
@@ -14047,7 +14089,7 @@ function renderSessionDetail(){
     <div class="sd-saved-caption">Saved ${formatWhen(s.createdAt)}</div>
   </div>
   <div class="section-pad">
-    ${editing ? '' : sessionDetailActionsHtml(s, isOwner)}
+    ${editing ? `<div class="sd-edit-note" role="status">${ICONS.pencil}<span>You\u2019re editing this session. Tap <b>Save Changes</b> below when you\u2019re done.</span></div>` : sessionDetailActionsHtml(s, isOwner)}
     <div class="sd-total-time" style="margin-top:22px;">${s.totalMin} min total</div>
 
     <div class="phase-strip sd-phases" style="margin-top:22px;">
@@ -14066,7 +14108,7 @@ function renderSessionDetail(){
             <div class="phase-exlist" data-saved-key="${g.key}">
               ${g.items.map(e => savedExRowHtml(s, e, editing, g.key, g.items.length > 1)).join('')}
             </div>
-            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}')">+ Add Exercise</button>`:''}
+            ${editing?`<button class="pcard-add-btn" onclick="addExerciseToSavedSessionFlow('${escJsAttr(s.id)}','${g.key}')">+ Add Exercise</button>`:''}
           </div>
         </div>`).join('')}
       ${extras.map((p,i)=>`
@@ -14293,7 +14335,7 @@ function ftMeasure(model, L, mc, dS){
   m.logoTop = m.padY;
   m.logoH = m.logo;
   m.logoW = m.logoH;
-  m.textX = M + m.logoW + L.fMeta * 0.9;   // title + details sit close beside the logo
+  m.textX = M + m.logoW + Math.max(2.5, L.fMeta * 0.45);   // title + details sit right beside the logo
   const availW = PW - m.textX - M;
   let tf = L.fHead; mc.font = `700 ${tf}px ${PRINT_HEAD_FONT}`;
   const tTitle = model.title.toUpperCase();

@@ -492,6 +492,9 @@ A developer-only test system lives in `qa/` (open `qa/index.html`; live at `.../
 audits), classified Automated / Hybrid / Manual. Each automated test runs the real `index.html` in a hidden iframe with fake storage, fake network (in-memory Apps Script mock), fake clipboard / share sheet,
 so real coach data, the Google Sheet and real messages are never touched (only a read-only GET of the live exercise library for generator / data tests). See `qa/README.md`.
 - **Smoke suite** (47 tests, ~30 s) = run after every code change before committing. **Full QA** (~2 min) = periodically / before a release; manual + hybrid items then need a person.
+- **Testing budget for small tweaks (standing rule from the coach, 2026-10):** do NOT run the full suite or even the whole smoke suite for routine tweaks. Pick a tiny subset: the 3-8 tests tagged for the touched area
+  (`QA.testsForAreas([...])`, or by ID) plus at most 2-3 core sanity checks (e.g. H-001, NS-023), aiming for ~30 s and never more than ~2 min total. Prefer the 390px scratch preview + direct DOM/state checks for the visual part.
+  Run smoke / full QA only when the coach asks, before a release, or after a risky/cross-cutting change (and say so). Add a new test only when a change adds real new behaviour, and run just that test.
 - When behaviour changes on purpose, update the affected test in the same commit (IDs stay stable; comparison between runs is keyed on them).
 - Gotchas: the sandbox patches `appBaseUrl`/`initSharedLink`/`GEN_MIN_DISPLAY_MS` in memory only - if those lines are renamed, `QA.loadSource().patches` shrinks and share-link / generation-timing tests should be revisited.
   A hidden browser pane throttles timers (runs look slow) - keep the pane visible when running. **Baseline record:** `qa/BASELINE-2026-10-18.md` (+ `qa/baseline-2026-10-18.json` with per-test statuses) is the reference to compare later runs against. Baseline pass (2026-10): smoke 47/47; full 274 pass / 1 fail / 14 partial / 15 manual not tested. Fixed: PR-005 (a very full Pocket print overflowed because the narrowed title column left no room --
@@ -503,6 +506,10 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   exercises inside the display group (activate/develop/play or `extra-<n>`); one `pushSessionToSheet` on drop (`onDrop` hook in `makeDragReorderController`). Print/Share/Duplicate just walk `s.phases` in order. Pop-ups: every action
   button in `#overlay` (`.btn`, `.btn-edge`, `.btn-outline`, `.sd-act`, `.more-item`, `.balance-add-btn`, `.ios-alert-btn`, `.qp-customize-btn`) uses `border:1.5px solid var(--btn-edge)` (#B8C2CF, #64748B dark) = the "Print / Save PDF" border.
   The red Delete/Discard buttons no longer have a red border (they were already yellow). New QA tests: SS-023 (reorder), CN-009 (pop-up borders).
+- **Saved Session "+ Add Exercise" is pre-filtered (2026-10):** `addExerciseToSavedSessionFlow(id, groupKey)` opens the library filtered to the group's first section (Activate -> Warmup, Develop -> Duels, Play -> Scrimmage; the section chips switch to the others). Print header text now starts `max(2.5, fMeta*0.45)`pt right of the logo.
+- **Template name error + Save Changes on saved sessions (2026-10).** Save Template with no name -> `state.templateNameError`: toast + red inline "Add a title for your template." under the name field, page scrolls to top, field focused; clears when typing.
+  Editing a saved session shows a `.sd-edit-note` and a bottom `Save Changes` CTA (`workflowFooterHtml`, owner only) -> `saveSavedSessionChanges()` (also the header check). GOTCHA: the saved-session title is CSS-uppercased, so read it with `textContent`, never `innerText`
+  (innerText returned CAPS and silently renamed sessions to all caps; fixed in the title's onblur too). Tests: SS-024, TM-003 extended.
 
 ## Where things live
 

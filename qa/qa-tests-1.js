@@ -612,5 +612,15 @@ add('SS-023', C.core, 'Saved Session', 'Edit mode: exercises can be dragged into
     assert(sb.ctx.backend.sessions.get(s.id), 'Not synced to the server'); sb.flushState(); const sb2 = await sb.reboot(); eq(sb2.fn('sessionDetailPhaseGroups', sb2.S.savedSessions[0]).find(g => g.key === 'develop').items.map(e => e.name).join(), after.join(), 'Order after reopening');
   }});
 
+add('SS-024', C.use, 'Saved Session', 'Editing a saved session shows an "editing" note and a Save Changes button at the bottom (like Save Session); tapping it saves and leaves edit mode without altering an untouched title.', {
+  severity: 'Major', tags: ['saved', 'save'], steps: ['More > Edit, change the title, tap Save Changes.'], exp: 'Bottom button present only while editing; title saved as typed; back to the normal view with a "Changes saved" message.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; s.name = 'Mixed Case Plan'; L.openSaved(sb, s.id); assert(!sb.has('Save Changes', '#workflowFooter'), 'Save Changes shown outside edit mode');
+    sb.fn('toggleEditSessionDetail'); assert(sb.has('Save Changes', '#workflowFooter'), 'No Save Changes button while editing'); assert(sb.q('#content .sd-edit-note'), 'No "you are editing" note');
+    sb.click('Save Changes', '#workflowFooter'); eq(sb.S.editingSessionDetail, false, 'Still editing'); eq(s.name, 'Mixed Case Plan', 'An untouched title was altered (CSS uppercase leaking into the saved name?)'); eq(sb.S.toast, 'Changes saved', 'Toast');
+    sb.fn('toggleEditSessionDetail'); sb.q('#content .editable-title').textContent = 'Typed Name'; sb.click('Save Changes', '#workflowFooter'); eq(s.name, 'Typed Name', 'Typed title');
+    s.createdBy = 'Other'; sb.fn('toggleEditSessionDetail'); assert(!sb.has('Save Changes', '#workflowFooter'), 'Save Changes offered to a non-owner');
+  }});
+
 QA.register(tests);
 })();
