@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>FT2 QA Dashboard</title>
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface2:#EEF1F6; --ink:#0F172A; --ink2:#475569; --ink3:#64748B; --line:#D5DCE6; --line2:#E7ECF2;
+  --brand:#0F172A; --accent:#F5E642; --accentInk:#0F172A;
+  --pass:#0E8A5F; --passBg:#DDF4EA; --fail:#C0262D; --failBg:#FBE3E4; --part:#B26B00; --partBg:#FFF0D1; --none:#64748B; --noneBg:#E9EDF3; --fixed:#5B3FD0; --fixedBg:#E8E3FB;
+  --crit:#9B1217; --radius:12px; --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.05);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1220; --surface:#131C2E; --surface2:#1A2539; --ink:#E8EDF5; --ink2:#B2BDCE; --ink3:#8795AB; --line:#2A3850; --line2:#223048;
+    --brand:#0B1220; --accent:#F5E642;
+    --pass:#4ADE9C; --passBg:#12382B; --fail:#FF7B80; --failBg:#431A1D; --part:#FFC15C; --partBg:#43310E; --none:#9AA8BD; --noneBg:#1F2A3F; --fixed:#B3A1FF; --fixedBg:#2C2554;
+    --crit:#FF9AA0; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#131C2E; --surface2:#1A2539; --ink:#E8EDF5; --ink2:#B2BDCE; --ink3:#8795AB; --line:#2A3850; --line2:#223048;
+  --brand:#0B1220; --accent:#F5E642;
+  --pass:#4ADE9C; --passBg:#12382B; --fail:#FF7B80; --failBg:#431A1D; --part:#FFC15C; --partBg:#43310E; --none:#9AA8BD; --noneBg:#1F2A3F; --fixed:#B3A1FF; --fixedBg:#2C2554;
+  --crit:#FF9AA0; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
+header.top{background:var(--brand);color:#fff;padding:18px 0 16px}
+header.top .wrap{padding-bottom:0}
+.title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.title h1{margin:0;font-size:22px;letter-spacing:-.01em}
+.mode{background:var(--accent);color:var(--accentInk);font-weight:800;font-size:11px;letter-spacing:.08em;padding:4px 9px;border-radius:99px}
+.sub{margin:6px 0 0;color:#B8C4D6;font-size:13px;max-width:70ch}
+.build{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font:12px var(--mono);color:#B8C4D6}
+.build span{background:rgba(255,255,255,.1);padding:3px 8px;border-radius:6px}
+section{margin-top:22px}
+h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px;font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 13px;font-weight:600;font-size:14px;min-height:40px}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--accent);color:var(--accentInk);border-color:#B8C2CF;font-weight:800}
+.btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--fail)}
+.btn.small{padding:5px 9px;min-height:30px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=search],input[type=text],textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px}
+textarea{width:100%;min-height:64px}
+.grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.status-banner{display:flex;gap:14px;flex-wrap:wrap}
+.sb{flex:1 1 260px;border-radius:var(--radius);padding:14px 16px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.sb .big{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.sb small{display:block;color:var(--ink3);margin-top:4px}
+.sb.PASS{border-color:var(--pass);background:var(--passBg)} .sb.PASS .big{color:var(--pass)}
+.sb.FAIL{border-color:var(--fail);background:var(--failBg)} .sb.FAIL .big{color:var(--fail)}
+.sb.PARTIAL{border-color:var(--part);background:var(--partBg)} .sb.PARTIAL .big{color:var(--part)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.tile b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--ink3)}
+.tile.pass b{color:var(--pass)} .tile.fail b{color:var(--fail)} .tile.part b{color:var(--part)} .tile.fixed b{color:var(--fixed)}
+.tile.alert{border-color:var(--fail);background:var(--failBg)} .tile.alert b{color:var(--crit)}
+.tile.zero{opacity:.75}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:11px 13px;cursor:pointer;text-align:left}
+.cat:hover{border-color:var(--ink3)}
+.cat .nm{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.cat .ct{font-size:20px;font-weight:800;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.cat .ct small{font-size:12px;font-weight:600;color:var(--ink3)}
+.bar{height:9px;border-radius:6px;background:var(--noneBg);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .p{background:var(--pass)} .bar .f{background:var(--fail)} .bar .a{background:var(--part)} .bar .x{background:var(--fixed)}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.chip.Pass{background:var(--passBg);color:var(--pass)} .chip.Fail{background:var(--failBg);color:var(--fail)} .chip.Partial{background:var(--partBg);color:var(--part)}
+.chip.NotTested{background:var(--noneBg);color:var(--none)} .chip.Fixed{background:var(--fixedBg);color:var(--fixed)}
+.sev{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.sev.Critical{color:var(--crit)} .sev.Major{color:var(--part)} .sev.Minor{color:var(--ink3)} .sev.Polish{color:var(--ink3);font-weight:600}
+.type{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink2)}
+.type.Automated{border-color:var(--pass);color:var(--pass)} .type.Hybrid{border-color:var(--part);color:var(--part)} .type.Manual{border-color:var(--fixed);color:var(--fixed)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.filters select,.filters input{min-height:36px;padding:5px 8px;font-size:14px}
+.list{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.row{border-top:1px solid var(--line2)}
+.row:first-child{border-top:0}
+.row>summary,.row>.head{list-style:none;display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
+.row>summary::-webkit-details-marker{display:none}
+.row .id{font:700 13px var(--mono)}
+.row .d{min-width:0}
+.row .d b{font-weight:600;display:block}
+.row .d small{color:var(--ink3);display:block}
+.row .rt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.row.flash{outline:3px solid var(--accent);outline-offset:-3px}
+.detail{padding:4px 14px 14px 12px;display:grid;gap:12px;grid-template-columns:1fr 1fr}
+@media (max-width:760px){.detail{grid-template-columns:1fr}.row>summary,.row>.head{grid-template-columns:54px 1fr}.row .rt{grid-column:1/-1;justify-content:flex-start}}
+.detail h4{margin:0 0 3px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.detail p,.detail ol{margin:0;font-size:14px}
+.detail ol{padding-left:18px}
+.detail .full{grid-column:1/-1}
+.actual{font:13px var(--mono);white-space:pre-wrap;word-break:break-word;background:var(--surface2);border-radius:8px;padding:8px 10px}
+.marks{display:flex;gap:6px;flex-wrap:wrap}
+.marks .btn.pass{border-color:var(--pass);color:var(--pass)} .marks .btn.fail{border-color:var(--fail);color:var(--fail)} .marks .btn.part{border-color:var(--part);color:var(--part)} .marks .btn.fixed{border-color:var(--fixed);color:var(--fixed)}
+.progress{height:12px;border-radius:7px;background:var(--noneBg);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .15s}
+.runlog{font:12.5px var(--mono);max-height:240px;overflow:auto;background:var(--surface2);border-radius:8px;padding:8px 10px;margin-top:10px}
+.runlog .f{color:var(--fail);font-weight:700} .runlog .a{color:var(--part)} .runlog .p{color:var(--pass)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.cmp .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.cmp .box h3{margin:0 0 6px;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.cmp .box.bad{border-color:var(--fail);background:var(--failBg)} .cmp .box.good{border-color:var(--pass);background:var(--passBg)}
+.cmp .box a{display:inline-block;margin:2px 6px 2px 0;font:700 12.5px var(--mono);text-decoration:underline;cursor:pointer}
+.small{font-size:13px;color:var(--ink3)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+.how{font-size:14px;color:var(--ink2)}
+.how ol{margin:6px 0 0;padding-left:20px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line2)}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);border-top:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.hide{display:none!important}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:50;box-shadow:var(--shadow)}
+.areas{display:flex;gap:6px;flex-wrap:wrap}
+.areas label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;background:var(--surface);cursor:pointer}
+.areas input{accent-color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="title"><h1>FT2 QA &amp; Regression</h1><span class="mode">QA MODE · ISOLATED SANDBOX</span></div>
+  <p class="sub">Developer tool for checking the FT2 Coaches app after any change. Every test runs in its own hidden copy of the app with fake storage, a pretend server and a pretend share sheet, so your real sessions, templates and exercise sheet are never touched.</p>
+  <div class="build" id="build"><span>Loading build info…</span></div>
+</div></header>
+
+<main class="wrap">
+  <section id="s-actions">
+    <h2>Run tests</h2>
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn primary" data-act="smoke">Run Smoke Tests</button>
+        <button class="btn dark" data-act="full">Run Full QA</button>
+        <span class="grp"><select id="catSel" aria-label="Category"></select><button class="btn" data-act="category">Run Category</button></span>
+        <button class="btn" data-act="failed">Run Failed Tests</button>
+        <button class="btn" data-act="cancel" id="cancelBtn" disabled>Stop</button>
+      </div>
+      <div style="margin-top:12px">
+        <div class="small" style="margin-bottom:6px"><b>Changed something?</b> Tick the parts of the app you touched and run only the tests that protect them:</div>
+        <div class="areas" id="areas"></div>
+        <div style="margin-top:8px"><button class="btn small" data-act="areas">Run tests for these areas</button> <span class="small" id="areaCount"></span></div>
+      </div>
+      <div class="toolbar" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line2)">
+        <button class="btn" data-act="viewlast">View Last Run</button>
+        <button class="btn" data-act="compare">Compare With Previous Run</button>
+        <button class="btn" data-act="export">Export results</button>
+        <button class="btn danger" data-act="reset">Reset Test Results</button>
+        <button class="btn small" data-act="theme">Light / dark</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-run" class="hide"><h2 id="runTitle">Run</h2><div class="card" id="runPanel"></div></section>
+
+  <section><h2>Where things stand</h2><div class="status-banner" id="banner"></div></section>
+  <section><div class="tiles" id="tiles"></div></section>
+  <section id="s-compare"><h2>Regression: this run vs the one before</h2><div id="comparePanel" class="card small">Run the smoke or full suite twice to see what changed.</div></section>
+  <section><h2>By category <span class="small" style="text-transform:none;letter-spacing:0">(click one to filter the list below)</span></h2><div class="cats" id="cats"></div></section>
+  <section id="s-gen"><h2>Generator QA</h2><div class="card" id="genPanel"></div></section>
+  <section><h2>Needs a person <span class="small" style="text-transform:none;letter-spacing:0">- manual and hybrid checks still waiting</span></h2><div id="manualBox" class="card"></div></section>
+
+  <section id="s-tests">
+    <h2>All tests</h2>
+    <div class="legend" style="margin-bottom:10px"><span><span class="type Automated">Automated</span> a program checks it</span><span><span class="type Hybrid">Hybrid</span> a program checks what it can, a person confirms the rest</span><span><span class="type Manual">Manual</span> only a person can judge it</span></div>
+    <div class="filters" id="filters"></div>
+    <div class="small" id="countLine" style="margin-bottom:6px"></div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section>
+    <h2>How to use this after a code change</h2>
+    <div class="card how">
+      <ol>
+        <li>Make the change.</li>
+        <li><b>Run Smoke Tests</b> (about a minute). If anything fails, open it from the report, fix the app, run smoke again.</li>
+        <li>When smoke passes, commit / push.</li>
+        <li>Now and then, <b>Run Full QA</b> and clear the "Needs a person" list. Before a major release, do the full run plus the manual checks on a real phone.</li>
+      </ol>
+      <p class="small" style="margin:10px 0 0">Not sure what to run? Tick the areas you changed above and use "Run tests for these areas". Results, notes and the last 30 runs are kept in this browser only.</p>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast hide"></div>
+
+<script>
+/* Load the QA scripts fresh every time (never a stale cached copy), in order. */
+(function(){
+  var files = ['qa-core.js','qa-tests-1.js','qa-tests-2.js','qa-tests-3.js','qa-tests-4.js','qa-tests-5.js','qa-ui.js'], i = 0, t = Date.now();
+  (function next(){
+    if(i >= files.length) return;
+    var s = document.createElement('script'); s.src = files[i++] + '?t=' + t; s.onload = next;
+    s.onerror = function(){ document.body.insertAdjacentHTML('afterbegin', '<p style="padding:20px;color:#c0262d">Could not load ' + s.src + '</p>'); };
+    document.body.appendChild(s);
+  })();
+})();
+</script>
+</body>
+</html>

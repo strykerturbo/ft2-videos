@@ -1,0 +1,600 @@
+/* FT2 QA inventory, part 1: Home, Normal Session (Start New Session flow), Session Review, Saved Session.
+   Written from the app's actual behaviour. Each test: id, category, screen, desc, pre, steps, exp, type (Automated | Manual | Hybrid),
+   severity, smoke, tags (used to pick the tests relevant to a change), and run(env, QA) for anything a program can check. */
+(function(){
+'use strict';
+const QA = window.QA;
+const {assert, eq, fail, partial} = QA;
+const C = {core: 'Core Functionality', data: 'Data & State / Persistence', nav: 'Navigation & Workflow', gen: 'Generator / Recommendation Engine', use: 'Usability',
+  cons: 'Consistency', vis: 'Visual / Responsive', integ: 'Integration', err: 'Error Handling / Offline', sec: 'Security / Privacy / Performance'};
+QA.C = C;
+const T = (id, category, screen, desc, o) => Object.assign({id, category, screen, desc, pre: 'App open on a phone-size screen with a coach name set.', steps: [], exp: '', type: 'Automated', severity: 'Major', smoke: false, tags: [], notes: ''}, o);
+QA.T = T;
+
+/* ---------- shared flow helpers (also used by the other test files) ---------- */
+const L = QA.lib = {
+  /* Home -> Start New Session -> Next: Build Session, the way a coach does it. */
+  async startBuild(env, o){
+    const sb = await env.boot(o);
+    sb.click('Start New Session'); sb.click('Next: Build Session');
+    assert(sb.screen === 'build', 'Expected to land on Build Session, got ' + sb.screen);
+    return sb;
+  },
+  /* A draft with one exercise in every phase, then to Session Review. */
+  async toReview(env, o){
+    const sb = await L.startBuild(env, o);
+    sb.addExercises(sb.firstIdsPerPhase(1));
+    sb.click('Next: Session Review');
+    assert(sb.screen === 'review', 'Expected Session Review, got ' + sb.screen);
+    return sb;
+  },
+  /* Save through the real Save Session button. Returns the saved session. */
+  saveFromReview(sb){
+    const before = sb.S.savedSessions.length;
+    sb.click('Save Session');
+    assert(sb.S.savedSessions.length === before + 1, 'Save Session did not add exactly one saved session');
+    return sb.S.savedSessions[sb.S.savedSessions.length - 1];
+  },
+  /* A booted app that already holds N saved sessions (made through the app's own save path). */
+  async withSaved(env, n, o){
+    const sb = await env.boot(o);
+    for(let i = 0; i < (n || 1); i++){
+      sb.fn('resetBuilderDraft');
+      sb.S.sessionName = 'QA Session ' + (i + 1);
+      sb.addExercises(sb.firstIdsPerPhase(1));
+      sb.fn('completeSession', {skipConfirm: true});
+    }
+    return sb;
+  },
+  openSaved(sb, id){ sb.fn('openSessionDetail', id); assert(sb.screen === 'sessionDetail', 'Saved Session did not open'); },
+  sumDraftMinutes(sb){
+    let t = 0; const S = sb.S;
+    sb.e('PHASES').forEach(p => S.phaseData[p.key].forEach(id => { const ex = sb.fn('exById', id); t += (ex && ex.duration) || 10; }));
+    return t;
+  },
+  reopen(sb, o){ sb.flushState(); return sb.reboot(o); },
+  backLabel(sb){ const b = sb.q('#content .nav-back-link, #content .backbtn'); return b ? sb.text('#content .nav-back-link') : ''; },
+};
+
+const tests = [];
+const add = (...a) => tests.push(T(...a));
+
+/* ================================================================ HOME (H-001 .. H-012) */
+add('H-001', C.core, 'Home', 'Home loads with greeting, Start New Session, Quick Start, Recent Sessions and a Featured Exercise.', {
+  smoke: true, severity: 'Critical', tags: ['home'],
+  steps: ['Open the app.', 'Look at the Home screen.'], exp: 'Greeting, Start New Session button, Quick Start cards, Recent Sessions and Featured Exercise are all visible; no script errors.',
+  async run(env){
+    const sb = await env.boot();
+    eq(sb.screen, 'home', 'First screen');
+    ['Start New Session', 'Quick Start', 'Recent Sessions', 'Featured Exercise'].forEach(t => assert(sb.has(t, '#content'), `Home is missing "${t}"`));
+    assert(/Good (Morning|Afternoon|Evening)/.test(sb.text('#content')), 'No time-of-day greeting');
+    assert(sb.errors.length === 0, 'Script errors on load: ' + sb.errors.join(' | '));
+  }});
+add('H-002', C.core, 'Home', 'Start New Session opens Session Setup with an empty draft.', {
+  smoke: true, severity: 'Critical', tags: ['home', 'setup', 'nav'],
+  steps: ['Tap Start New Session.'], exp: 'Session Setup opens; the draft has no exercises; "Next: Build Session" is offered.',
+  async run(env){
+    const sb = await env.boot();
+    sb.click('Start New Session');
+    eq(sb.screen, 'practiceSetup', 'Screen after Start New Session');
+    eq(sb.fn('currentTotalMinutes').count, 0, 'Exercises in a brand-new draft');
+    assert(sb.has('Next: Build Session', '#workflowFooter'), 'Missing "Next: Build Session" button');
+  }});
+add('H-003', C.core, 'Home', 'Custom Session opens Step 1 (pick an objective) with nothing pre-selected.', {
+  smoke: true, severity: 'Critical', tags: ['home', 'custom', 'nav'],
+  steps: ['Tap Custom Session.'], exp: 'Step 1 "What do you want to work on?" shows the 8 focus areas, none selected, Next disabled.',
+  async run(env){
+    const sb = await env.boot();
+    sb.click('Custom Session');
+    eq(sb.screen, 'quickStartCustom', 'Screen after Custom Session');
+    assert(sb.has('What do you want to work on', '#content'), 'Step 1 title missing');
+    eq(sb.qa('#content .cs-list button').length, 8, 'Number of focus areas');
+    eq(sb.S.csFocusAreaId, null, 'Pre-selected focus area');
+    const next = sb.q('#workflowFooter button');
+    assert(next && next.disabled, 'Next button should be disabled until a focus area is picked');
+  }});
+add('H-004', C.nav, 'Home', 'Bottom navigation shows Home, Exercises, Sessions, Settings with Home active.', {
+  smoke: true, severity: 'Major', tags: ['home', 'bottomnav', 'nav'],
+  steps: ['Look at the bottom bar on Home.'], exp: 'Four items in that order; Home is the highlighted one.',
+  async run(env){
+    const sb = await env.boot();
+    QA.deepEq(sb.visibleNavLabels(), ['Home', 'Exercises', 'Sessions', 'Settings'], 'Bottom nav items');
+    eq(sb.navLabelActive(), 'Home', 'Active bottom-nav item');
+  }});
+add('H-005', C.core, 'Home', 'Pre-built Sessions and Surprise Me are clearly "Coming Soon" and do nothing when tapped.', {
+  severity: 'Minor', tags: ['home'],
+  steps: ['Tap Pre-built Sessions, then Surprise Me.'], exp: 'Both are labelled Coming Soon!; tapping leaves you on Home.',
+  async run(env){
+    const sb = await env.boot();
+    const cards = sb.qa('#content .hm-qs[aria-disabled="true"]');
+    eq(cards.length, 2, 'Number of "Coming Soon" cards');
+    cards.forEach(c => { assert(/coming soon/i.test(c.textContent), 'A disabled card is not labelled Coming Soon'); c.click(); });
+    eq(sb.screen, 'home', 'Screen after tapping the Coming Soon cards');
+  }});
+add('H-006', C.core, 'Home', 'Continue Session appears only when a draft exists, and resumes Build Session.', {
+  severity: 'Major', tags: ['home', 'build', 'persistence'],
+  steps: ['With no draft, look for Continue Session.', 'Add an exercise to a draft, return Home.', 'Tap Continue Session.'], exp: 'Hidden with no draft; visible with a draft; tapping opens Build Session with the draft intact.',
+  async run(env){
+    const sb = await env.boot();
+    assert(!sb.has('Continue Session', '#content'), 'Continue Session shown with an empty draft');
+    sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('nav', 'home');
+    assert(sb.has('Continue Session', '#content'), 'Continue Session missing while a draft exists');
+    sb.click('Continue Session');
+    eq(sb.screen, 'build', 'Screen after Continue Session');
+    eq(sb.fn('currentTotalMinutes').count, 6, 'Exercises still in the draft');
+  }});
+add('H-007', C.core, 'Home', 'Start New Session with a draft in progress asks before anything is lost.', {
+  severity: 'Critical', tags: ['home', 'setup', 'persistence'],
+  steps: ['Build a draft with exercises.', 'Go Home and tap Start New Session.'], exp: 'A choice appears; cancelling keeps the draft; discarding starts a clean Setup.',
+  async run(env){
+    const sb = await env.boot();
+    sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('nav', 'home');
+    sb.click('Start New Session');
+    eq(sb.S.confirmNewSessionOpen, true, 'Confirmation dialog open');
+    assert(sb.overlayText().length > 10, 'Dialog has no text');
+    sb.fn('cancelNewSessionModal');
+    eq(sb.fn('currentTotalMinutes').count, 6, 'Draft after cancelling');
+    sb.click('Start New Session'); sb.fn('startNewSessionDiscardingDraft');
+    eq(sb.screen, 'practiceSetup', 'Screen after discarding'); eq(sb.fn('currentTotalMinutes').count, 0, 'Draft after discarding');
+  }});
+add('H-008', C.core, 'Home', 'Recent Sessions lists the 3 newest saved sessions; See all opens the full list.', {
+  severity: 'Major', tags: ['home', 'saved'],
+  steps: ['Save 4 sessions.', 'Look at Recent Sessions on Home.', 'Tap See all.'], exp: 'Only 3 rows, newest first; See all opens Sessions with the full list.',
+  async run(env){
+    const sb = await L.withSaved(env, 4); sb.fn('nav', 'home');
+    const rows = sb.qa('#content .hm-sess');
+    eq(rows.length, 3, 'Rows in Recent Sessions');
+    assert(rows[0].textContent.includes('QA Session 4'), 'Newest session is not first');
+    sb.click('See all'); eq(sb.screen, 'sessions', 'Screen after See all'); eq(sb.S.sessionsViewAll, true, 'Full list mode');
+  }});
+add('H-009', C.use, 'Home', 'With no saved sessions Home invites the coach to create their first one.', {
+  severity: 'Minor', tags: ['home'],
+  steps: ['Open the app with no saved sessions.'], exp: '"No saved sessions yet" and a "Create your first session" link that starts Session Setup.',
+  async run(env){
+    const sb = await env.boot();
+    assert(sb.has('No saved sessions yet', '#content'), 'Empty-state text missing');
+    sb.click('Create your first session'); eq(sb.screen, 'practiceSetup', 'Screen after the link');
+  }});
+add('H-010', C.nav, 'Home', 'Featured Exercise opens that exercise; Back returns to Home.', {
+  severity: 'Minor', tags: ['home', 'detail', 'nav'],
+  steps: ['Tap the Featured Exercise card.', 'Tap Back.'], exp: 'Exercise Detail opens with the "Back to Home" label; Back returns Home.',
+  async run(env){
+    const sb = await env.boot();
+    sb.clickSel('#content .hm-feat');
+    eq(sb.screen, 'detail', 'Screen after tapping Featured Exercise');
+    assert(/Back to Home/i.test(sb.text('#content .nav-back-link')), 'Back label should say "Back to Home"');
+    sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'home', 'Screen after Back');
+  }});
+add('H-011', C.core, 'Home', 'Club Feed opens and closes.', {
+  severity: 'Polish', tags: ['home'],
+  steps: ['Tap Club Feed twice.'], exp: 'It expands, then collapses.',
+  async run(env){
+    const sb = await env.boot();
+    const head = sb.q('#content .hm-feed-head'); assert(head, 'Club Feed header missing');
+    head.click(); eq(sb.S.homeFeedOpen, true, 'Open after first tap');
+    sb.q('#content .hm-feed-head').click(); eq(sb.S.homeFeedOpen, false, 'Open after second tap');
+  }});
+add('H-012', C.vis, 'Home', 'Home layout on a real phone: spacing, alignment, readable text, nothing clipped.', {
+  type: 'Hybrid', severity: 'Polish', tags: ['home', 'visual'],
+  steps: ['Open Home on a phone in light mode, then dark mode.', 'Check text alignment, card spacing and that nothing is cut off.'], exp: 'Clean, left-aligned layout; no overlapping or clipped text in either mode.',
+  async run(env){
+    const sb = await env.boot({width: 390});
+    const sc = sb.q('#content');
+    assert(sc.scrollWidth <= sc.clientWidth + 1, 'Home scrolls sideways at 390px wide');
+  }});
+
+/* ================================================================ NORMAL SESSION (NS-001 .. NS-024) */
+add('NS-001', C.core, 'Session Setup', 'Session Setup shows title, date, start time, duration, location and the template choices.', {
+  smoke: true, severity: 'Critical', tags: ['setup'],
+  steps: ['Home > Start New Session.'], exp: 'All fields present with sensible defaults; Next: Build Session offered.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    ['Title', 'Date', 'Start Time', 'Duration', 'Location', 'Start from Scratch', 'Choose a Template'].forEach(t => assert(sb.has(t, '#content'), `Session Setup is missing "${t}"`));
+    assert(sb.S.setupName && sb.S.setupDate && sb.S.setupDuration && sb.S.setupLocation, 'A Setup field has no default value');
+  }});
+add('NS-002', C.core, 'Session Setup', 'The default session name is sensible and the coach can rename it.', {
+  severity: 'Minor', tags: ['setup'],
+  steps: ['Open Setup, edit the title.', 'Continue to Build.'], exp: 'Default name follows the "<Day> Session" pattern; the typed name carries into Build.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    assert(/\S/.test(sb.S.setupName), 'Default name is blank');
+    sb.S.setupName = 'Tuesday Rondos'; sb.click('Next: Build Session');
+    eq(sb.S.sessionName, 'Tuesday Rondos', 'Session name after Setup'); assert(sb.has('Tuesday Rondos', '#content') || sb.has('Build Session', '#content'), 'Build did not render');
+  }});
+add('NS-003', C.core, 'Session Setup', 'Duration choices 60 / 75 / 90 / Custom change the target length.', {
+  smoke: true, severity: 'Major', tags: ['setup', 'build'],
+  steps: ['Pick each duration.', 'Choose Custom and type a length.'], exp: 'The chosen duration is used by Build Session as the target.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    [60, 75, 90].forEach(n => { sb.fn('setSetupDuration', n); eq(sb.S.setupDuration, n, 'Duration after choosing ' + n); });
+    sb.fn('commitSetupCustomDuration', '100'); await sb.sleep(20); eq(sb.S.setupDuration, 100, 'Custom duration');
+    sb.click('Next: Build Session'); eq(sb.S.targetDuration, 100, 'Target duration in Build');
+  }});
+add('NS-004', C.core, 'Session Setup', 'Next: Build Session carries name, date, start time, duration and location into the draft.', {
+  smoke: true, severity: 'Critical', tags: ['setup', 'build', 'nav'],
+  steps: ['Fill Setup, tap Next: Build Session.'], exp: 'Build Session shows the same values; the draft is empty.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    sb.S.setupName = 'Carry Test'; sb.fn('setSetupDate', '2026-11-05'); sb.fn('setSetupStartTime', '16:30'); sb.fn('setSetupDuration', 90); sb.fn('setSetupLocation', 'indoor');
+    sb.click('Next: Build Session');
+    const S = sb.S;
+    eq(S.screen, 'build', 'Screen'); eq(S.sessionName, 'Carry Test', 'Name'); eq(S.practiceDate, '2026-11-05', 'Date'); eq(S.practiceStartTime, '16:30', 'Start time');
+    eq(S.targetDuration, 90, 'Duration'); eq(S.practiceLocation, 'indoor', 'Location'); eq(sb.fn('currentTotalMinutes').count, 0, 'Exercises');
+  }});
+add('NS-005', C.core, 'Session Setup', 'Location can be switched between Outdoor and Indoor.', {
+  severity: 'Major', tags: ['setup'],
+  steps: ['Tap Indoor, then Outdoor.'], exp: 'The choice changes and is used by Build.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    sb.click('Indoor', '#content'); eq(sb.S.setupLocation, 'indoor', 'After Indoor');
+    sb.click('Outdoor', '#content'); eq(sb.S.setupLocation, 'outdoor', 'After Outdoor');
+  }});
+add('NS-006', C.core, 'Session Setup', 'Picking a Monday / Tuesday / Thursday date pre-fills that night\'s start time, length and place.', {
+  severity: 'Minor', tags: ['setup'],
+  steps: ['Pick a Monday, Tuesday and Thursday date.'], exp: 'Mon 5:00 PM 90 min outdoor; Tue 6:00 PM 60 min indoor; Thu 5:00 PM 75 min outdoor. A Saturday keeps the defaults.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    const check = (date, start, dur, loc) => { sb.fn('initSetupDraft'); sb.fn('setSetupDate', date); const S = sb.S; eq(S.setupStartTime, start, date + ' start'); eq(S.setupDuration, dur, date + ' duration'); eq(S.setupLocation, loc, date + ' location'); };
+    check('2026-11-02', '17:00', 90, 'outdoor'); check('2026-11-03', '18:00', 60, 'indoor'); check('2026-11-05', '17:00', 75, 'outdoor');
+    sb.fn('initSetupDraft'); sb.fn('setSetupDuration', 60); sb.fn('setSetupDate', '2026-11-02'); eq(sb.S.setupDuration, 60, 'A hand-picked duration must not be overwritten by the schedule');
+  }});
+add('NS-007', C.data, 'Session Setup', 'The start time chosen in Setup is stored and shown on the draft and saved session.', {
+  severity: 'Minor', tags: ['setup', 'save'],
+  steps: ['Set a start time, build and save.'], exp: 'The saved session keeps the start time.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session'); sb.fn('setSetupStartTime', '18:15'); sb.click('Next: Build Session');
+    sb.addExercises(sb.firstIdsPerPhase(1)); sb.click('Next: Session Review'); const s = L.saveFromReview(sb);
+    eq(s.startTime, '18:15', 'Saved start time');
+  }});
+add('NS-008', C.core, 'Session Setup', 'Choosing a template on Setup applies its length and location to the new session.', {
+  severity: 'Major', tags: ['setup', 'templates'],
+  steps: ['On Setup tap a template card, then Next.'], exp: 'The template is the active template on Build.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    const t = sb.S.practiceTemplates[0]; assert(t, 'There are no templates to choose from');
+    sb.fn('selectSetupTemplate', t.id); eq(sb.S.setupSelectedTemplateId, t.id, 'Selected template');
+    sb.click('Next: Build Session'); eq(sb.S.activeTemplateId, t.id, 'Active template in Build');
+  }});
+add('NS-009', C.core, 'Build Session', 'Build Session lists all six phases, each with an Add Exercise button.', {
+  severity: 'Critical', tags: ['build'],
+  steps: ['Open Build Session.'], exp: 'Warmup, Athletic, Duels, Rondos, Small Sided Games and Scrimmage each show an Add Exercise button.',
+  async run(env){
+    const sb = await L.startBuild(env);
+    ['Warmup', 'Athletic', 'Duels', 'Rondos', 'Small Sided Games', 'Scrimmage'].forEach(t => assert(sb.has(t, '#content'), `Build is missing the "${t}" phase`));
+    eq(sb.qa('#content .pcard-add-pill').length, 6, 'Add Exercise buttons');
+  }});
+add('NS-010', C.nav, 'Build Session', 'Add Exercise opens Find Exercises scoped to that phase, with a Back button to Build.', {
+  severity: 'Major', tags: ['build', 'library', 'nav'],
+  steps: ['Tap Add Exercise on Duels.'], exp: 'Find Exercises opens on Duels; Back to Build Session returns.',
+  async run(env){
+    const sb = await L.startBuild(env);
+    sb.qa('#content .pcard-add-pill')[2].click();
+    eq(sb.screen, 'exercises', 'Screen'); eq(sb.S.pickingPhase, 'duels', 'Phase being picked');
+    assert(/Back to Build Session/i.test(sb.text('#content .nav-back-link')), 'Back label');
+    sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'build', 'Screen after Back');
+  }});
+add('NS-011', C.core, 'Find Exercises', 'Adding an exercise from Find Exercises puts it in that phase.', {
+  smoke: true, severity: 'Critical', tags: ['build', 'library'],
+  steps: ['Add Exercise on Warmup, tap Add on the first exercise, go back.'], exp: 'The exercise appears under Warmup and counts toward the total.',
+  async run(env){
+    const sb = await L.startBuild(env);
+    sb.qa('#content .pcard-add-pill')[0].click();
+    const card = sb.q('#content .ex-card'); const btn = card.querySelector('.ex-addbtn'); btn.click();
+    await sb.sleep(30);
+    if(sb.S.pendingQuickAdd) sb.fn('confirmQuickAddYes');
+    eq(sb.S.phaseData.warmup.length, 1, 'Exercises in Warmup');
+    sb.clickSel('#content .nav-back-link'); assert(sb.fn('currentTotalMinutes').count === 1, 'Total exercise count');
+  }});
+add('NS-012', C.core, 'Build Session', 'An exercise can be removed from the draft.', {
+  smoke: true, severity: 'Critical', tags: ['build'],
+  steps: ['Add an exercise, remove it.'], exp: 'Gone from the phase and from the total.',
+  async run(env){
+    const sb = await L.startBuild(env); const id = sb.firstIdsPerPhase(1).warmup[0];
+    sb.fn('addToPhase', 'warmup', id); eq(sb.S.phaseData.warmup.length, 1, 'After add');
+    sb.fn('removeFromPhase', 'warmup', id); eq(sb.S.phaseData.warmup.length, 0, 'After remove'); eq(sb.fn('currentTotalMinutes').count, 0, 'Total count');
+  }});
+add('NS-013', C.core, 'Build Session', 'Exercises can be reordered inside a phase by dragging.', {
+  type: 'Manual', severity: 'Minor', tags: ['build', 'usability'],
+  steps: ['Add two Warmup exercises.', 'Drag the grip handle of one past the other.'], exp: 'The order changes and stays changed after leaving and returning.', run: null});
+add('NS-014', C.core, 'Build Session', 'The planned-minutes total equals the sum of the exercises\' durations.', {
+  smoke: true, severity: 'Critical', tags: ['build', 'math'],
+  steps: ['Add exercises to several phases.', 'Compare the total at the top with the individual durations.'], exp: 'Total = sum of durations; header shows "<total> / <target> MIN PLANNED".',
+  async run(env){
+    const sb = await L.startBuild(env); sb.addExercises(sb.firstIdsPerPhase(2));
+    eq(sb.fn('currentTotalMinutes').total, L.sumDraftMinutes(sb), 'currentTotalMinutes() vs sum of durations');
+    assert(new RegExp(sb.fn('currentTotalMinutes').total + '\\s*/\\s*' + sb.S.targetDuration, 'i').test(sb.text('#content')), 'Header does not show "<total> / <target>"');
+  }});
+add('NS-015', C.use, 'Build Session', 'The page makes it obvious when the session is under or over the target length.', {
+  severity: 'Minor', tags: ['build', 'math'],
+  steps: ['Build well over the target.'], exp: 'Remaining / over-by wording appears and changes with the total.',
+  async run(env){
+    const sb = await L.startBuild(env); const under = sb.text('#content');
+    assert(/remaining|planned/i.test(under), 'Remaining/planned wording missing');
+    sb.addExercises(sb.firstIdsPerPhase(4)); sb.fn('render');
+    assert(sb.text('#content') !== under, 'The summary did not change after adding many exercises');
+  }});
+add('NS-016', C.core, 'Build Session', 'Replace swaps an exercise in place without changing the order.', {
+  severity: 'Major', tags: ['build', 'library'],
+  steps: ['Use Replace on an exercise, pick another.'], exp: 'The new exercise sits in the same position; the old one is gone.',
+  async run(env){
+    const sb = await L.startBuild(env); const ids = sb.exercises().filter(e => e.section === 'Warmup').slice(0, 3).map(e => e.id);
+    sb.fn('addToPhase', 'warmup', ids[0]); sb.fn('addToPhase', 'warmup', ids[1]);
+    sb.fn('pickReplacementFor', 'warmup', ids[0], 'build'); eq(sb.screen, 'exercises', 'Picker opened');
+    sb.fn('performReplace', ids[2]);
+    QA.deepEq(sb.S.phaseData.warmup, [ids[2], ids[1]], 'Warmup order after replace');
+  }});
+add('NS-017', C.core, 'Build Session', 'Next: Session Review works with at least one exercise and the page says so when empty.', {
+  smoke: true, severity: 'Major', tags: ['build', 'review', 'nav'],
+  steps: ['Open Build with no exercises.', 'Add one and tap Next: Session Review.'], exp: 'With none, you are told to add an exercise; with one, Session Review opens.',
+  async run(env){
+    const sb = await L.startBuild(env);
+    const next = sb.q('#workflowFooter button'); assert(next && next.disabled, '"Next: Session Review" should be disabled while the draft is empty');
+    eq(sb.screen, 'build', 'Screen with an empty draft');
+    sb.addExercises({warmup: sb.firstIdsPerPhase(1).warmup}); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Screen with an exercise');
+  }});
+add('NS-018', C.nav, 'Find Exercises', 'The phase chips at the top of Find Exercises switch the phase being filled.', {
+  severity: 'Minor', tags: ['build', 'library'],
+  steps: ['Open Find Exercises, tap another phase chip.'], exp: 'The list and heading change to that phase.',
+  async run(env){
+    const sb = await L.startBuild(env); sb.qa('#content .pcard-add-pill')[0].click();
+    eq(sb.S.pickingPhase, 'warmup', 'Start phase'); sb.fn('switchPickingPhase', 'rondos'); eq(sb.S.pickingPhase, 'rondos', 'Phase after chip');
+    assert(sb.qa('#content .ex-card').length > 0, 'No exercises listed for Rondos');
+  }});
+add('NS-019', C.core, 'Find Exercises', 'Quick Pick suggests exercises for the phase and can add one.', {
+  severity: 'Minor', tags: ['build', 'library'],
+  steps: ['In Find Exercises tap "Quick Pick".'], exp: 'A sheet suggests exercises for the phase; adding one puts it in the draft.',
+  async run(env){
+    const sb = await L.startBuild(env); sb.qa('#content .pcard-add-pill')[0].click();
+    sb.fn('openQuickPick'); eq(sb.S.quickPickOpen, true, 'Quick Pick open'); assert(sb.overlayText().length > 20, 'Quick Pick sheet is empty');
+    sb.fn('closeQuickPick'); eq(sb.S.quickPickOpen, false, 'Quick Pick closed');
+  }});
+add('NS-020', C.core, 'Build Session', 'A custom extra section can be added, named and filled.', {
+  severity: 'Minor', tags: ['build'],
+  steps: ['Use Add Section, name it, add an exercise.'], exp: 'The section exists with the exercise and counts in the total.',
+  async run(env){
+    const sb = await L.startBuild(env); sb.fn('addExtraSection'); eq(sb.S.extraSections.length, 1, 'Extra sections');
+    const key = sb.S.extraSections[0].key; sb.fn('renameExtraSection', key, 'Cool Down');
+    sb.S.extraSections[0].exercises.push(sb.exercises()[0].id); sb.fn('render');
+    eq(sb.S.extraSections[0].label, 'Cool Down', 'Section label'); assert(sb.fn('currentTotalMinutes').count === 1, 'Extra-section exercise not counted');
+  }});
+add('NS-021', C.nav, 'Build Session', 'Back to Session Setup keeps the exercises already added.', {
+  severity: 'Critical', tags: ['build', 'setup', 'nav'],
+  steps: ['Add exercises.', 'Tap Back to Session Setup, change the title, tap Next.'], exp: 'Exercises are still there; the new title applies.',
+  async run(env){
+    const sb = await L.startBuild(env); sb.addExercises(sb.firstIdsPerPhase(1));
+    sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'practiceSetup', 'Screen after Back');
+    sb.S.setupName = 'Renamed'; sb.click('Next: Build Session');
+    eq(sb.fn('currentTotalMinutes').count, 6, 'Exercises kept'); eq(sb.S.sessionName, 'Renamed', 'Name');
+  }});
+add('NS-022', C.core, 'Build Session', 'A phase switched off in Settings does not appear in Build Session.', {
+  severity: 'Minor', tags: ['build', 'settings'],
+  steps: ['In Settings turn a phase off, open Build.'], exp: 'That phase is hidden.',
+  async run(env){
+    const sb = await env.boot(); sb.S.enabledPhaseKeys.delete('athletic'); sb.click('Start New Session'); sb.click('Next: Build Session');
+    eq(sb.qa('#content .pcard-add-pill').length, 5, 'Add Exercise buttons with Athletic off');
+  }});
+add('NS-023', C.core, 'Normal Session', 'Full flow: Setup, Build, Review, Save creates one saved session that appears in Sessions.', {
+  smoke: true, severity: 'Critical', tags: ['setup', 'build', 'review', 'save', 'nav'],
+  steps: ['Start New Session > Next: Build Session > add exercises > Next: Session Review > Save Session.', 'Open Sessions.'], exp: 'One new saved session with the right name and minutes; it is listed under Sessions; the draft is cleared.',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session'); sb.S.setupName = 'Flow Test'; sb.click('Next: Build Session');
+    sb.addExercises(sb.firstIdsPerPhase(1)); const expected = L.sumDraftMinutes(sb);
+    sb.click('Next: Session Review'); const s = L.saveFromReview(sb);
+    eq(s.name, 'Flow Test', 'Saved name'); eq(s.totalMin, expected, 'Saved minutes'); eq(s.exCount, 6, 'Saved exercise count');
+    eq(sb.fn('currentTotalMinutes').count, 0, 'Draft cleared after save');
+    sb.click('Sessions', '#bottomnav'); assert(sb.has('Flow Test', '#content'), 'Saved session is not listed under Sessions');
+  }});
+add('NS-024', C.cons, 'Normal Session', 'Every screen in the flow has a Back button naming where it goes, and one forward button.', {
+  severity: 'Minor', tags: ['nav', 'build', 'setup', 'review'],
+  steps: ['Visit Setup, Build, Find Exercises, Review.'], exp: 'Each shows "Back to <place>"; forward buttons read "Next: <place>".',
+  async run(env){
+    const sb = await env.boot(); sb.click('Start New Session');
+    assert(/Back to Home/i.test(sb.text('#content .nav-back-link')), 'Setup back label'); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup forward label');
+    sb.click('Next: Build Session'); assert(/Back to Session Setup/i.test(sb.text('#content .nav-back-link')), 'Build back label');
+    sb.addExercises(sb.firstIdsPerPhase(1)); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build forward label');
+    sb.click('Next: Session Review'); assert(/Back to Build Session/i.test(sb.text('#content .nav-back-link')), 'Review back label');
+  }});
+
+/* ================================================================ SESSION REVIEW (RV-001 .. RV-012) */
+add('RV-001', C.core, 'Session Review', 'Review shows the session name, totals and every phase with its exercises.', {
+  smoke: true, severity: 'Critical', tags: ['review'],
+  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N total minutes · M exercises", Activate / Develop / Play groups with the exercises.',
+  async run(env){
+    const sb = await L.toReview(env); const t = sb.text('#content');
+    ['Session Review', 'Activate', 'Develop', 'Play', 'total minutes', '6 exercises', 'unsaved'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
+  }});
+add('RV-002', C.core, 'Session Review', 'Each phase group shows planned minutes against its share of the target.', {
+  severity: 'Minor', tags: ['review', 'math'],
+  steps: ['Open Review.'], exp: 'Each group line reads "<minutes> / <share> min".',
+  async run(env){ const sb = await L.toReview(env); eq((sb.text('#content').match(/\d+\s*\/\s*\d+\s*min/gi) || []).length >= 3, true, 'Number of "x / y min" group lines >= 3'); }});
+add('RV-003', C.core, 'Session Review', 'Save Session saves exactly once and clears the draft.', {
+  smoke: true, severity: 'Critical', tags: ['review', 'save'],
+  steps: ['Tap Save Session once.'], exp: 'One saved session; draft empty; coach lands Home.',
+  async run(env){
+    const sb = await L.toReview(env); L.saveFromReview(sb); eq(sb.S.savedSessions.length, 1, 'Saved sessions'); eq(sb.fn('currentTotalMinutes').count, 0, 'Draft cleared'); eq(sb.screen, 'home', 'Screen');
+  }});
+add('RV-004', C.core, 'Session Review', 'Saving a second session with the same name keeps both, with unique names.', {
+  severity: 'Major', tags: ['review', 'save'],
+  steps: ['Save two sessions with the same name.'], exp: 'The second is numbered, e.g. "Name 2"; no overwriting.',
+  async run(env){
+    const sb = await env.boot();
+    for(let i = 0; i < 3; i++){ sb.S.sessionName = 'Same Name'; sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('completeSession', {skipConfirm: true}); }
+    const names = sb.S.savedSessions.map(s => s.name); eq(new Set(names).size, 3, 'Distinct names ' + JSON.stringify(names));
+  }});
+add('RV-005', C.nav, 'Session Review', 'Back to Build Session returns with the draft intact.', {
+  smoke: true, severity: 'Major', tags: ['review', 'build', 'nav'],
+  steps: ['On Review tap Back to Build Session.'], exp: 'Build opens with the same exercises.',
+  async run(env){ const sb = await L.toReview(env); sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'build', 'Screen'); eq(sb.fn('currentTotalMinutes').count, 6, 'Exercises'); }});
+add('RV-006', C.nav, 'Session Review', 'Tapping an exercise opens its detail and Back returns to the review.', {
+  severity: 'Major', tags: ['review', 'detail', 'nav'],
+  steps: ['Tap an exercise on Review, tap Back.'], exp: 'Detail opens ("Back to Session Review"); Back returns.',
+  async run(env){
+    const sb = await L.toReview(env); sb.clickSel('#content .phase-ex-item'); eq(sb.screen, 'detail', 'Screen');
+    assert(/Back to Session Review/i.test(sb.text('#content .nav-back-link')), 'Back label'); sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'review', 'Screen after Back');
+  }});
+add('RV-007', C.core, 'Session Review', 'Print & Share on an unsaved review asks the coach to save first.', {
+  severity: 'Major', tags: ['review', 'print', 'share'],
+  steps: ['On an unsaved Review tap Print PDF / Create Image.'], exp: '"Save your session first" sheet with Not yet / Save Session.',
+  async run(env){
+    const sb = await L.toReview(env); sb.click('Print PDF'); assert(sb.S.saveFirstSheet, 'Save-first sheet did not open'); assert(/save/i.test(sb.overlayText()), 'Sheet has no save wording');
+  }});
+add('RV-008', C.core, 'Session Review', 'Training profile summarises Technical / Tactical / Physical / Cognitive for the draft.', {
+  severity: 'Minor', tags: ['review'],
+  steps: ['Open Review.'], exp: 'Four scores and a one-line interpretation.',
+  async run(env){ const sb = await L.toReview(env); ['Technical', 'Tactical', 'Physical', 'Cognitive'].forEach(w => assert(sb.has(w, '#content'), 'Missing ' + w)); }});
+add('RV-009', C.use, 'Session Review', 'An empty draft shows an empty state, not a broken page.', {
+  severity: 'Minor', tags: ['review'],
+  steps: ['Open Review with no exercises.'], exp: 'Friendly empty message with a button back to Build.',
+  async run(env){ const sb = await env.boot(); sb.fn('nav', 'review'); assert(sb.has('No exercises', '#content'), 'No empty-state message'); }});
+add('RV-010', C.core, 'Session Review', 'After saving, a "Session saved" sheet offers Print, Share, View Session and Done.', {
+  smoke: true, severity: 'Major', tags: ['review', 'save', 'print', 'share'],
+  steps: ['Save a session.'], exp: 'Sheet titled "Session saved" with the four choices.',
+  async run(env){
+    const sb = await L.toReview(env); sb.click('Save Session');
+    ['Session saved', 'Print PDF', 'Share Session', 'View Session', 'Done'].forEach(w => assert(sb.has(w, '#overlay'), `Saved sheet is missing "${w}"`));
+    sb.click('Done', '#overlay'); eq(sb.S.savedSheet, null, 'Sheet closed after Done');
+  }});
+add('RV-011', C.core, 'Session Review', 'Balance My Session suggests an exercise that fills the weakest training area.', {
+  severity: 'Minor', tags: ['review'],
+  steps: ['Tap Balance My Session.'], exp: 'A sheet shows suggestions you can add.',
+  async run(env){ const sb = await L.toReview(env); sb.click('Balance My Session'); eq(sb.S.balanceSheetOpen, true, 'Balance sheet open'); assert(sb.overlayText().length > 20, 'Balance sheet is empty'); }});
+add('RV-012', C.vis, 'Session Review', 'Review layout on a phone: Back button, timeline, sticky Save, rate box.', {
+  type: 'Manual', severity: 'Polish', tags: ['review', 'visual'],
+  steps: ['Open Review on a phone, scroll to the bottom.'], exp: 'Back pill docked at top, Save Session always reachable, nothing overlaps the bottom bar.', run: null});
+
+/* ================================================================ SAVED SESSION (SS-001 .. SS-022) */
+add('SS-001', C.core, 'Saved Session', 'A saved session opens from Sessions and shows name, date, length, place, coach and exercise count.', {
+  smoke: true, severity: 'Critical', tags: ['saved'],
+  steps: ['Sessions > tap a saved session.'], exp: 'Header shows all of that metadata.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.click('Sessions', '#bottomnav'); sb.clickSel('#content .hm-sess');
+    eq(sb.screen, 'sessionDetail', 'Screen'); const t = sb.text('#content');
+    [s.name, 'min session', 'Outdoor', 'QA Coach', 'Exercises'].forEach(w => assert(t.includes(w), `Saved session header is missing "${w}"`));
+  }});
+add('SS-002', C.nav, 'Saved Session', 'Back from a saved session returns to Sessions.', {
+  severity: 'Major', tags: ['saved', 'nav'],
+  steps: ['Open a saved session, tap Back.'], exp: 'Sessions hub opens.',
+  async run(env){ const sb = await L.withSaved(env, 1); L.openSaved(sb, sb.S.savedSessions[0].id); sb.clickSel('#content .backbtn'); eq(sb.screen, 'sessions', 'Screen'); }});
+add('SS-003', C.core, 'Saved Session', 'Phase groups add up to the session total.', {
+  severity: 'Major', tags: ['saved', 'math'],
+  steps: ['Open a saved session.'], exp: 'Activate + Develop + Play minutes = the "min total".',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const groups = sb.fn('sessionDetailPhaseGroups', s);
+    eq(groups.reduce((a, g) => a + g.mins, 0), s.totalMin, 'Group minutes vs total');
+  }});
+add('SS-004', C.data, 'Saved Session', 'The saved total equals the sum of its exercises\' durations.', {
+  severity: 'Major', tags: ['saved', 'math'],
+  steps: ['Compare the total with the exercise rows.'], exp: 'Equal.',
+  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; eq(s.phases.flatMap(p => p.exercises).reduce((a, e) => a + (e.duration || 10), 0), s.totalMin, 'Sum vs totalMin'); }});
+add('SS-005', C.nav, 'Saved Session', 'Tapping an exercise in a saved session opens it; Back returns to the saved session.', {
+  severity: 'Major', tags: ['saved', 'detail', 'nav'],
+  steps: ['Tap an exercise, tap Back.'], exp: '"Back to Saved Session" label; returns to the same session.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const id = sb.S.savedSessions[0].id; L.openSaved(sb, id);
+    sb.clickSel('#content .phase-ex-item'); eq(sb.screen, 'detail', 'Screen'); assert(/Back to Saved Session/i.test(sb.text('#content .nav-back-link')), 'Back label');
+    sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'sessionDetail', 'Back screen'); eq(sb.S.viewingSessionId, id, 'Same session');
+  }});
+add('SS-006', C.core, 'Saved Session', 'The Training profile row shows for a saved session.', {
+  severity: 'Minor', tags: ['saved'], steps: ['Open a saved session.'], exp: 'Four scores and an interpretation.',
+  async run(env){ const sb = await L.withSaved(env, 1); L.openSaved(sb, sb.S.savedSessions[0].id); ['Training profile', 'Technical', 'Tactical'].forEach(w => assert(sb.has(w, '#content'), 'Missing ' + w)); }});
+add('SS-007', C.core, 'Saved Session', 'Rename in Edit mode saves, and a name already in use is made unique.', {
+  smoke: true, severity: 'Major', tags: ['saved', 'save'],
+  steps: ['More > Edit, rename to an existing name.'], exp: 'Renamed with a number added; the other session is untouched.',
+  async run(env){
+    const sb = await L.withSaved(env, 2); const [a, b] = sb.S.savedSessions;
+    sb.fn('renameSavedSession', a.id, 'Brand New'); eq(a.name, 'Brand New', 'Plain rename');
+    sb.fn('renameSavedSession', b.id, 'Brand New'); assert(b.name !== 'Brand New' && /Brand New/.test(b.name), 'Duplicate name was allowed: ' + b.name); eq(a.name, 'Brand New', 'First session kept its name');
+  }});
+add('SS-008', C.core, 'Saved Session', 'Delete asks first; cancelling keeps the session, confirming removes it.', {
+  smoke: true, severity: 'Critical', tags: ['saved'],
+  steps: ['More > Delete Session, Cancel; then again and confirm.'], exp: 'Kept after Cancel; gone after Delete, and removed from the server copy too.',
+  async run(env){
+    const sb = await L.withSaved(env, 2); await sb.sleep(50); const id = sb.S.savedSessions[0].id; L.openSaved(sb, id);
+    sb.fn('openSessionMore', id); sb.click('Delete Session', '#overlay'); eq(sb.S.confirmDeleteSessionId, id, 'Confirmation open'); sb.fn('cancelDeleteSession'); eq(sb.S.savedSessions.length, 2, 'After cancel');
+    sb.fn('requestDeleteSession', id); sb.fn('confirmDeleteSessionNow'); await sb.sleep(50);
+    eq(sb.S.savedSessions.length, 1, 'After confirm'); assert(!sb.ctx.backend.sessions.has(id), 'Deleted session still on the (mock) server');
+  }});
+add('SS-009', C.core, 'Saved Session', 'Copy Session makes a new unsaved draft and never alters the original.', {
+  severity: 'Major', tags: ['saved', 'build'],
+  steps: ['More > Copy Session > confirm.'], exp: 'Build opens with the same exercises; the original is unchanged.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const snap = JSON.stringify(s);
+    sb.fn('requestDuplicateSession', s.id); sb.fn('confirmDuplicateSession');
+    eq(sb.fn('currentTotalMinutes').count, s.exCount, 'Draft exercises'); eq(JSON.stringify(sb.S.savedSessions[0]), snap, 'Original saved session changed'); eq(sb.S.savedSessions.length, 1, 'A copy was saved prematurely');
+  }});
+add('SS-010', C.core, 'Saved Session', 'A star rating saves, can be changed and cleared, and persists.', {
+  smoke: true, severity: 'Major', tags: ['saved', 'persistence'],
+  steps: ['Tap 4 stars, tap 4 again.'], exp: '4 stars saved; tapping again clears it.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; L.openSaved(sb, s.id);
+    sb.qa('#content .star-btn')[3].click(); eq(s.rating, 4, 'Rating'); sb.qa('#content .star-btn')[3].click(); eq(s.rating, 0, 'Rating after repeat tap');
+    sb.qa('#content .star-btn')[4].click(); const sb2 = await L.reopen(sb); eq(sb2.S.savedSessions[0].rating, 5, 'Rating after reopen');
+  }});
+add('SS-011', C.core, 'Saved Session', 'Make Private / Make Shared toggles visibility and syncs it.', {
+  smoke: true, severity: 'Major', tags: ['saved', 'privacy'],
+  steps: ['More > Make Private, then Make Shared.'], exp: 'Visibility flips each time.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; eq(s.visibility, 'shared', 'Starts shared');
+    sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'private', 'After 1st'); sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'shared', 'After 2nd');
+  }});
+add('SS-012', C.core, 'Saved Session', 'Print PDF / Create Image opens the print sheet for that session.', {
+  smoke: true, severity: 'Major', tags: ['saved', 'print'],
+  steps: ['Tap Print PDF / Create Image.'], exp: 'A sheet offering PDF or Image.',
+  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; L.openSaved(sb, s.id); sb.click('Print PDF'); assert(sb.S.printSheet, 'Print sheet state missing'); assert(/PDF/.test(sb.overlayText()) && /Image/.test(sb.overlayText()), 'Sheet is missing PDF / Image'); }});
+add('SS-013', C.sec, 'Saved Session', 'Share Session is offered only to the session\'s owner.', {
+  severity: 'Major', tags: ['saved', 'share', 'privacy'],
+  steps: ['Open someone else\'s shared session.'], exp: 'No Share Session, no Edit, no Delete.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; s.createdBy = 'Another Coach'; L.openSaved(sb, s.id);
+    assert(!sb.has('Share Session', '#content'), 'Share shown to a non-owner');
+    sb.fn('openSessionMore', s.id); assert(!sb.has('Delete Session', '#overlay') && !sb.canClick('Edit', '#overlay', {exact: true}), 'Owner-only actions offered to a non-owner');
+  }});
+add('SS-014', C.core, 'Saved Session', 'Bookmarking a saved session toggles and persists.', {
+  severity: 'Minor', tags: ['saved', 'persistence'],
+  steps: ['Tap the bookmark.'], exp: 'Bookmark fills; remains after reopening.',
+  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.fn('toggleSessionFavorite', s.id); eq(s.favorited, true, 'Favorited'); const sb2 = await L.reopen(sb); eq(sb2.S.savedSessions[0].favorited, true, 'After reopen'); }});
+add('SS-015', C.nav, 'Saved Session', 'Edit > + Add Exercise opens the library with a Back to Saved Session button, and the added exercise lands in the session.', {
+  severity: 'Critical', tags: ['saved', 'library', 'nav'],
+  steps: ['More > Edit > + Add Exercise.', 'Tap Add on an exercise.', 'Tap Back to Saved Session.'], exp: 'Back button present; returns to the session still in edit mode; exercise included; totals updated.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const before = s.exCount; L.openSaved(sb, s.id); sb.fn('toggleEditSessionDetail');
+    sb.clickSel('#content .pcard-add-btn'); eq(sb.screen, 'exercises', 'Picker'); assert(/Back to Saved Session/i.test(sb.text('#content .nav-sticky-back')), 'No "Back to Saved Session" button');
+    const pick = sb.exercises().find(e => !sb.fn('isExerciseInSavedSession', s.id, e.id)); sb.fn('addExerciseToSavedSession', s.id, pick.id);
+    sb.clickSel('#content .nav-sticky-back .nav-back-link'); eq(sb.screen, 'sessionDetail', 'Screen after Back'); eq(sb.S.editingSessionDetail, true, 'Still in edit mode'); eq(s.exCount, before + 1, 'Exercise count');
+  }});
+add('SS-016', C.core, 'Saved Session', 'Removing an exercise in Edit mode updates the count and total.', {
+  severity: 'Major', tags: ['saved', 'math'],
+  steps: ['Edit > trash an exercise.'], exp: 'Count and minutes drop by that exercise.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const e = s.phases[0].exercises[0]; const total = s.totalMin, count = s.exCount;
+    sb.fn('removeExerciseFromSavedSession', s.id, e.id, e.name); eq(s.exCount, count - 1, 'Count'); eq(s.totalMin, total - (e.duration || 10), 'Minutes');
+  }});
+add('SS-017', C.core, 'Saved Session', 'Changing a saved session\'s target length saves.', {
+  severity: 'Minor', tags: ['saved'],
+  steps: ['Edit the target duration.'], exp: 'New target is stored.',
+  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.fn('setSavedSessionDuration', s.id, '90'); eq(s.targetDuration, 90, 'Target'); sb.fn('setSavedSessionDuration', s.id, 'abc'); eq(s.targetDuration, 90, 'Bad input must be ignored'); }});
+add('SS-018', C.core, 'Saved Session', 'A comment on a saved session is stored.', {
+  severity: 'Minor', tags: ['saved'], steps: ['Type a comment.'], exp: 'Stored with the session.',
+  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.fn('setSessionComment', s.id, 'Great energy'); eq(s.comment, 'Great energy', 'Comment'); }});
+add('SS-019', C.sec, 'Saved Session', 'Another coach\'s session is read-only: no edit, delete, rate, favorite or visibility change.', {
+  severity: 'Major', tags: ['saved', 'privacy'],
+  steps: ['Community > open a session by someone else.'], exp: 'View only.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; s.createdBy = 'Another Coach'; L.openSaved(sb, s.id);
+    sb.qa('#content .star-btn')[2].click(); eq(s.rating, 0, 'A non-owner changed the rating'); assert(!sb.q('#content .pcard-add-btn'), 'Add Exercise offered to a non-owner');
+    assert(!sb.q('#content [onclick*="removeExerciseFromSavedSession"]'), 'Remove offered to a non-owner'); assert(!sb.has('Share Session', '#content'), 'Share offered');
+  }});
+add('SS-020', C.data, 'Saved Session', 'A saved session survives closing and reopening the app.', {
+  smoke: true, severity: 'Critical', tags: ['saved', 'persistence'],
+  steps: ['Save a session, close and reopen the app.'], exp: 'The session is still listed with the same content.',
+  async run(env){ const sb = await L.withSaved(env, 2); const before = JSON.stringify(sb.S.savedSessions.map(s => [s.id, s.name, s.totalMin, s.exCount])); const sb2 = await L.reopen(sb); eq(JSON.stringify(sb2.S.savedSessions.map(s => [s.id, s.name, s.totalMin, s.exCount])), before, 'Saved sessions after reopen'); }});
+add('SS-021', C.cons, 'Saved Session', 'Editing a saved session does not show a start-time field (it is not editable there).', {
+  severity: 'Minor', tags: ['saved'],
+  steps: ['Open a saved session, More > Edit.'], exp: 'No time input is shown.',
+  async run(env){ const sb = await L.withSaved(env, 1); L.openSaved(sb, sb.S.savedSessions[0].id); sb.fn('toggleEditSessionDetail'); eq(sb.qa('#content input[type="time"]').length, 0, 'Time inputs in edit mode'); }});
+add('SS-022', C.vis, 'Saved Session', 'Saved Session top section: dark header, action buttons, More menu, Print / Share buttons.', {
+  type: 'Manual', severity: 'Polish', tags: ['saved', 'visual'],
+  steps: ['Open a saved session on a phone, light and dark.'], exp: 'Header is tidy, buttons are tappable and clearly labelled, nothing is clipped.', run: null});
+
+QA.register(tests);
+})();

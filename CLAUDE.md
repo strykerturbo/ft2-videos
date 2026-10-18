@@ -485,6 +485,18 @@ rather than letting it get rediscovered next session.
   word can't wrap, so `ftMeasure` eases the title type down (min 84%) to fit it in the narrow column, and only widens the column (cap 25%) if that still isn't enough. Header text starts at
   `M + logoW + fMeta*0.9` (was `+ M*0.9 + fMeta*0.4`) so the title/details sit right beside the logo.
 
+## QA & regression suite (`qa/`)
+
+A developer-only test system lives in `qa/` (open `qa/index.html`; live at `.../ft2-videos/qa/`). It is NOT linked from the app and must never change the coach-facing UI.
+304 tests (the 202 checklist IDs H/NS/RV/SS/EX/ED/CS/TM/SH/PR/P plus navigation, bottom-nav, data-integrity, generator, usability, consistency, responsive, error/offline, security and performance
+audits), classified Automated / Hybrid / Manual. Each automated test runs the real `index.html` in a hidden iframe with fake storage, fake network (in-memory Apps Script mock), fake clipboard / share sheet,
+so real coach data, the Google Sheet and real messages are never touched (only a read-only GET of the live exercise library for generator / data tests). See `qa/README.md`.
+- **Smoke suite** (47 tests, ~30 s) = run after every code change before committing. **Full QA** (~2 min) = periodically / before a release; manual + hybrid items then need a person.
+- When behaviour changes on purpose, update the affected test in the same commit (IDs stay stable; comparison between runs is keyed on them).
+- Gotchas: the sandbox patches `appBaseUrl`/`initSharedLink`/`GEN_MIN_DISPLAY_MS` in memory only - if those lines are renamed, `QA.loadSource().patches` shrinks and share-link / generation-timing tests should be revisited.
+  A hidden browser pane throttles timers (runs look slow) - keep the pane visible when running. First full run (2026-10) found real issues: print of 12 exercises on Pocket overflows (PR-005),
+  Custom Step 4 scrolls sideways at 320-360px (RS-001), wrong-shaped saved data blanks the app (P-009).
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
