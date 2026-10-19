@@ -467,7 +467,7 @@ add('SS-001', C.core, 'Saved Session', 'A saved session opens from Sessions and 
   smoke: true, severity: 'Critical', tags: ['saved'],
   steps: ['Sessions > tap a saved session.'], exp: 'Header shows all of that metadata.',
   async run(env){
-    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.click('Sessions', '#bottomnav'); sb.clickSel('#content .hm-sess');
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.click('Sessions', '#bottomnav'); sb.clickSel('#content .so-row');
     eq(sb.screen, 'sessionDetail', 'Screen'); const t = sb.text('#content');
     [s.name, 'min session', 'Outdoor', 'QA Coach', 'Exercises'].forEach(w => assert(t.includes(w), `Saved session header is missing "${w}"`));
   }});
@@ -518,9 +518,9 @@ add('SS-009', C.core, 'Saved Session', 'Copy Session makes a new unsaved draft a
   severity: 'Major', tags: ['saved', 'build'],
   steps: ['More > Copy Session > confirm.'], exp: 'Build opens with the same exercises; the original is unchanged.',
   async run(env){
-    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const snap = JSON.stringify(s);
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const strip = o => JSON.stringify({...o, lastUsedAt: 0}); const snap = strip(s);   // Copy Session counts as using the original, so only lastUsedAt may move
     sb.fn('requestDuplicateSession', s.id); sb.fn('confirmDuplicateSession');
-    eq(sb.fn('currentTotalMinutes').count, s.exCount, 'Draft exercises'); eq(JSON.stringify(sb.S.savedSessions[0]), snap, 'Original saved session changed'); eq(sb.S.savedSessions.length, 1, 'A copy was saved prematurely');
+    eq(sb.fn('currentTotalMinutes').count, s.exCount, 'Draft exercises'); eq(strip(sb.S.savedSessions[0]), snap, 'Original saved session changed'); eq(sb.S.savedSessions.length, 1, 'A copy was saved prematurely');
   }});
 add('SS-010', C.core, 'Saved Session', 'A star rating saves, can be changed and cleared, and persists.', {
   smoke: true, severity: 'Major', tags: ['saved', 'persistence'],
@@ -620,6 +620,119 @@ add('SS-024', C.use, 'Saved Session', 'Editing a saved session shows an "editing
     sb.click('Save Changes', '#workflowFooter'); eq(sb.S.editingSessionDetail, false, 'Still editing'); eq(s.name, 'Mixed Case Plan', 'An untouched title was altered (CSS uppercase leaking into the saved name?)'); eq(sb.S.toast, 'Changes saved', 'Toast');
     sb.fn('toggleEditSessionDetail'); sb.q('#content .editable-title').textContent = 'Typed Name'; sb.click('Save Changes', '#workflowFooter'); eq(s.name, 'Typed Name', 'Typed title');
     s.createdBy = 'Other'; sb.fn('toggleEditSessionDetail'); assert(!sb.has('Save Changes', '#workflowFooter'), 'Save Changes offered to a non-owner');
+  }});
+
+/* ================================================================ SAVED SESSIONS ORGANIZATION (SS-025 .. SS-034) */
+const SO_FOCUS = ['keep_the_ball', 'play_forward', 'create_and_score', 'beat_players', 'defend_together', 'win_it_back', 'transition_quickly', 'master_the_ball'];
+Object.assign(L, {
+  /* n saved sessions with varied metadata, made through the app's own save path, then given distinct dates / usage so every sort has an answer */
+  async library(env, n, o){
+    const sb = await env.boot(o); const base = Date.now() - 1000 * 60 * 60 * 24 * 90; const sess = [];
+    for(let i = 0; i < n; i++){
+      sb.fn('resetBuilderDraft'); sb.S.sessionName = 'Session ' + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : '') + ' ' + (i % 7);
+      sb.S.targetDuration = [60, 75, 90][i % 3]; sb.S.practiceLocation = i % 2 ? 'indoor' : 'outdoor'; sb.S.practiceDate = '2026-' + String(1 + (i * 5) % 12).padStart(2, '0') + '-' + String(1 + (i * 7) % 27).padStart(2, '0');
+      sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('completeSession', {skipConfirm: true}); const s = sb.S.savedSessions[sb.S.savedSessions.length - 1];
+      s.createdAt = base + i * 3600000 * 7; s.updatedAt = s.createdAt; s.lastUsedAt = s.createdAt + ((i * 37) % 11) * 3600000;
+      if(i % 3 !== 2){ s.ageGroup = ['U8', 'U9', 'U10', 'U11', 'U12'][i % 5]; s.focusArea = SO_FOCUS[i % 8]; s.sessionStyle = ['technical', 'balanced', 'game_based'][i % 3]; s.locationPref = ['outdoor', 'indoor', 'either'][i % 3]; if(s.locationPref !== 'either') s.location = s.locationPref; }
+      if(i % 4 === 0) s.favorited = true; sess.push(s);
+    }
+    sb.fn('nav', 'sessions'); return {sb, sess};
+  },
+  ids(list){ return list.map(s => s.id); },
+  rowIds(sb, scope){ return sb.qa((scope || '#content') + ' .so-row').map(r => r.dataset.sid); },
+  sectionOf(sb, title){ const h = sb.qa('#content .ss-h2').find(x => x.textContent.trim().toLowerCase() === title.toLowerCase()); return h ? h.closest('.ss-section') : null; },
+  openLibrary(sb){ sb.fn('openSessionsAll'); },
+});
+add('SS-025', C.core, 'Sessions page', 'Sessions page: Continue (only with a draft), Recent Sessions = the 5 most recently USED newest first, Favorites only when there are some, My Sessions entry, Templates - and no extra Start New Session button.', {
+  severity: 'Major', tags: ['saved', 'nav', 'templates'], timeout: 30000, steps: ['Open Sessions with 8 saved sessions.'], exp: 'Sections in order; 5 recent rows sorted by last used; See All Sessions opens the library.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 8); const h2 = () => sb.qa('#content .ss-h2').map(x => x.textContent.trim());
+    assert(!h2().includes('Continue Session'), 'Continue Session shown with no draft'); assert(!/Start New Session/i.test(sb.text('#content')), 'A Start New Session button is on the Sessions page');
+    const want = sb.fn('sortSessions', sess, 'used').slice(0, 5).map(s => s.id); const recent = L.sectionOf(sb, 'Recent Sessions'); QA.deepEq(sb.qa('.so-row', recent).map(r => r.dataset.sid), want, 'Recent Sessions order'); eq(sb.qa('.so-row', recent).length, 5, 'Recent rows');
+    sess.forEach(s => { s.favorited = false; }); sb.fn('render'); assert(!h2().includes('Favorites'), 'Empty Favorites section shown'); sess[3].favorited = true; sb.fn('render'); assert(h2().includes('Favorites'), 'Favorites section missing'); eq(sb.qa('.so-row', L.sectionOf(sb, 'Favorites')).length, 1, 'Favorites rows');
+    ['My Sessions', 'Templates'].forEach(t => assert(h2().includes(t), 'Missing section ' + t)); sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('render'); assert(h2()[0] === 'Continue Session', 'Continue Session missing with a draft');
+    sb.click('See All Sessions', '#content'); eq(sb.S.sessionsViewAll, true, 'Library open'); eq(sb.qa('#content .so-row').length, 8, 'All sessions in the library (older ones are not hidden)');
+  }});
+add('SS-026', C.data, 'Saved Session data', 'createdAt, updatedAt, lastUsedAt and the session date are separate: opening or copying updates "last used" only, editing updates "last edited" too, and merely showing the list changes nothing.', {
+  severity: 'Critical', tags: ['saved', 'persistence', 'save'], timeout: 30000, steps: ['Save, open, edit and copy a session.'], exp: 'Each date moves only when it should; the copy is a separate session.',
+  async run(env){
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const t = () => [s.createdAt, s.updatedAt, s.lastUsedAt];
+    assert(s.createdAt && s.updatedAt && s.lastUsedAt && /^\d{4}-\d{2}-\d{2}$/.test(s.practiceDate), 'A date field is missing on a new session'); eq(s.updatedAt, s.createdAt, 'updatedAt at creation'); eq(s.lastUsedAt, s.createdAt, 'lastUsedAt at creation');
+    s.createdAt -= 100000; s.updatedAt = s.createdAt; s.lastUsedAt = s.createdAt; const day = s.practiceDate; const before = t();
+    sb.fn('nav', 'sessions'); sb.fn('openSessionsAll'); sb.fn('render'); QA.deepEq(t(), before, 'Showing the Sessions list changed a date');
+    sb.fn('openSessionDetail', s.id); assert(s.lastUsedAt > before[2], 'Opening did not update lastUsedAt'); eq(s.updatedAt, before[1], 'Opening changed updatedAt'); eq(s.createdAt, before[0], 'Opening changed createdAt'); eq(s.practiceDate, day, 'Opening changed the session date');
+    const used = s.lastUsedAt; await sb.sleep(5); sb.fn('renameSavedSession', s.id, 'Edited Name'); assert(s.updatedAt > before[1] && s.lastUsedAt > used, 'Editing did not update updatedAt + lastUsedAt'); eq(s.createdAt, before[0], 'Editing changed createdAt');
+    const used2 = s.lastUsedAt, edited = s.updatedAt; await sb.sleep(5); sb.fn('requestDuplicateSession', s.id); sb.fn('confirmDuplicateSession'); assert(s.lastUsedAt > used2, 'Copy Session did not count as using the original'); eq(s.updatedAt, edited, 'Copy changed the original\'s updatedAt'); eq(sb.S.savedSessions.length, 1, 'The copy was saved before the coach saved it');
+    sb.fn('completeSession', {skipConfirm: true}); const copy = sb.S.savedSessions[1]; assert(copy && copy.id !== s.id && copy.createdAt >= s.lastUsedAt && copy.name !== s.name, 'The copy is not a separate new session'); eq(copy.updatedAt, copy.createdAt, 'Copy updatedAt'); eq(s.name, 'Edited Name', 'The original was overwritten');
+    const legacy = {id: 'L1', createdAt: 1000}; eq(sb.fn('sessionUsedAt', legacy), 1000, 'Fallback to createdAt'); legacy.updatedAt = 2000; eq(sb.fn('sessionUsedAt', legacy), 2000, 'Fallback to updatedAt'); legacy.lastUsedAt = 3000; eq(sb.fn('sessionUsedAt', legacy), 3000, 'lastUsedAt wins');
+  }});
+add('SS-027', C.core, 'My Sessions library', 'My Sessions library: every sort option orders correctly and only changes the view; search matches name, focus area and age group; filters (including several at once) really narrow the list, and the Filter button shows how many are on.', {
+  smoke: false, severity: 'Major', tags: ['saved'], timeout: 40000, steps: ['Open My Sessions; try each sort, a search, and two filters together.'], exp: 'Results always equal the independent calculation; saved order untouched.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 24); L.openLibrary(sb); const stored = L.ids(sb.S.savedSessions).join();
+    eq(sb.S.sessionsSort, 'used', 'Default sort'); eq(L.rowIds(sb).length, 24, 'All 24 listed');
+    const day = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.practiceDate); return new Date(+m[1], +m[2] - 1, +m[3]).getTime(); };
+    const exp = {used: (a, b) => (b.lastUsedAt - a.lastUsedAt), saved: (a, b) => b.createdAt - a.createdAt, oldest: (a, b) => a.createdAt - b.createdAt, date: (a, b) => day(b) - day(a), name: (a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: 'base', numeric: true})};
+    for(const k of ['used', 'saved', 'oldest', 'date', 'name']){ sb.fn('setSessionsSort', k); const want = sess.slice().sort((a, b) => exp[k](a, b) || b.createdAt - a.createdAt); QA.deepEq(L.rowIds(sb), L.ids(want), 'Order for sort "' + k + '"'); }
+    eq(L.ids(sb.S.savedSessions).join(), stored, 'Sorting changed the stored order'); sb.fn('setSessionsSort', 'used');
+    const focusTitle = id => sb.e('FOCUS_AREAS').find(f => f.id === id).title.toLowerCase();
+    const searchIds = q => { sb.fn('clearSessionsSearch'); sb.q('#soSearch').value = q; sb.fn('onSessionsSearch', q); sb.fn('refreshSessionsLibrary'); return L.rowIds(sb).sort(); };
+    const blob = s => [s.name, s.focusArea ? focusTitle(s.focusArea) : '', s.ageGroup || '', ({technical: 'more technical', balanced: 'balanced', game_based: 'more game-based'})[s.sessionStyle] || ''].join('|').toLowerCase(); const words = q => q.split(/\s+/); const exp2 = q => sess.filter(s => words(q).every(w => blob(s).includes(w))).map(s => s.id).sort();
+    QA.deepEq(searchIds('session c'), exp2('session c'), 'Search by name (every word must match)'); QA.deepEq(searchIds('u10'), exp2('u10'), 'Search by age'); assert(exp2('u10').length > 0, 'Test data has no U10 sessions'); QA.deepEq(searchIds('defend together'), exp2('defend together'), 'Search by focus area'); assert(exp2('defend together').length > 0, 'Test data has no Defend Together sessions'); eq(searchIds('zzzqqq').length, 0, 'Nonsense search'); searchIds('');
+    const nf = f => { sb.S.sessionsFilters = Object.assign({age: '', focus: '', duration: '', location: '', style: '', fav: false}, f); sb.fn('render'); return L.rowIds(sb).sort(); };
+    QA.deepEq(nf({age: 'U9'}), sess.filter(s => s.ageGroup === 'U9').map(s => s.id).sort(), 'Age filter'); QA.deepEq(nf({focus: 'keep_the_ball'}), sess.filter(s => s.focusArea === 'keep_the_ball').map(s => s.id).sort(), 'Focus filter'); QA.deepEq(nf({duration: '90'}), sess.filter(s => s.targetDuration === 90).map(s => s.id).sort(), 'Duration filter');
+    QA.deepEq(nf({location: 'either'}), sess.filter(s => s.locationPref === 'either').map(s => s.id).sort(), 'Either filter'); QA.deepEq(nf({location: 'indoor'}), sess.filter(s => s.locationPref !== 'either' && s.location === 'indoor').map(s => s.id).sort(), 'Indoor filter'); QA.deepEq(nf({style: 'balanced'}), sess.filter(s => s.sessionStyle === 'balanced').map(s => s.id).sort(), 'Style filter'); QA.deepEq(nf({fav: true}), sess.filter(s => s.favorited).map(s => s.id).sort(), 'Favorites filter');
+    const multi = nf({age: 'U10', duration: '60', fav: true}); QA.deepEq(multi, sess.filter(s => s.ageGroup === 'U10' && s.targetDuration === 60 && s.favorited).map(s => s.id).sort(), 'Three filters at once'); assert(/Filter\s*·\s*3/.test(sb.text('.so-ctl-filter')), 'Filter button does not show the count: ' + sb.text('.so-ctl-filter'));
+    sb.S.sessionsFilters.age = 'U10'; sb.S.sessionsFilters.duration = ''; sb.S.sessionsFilters.fav = false; sb.fn('openSessionsFilter'); sb.fn('setSessionsFilterDraft', 'focus', 'play_forward'); sb.fn('applySessionFilters'); QA.deepEq(L.rowIds(sb).sort(), sess.filter(s => s.ageGroup === 'U10' && s.focusArea === 'play_forward').map(s => s.id).sort(), 'Filter sheet Apply'); sb.fn('openSessionsFilter'); sb.fn('clearAllSessionFilters'); eq(L.rowIds(sb).length, 24, 'Clear All');
+  }});
+add('SS-028', C.use, 'My Sessions library', 'Empty states: no saved sessions ("You haven\'t saved any sessions yet" + Create Session), no search / filter results ("No sessions found" + Clear Search / Clear Filters that work), and no empty Favorites section.', {
+  severity: 'Major', tags: ['saved'], timeout: 30000, steps: ['Open My Sessions with nothing saved; then search for nonsense and filter to nothing.'], exp: 'Helpful messages with working buttons.',
+  async run(env){
+    const e = await env.boot(); e.fn('nav', 'sessions'); e.fn('openSessionsAll'); assert(e.has("You haven't saved any sessions yet", '#content'), 'No empty-library message'); assert(e.canClick('Create Session', '#content'), 'No Create Session button'); e.click('Create Session', '#content'); eq(e.screen, 'practiceSetup', 'Create Session destination'); e.destroy();
+    const {sb} = await L.library(env, 6); L.openLibrary(sb); sb.q('#soSearch').value = 'zzzqq'; sb.fn('onSessionsSearch', 'zzzqq'); sb.fn('refreshSessionsLibrary'); assert(sb.has('No sessions found', '#content'), 'No "No sessions found"'); assert(sb.canClick('Clear Search', '#content'), 'No Clear Search'); assert(!sb.canClick('Clear Filters', '#content'), 'Clear Filters offered with no filters');
+    sb.S.sessionsFilters.age = 'U12'; sb.S.sessionsFilters.focus = 'keep_the_ball'; sb.S.sessionsFilters.style = 'game_based'; sb.fn('render'); assert(sb.canClick('Clear Filters', '#content'), 'No Clear Filters'); sb.click('Clear Search', '#content'); sb.click('Clear Filters', '#content'); eq(sb.qa('#content .so-row').length, 6, 'After clearing both');
+  }});
+add('SS-029', C.core, 'Favorites', 'Favorites use the existing bookmark on the same session record: one tap toggles it, it persists after reopening, appears in the Favorites section and filter, and is not copied anywhere.', {
+  severity: 'Major', tags: ['saved', 'persistence'], timeout: 30000, steps: ['Tap a bookmark, reopen the app, filter to Favorites.'], exp: 'Same record flagged; listed in Favorites; remembered.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 5); sess.forEach(s => { s.favorited = false; }); sb.fn('openSessionsAll'); const row = sb.q('#content .so-row'); const id = row.dataset.sid; sb.clickSel(`#content .so-row[data-sid="${id}"] .so-fav`); const s = sb.S.savedSessions.find(x => x.id === id);
+    eq(s.favorited, true, 'Record not flagged'); assert(!/heart/i.test(sb.html('#content .so-row')), 'A heart icon is used'); sb.fn('toggleSessionFavorite', id); eq(s.favorited, false, 'Second tap'); sb.fn('toggleSessionFavorite', id);
+    eq(sb.S.savedSessions.filter(x => x.favorited).length, 1, 'Exactly one flagged record'); eq(sb.S.savedSessions.length, 5, 'A duplicate record was created'); sb.S.sessionsFilters.fav = true; sb.fn('render'); QA.deepEq(L.rowIds(sb), [id], 'Favorites filter');
+    sb.flushState(); const sb2 = await sb.reboot(); eq(sb2.S.savedSessions.find(x => x.id === id).favorited, true, 'Favorite lost after reopening'); sb2.S.sessionsFilters = {age: '', focus: '', duration: '', location: '', style: '', fav: false}; sb2.fn('nav', 'sessions'); eq(sb2.qa('.so-row', L.sectionOf(sb2, 'Favorites')).length, 1, 'Favorites section after reopening');
+  }});
+add('SS-030', C.core, 'My Sessions library', 'Deleting a session (with confirmation) removes it from Recent, Favorites, My Sessions, search results and filtered results, and returns to the Sessions screens.', {
+  severity: 'Critical', tags: ['saved'], timeout: 30000, steps: ['Delete a favourite session from its detail page.'], exp: 'Gone from every list; no stale rows.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 6); const s = sess[4]; s.favorited = true; s.name = 'Zebra Target'; s.ageGroup = 'U11'; sb.fn('openSessionsAll'); const id = s.id; sb.S.sessionsQuery = 'zebra'; sb.S.sessionsFilters.age = 'U11'; sb.fn('render'); assert(L.rowIds(sb).includes(id), 'Test session not found before deleting');
+    sb.fn('openSessionDetail', id); sb.fn('requestDeleteSession', id); eq(sb.S.confirmDeleteSessionId, id, 'No confirmation'); eq(sb.S.savedSessions.length, 6, 'Deleted without confirming'); sb.fn('confirmDeleteSessionNow'); eq(sb.screen, 'sessions', 'Screen after delete'); eq(sb.S.savedSessions.length, 5, 'Not deleted');
+    assert(!L.rowIds(sb).includes(id) && !sb.html('#content').includes(id), 'Still in the library / filtered / search results'); sb.fn('resetSessionsLibraryView'); sb.fn('closeSessionsAll'); assert(!sb.html('#content').includes(id), 'Still on the Sessions page (Recent / Favorites)'); sb.fn('openSessionsAll'); assert(!L.rowIds(sb).includes(id), 'Still in My Sessions');
+  }});
+add('SS-031', C.sec, 'My Sessions library', 'Community stays separate: other coaches\' sessions never appear in My Sessions / Recent / Favorites, and the Templates section does not change when switching My Sessions / Community.', {
+  severity: 'Major', tags: ['saved', 'privacy', 'templates'], timeout: 30000, steps: ['Add sessions from another coach, switch toggles.'], exp: 'My views contain only mine; Templates identical in both modes.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 4); const other = JSON.parse(JSON.stringify(sess[0])); other.id = 'OTHER1'; other.createdBy = 'Another Coach'; other.name = 'Their Shared Session'; other.visibility = 'shared'; other.favorited = true; sb.S.savedSessions.push(other); sb.fn('nav', 'sessions');
+    assert(!sb.html('#content').includes('OTHER1'), 'Another coach\'s session is in My Sessions / Recent / Favorites'); const tmpl = () => L.sectionOf(sb, 'Templates').textContent.replace(/\s+/g, ' '); const mine = tmpl(); sb.fn('setSessionsViewMode', 'community'); assert(sb.html('#content').includes('OTHER1'), 'Community does not show the shared session'); eq(tmpl(), mine, 'Templates changed with the Community toggle');
+    sb.fn('setSessionsViewMode', 'mine'); sb.fn('openSessionsAll'); assert(!L.rowIds(sb).includes('OTHER1'), 'Library lists another coach\'s session'); eq(sb.qa('#content .so-row').length, 4, 'Library count');
+  }});
+add('SS-032', C.sec, 'My Sessions library', 'Scale: with 300 saved sessions the library draws, searches, filters and sorts quickly (each under 150 ms) and the Sessions page still shows only 5 recent rows.', {
+  severity: 'Major', tags: ['saved', 'performance'], timeout: 90000, steps: ['Create 300 sessions and use the library.'], exp: 'Fast; nothing hidden.',
+  async run(env){
+    const {sb} = await L.library(env, 300); const ms = fn => { const t0 = performance.now(); fn(); return Math.round(performance.now() - t0); }; const out = {};
+    out.hub = ms(() => sb.fn('nav', 'sessions')); eq(sb.qa('#content .so-row').length <= 10, true, 'Hub rows'); out.open = ms(() => sb.fn('openSessionsAll')); eq(sb.qa('#content .so-row').length, 300, 'Library rows');
+    out.search = ms(() => { sb.q('#soSearch').value = 'session a'; sb.fn('onSessionsSearch', 'session a'); sb.fn('refreshSessionsLibrary'); }); out.sort = ms(() => sb.fn('setSessionsSort', 'name')); out.filter = ms(() => { sb.S.sessionsFilters.age = 'U10'; sb.S.sessionsFilters.duration = '75'; sb.fn('render'); });
+    const worst = Math.max(...Object.values(out)); const msg = Object.entries(out).map(([k, v]) => `${k} ${v}ms`).join(', '); if(worst > 400) throw new QA.Fail('Too slow: ' + msg); if(worst > 150) QA.partial('Slowish: ' + msg); return msg;
+  }});
+add('SS-033', C.data, 'Persistence', 'All session dates, favorites and the chosen sort survive closing and reopening the app, and a sort change reorders the view without reordering the saved data.', {
+  severity: 'Critical', tags: ['saved', 'persistence'], timeout: 30000, steps: ['Choose a sort, favourite one, reopen.'], exp: 'Identical fields; same sort.',
+  async run(env){
+    const {sb, sess} = await L.library(env, 6); sb.fn('openSessionsAll'); sb.fn('setSessionsSort', 'name'); const snap = JSON.stringify(sb.S.savedSessions.map(s => [s.id, s.createdAt, s.updatedAt, s.lastUsedAt, s.practiceDate, s.favorited, s.locationPref]));
+    sb.flushState(); const sb2 = await sb.reboot(); eq(JSON.stringify(sb2.S.savedSessions.map(s => [s.id, s.createdAt, s.updatedAt, s.lastUsedAt, s.practiceDate, s.favorited, s.locationPref])), snap, 'Session fields after reopening'); eq(sb2.S.sessionsSort, 'name', 'Sort preference after reopening');
+    sb2.fn('nav', 'sessions'); sb2.fn('openSessionsAll'); QA.deepEq(L.rowIds(sb2), L.ids(sb2.fn('sortSessions', sb2.S.savedSessions, 'name')), 'Library order after reopening');
+  }});
+add('SS-034', C.vis, 'My Sessions library', 'Phone touch targets: search box, Sort, Filter and each bookmark are at least 44px tall/wide, rows are generous, and the library does not scroll sideways at 390 and 320px.', {
+  type: 'Hybrid', severity: 'Minor', tags: ['saved', 'visual', 'responsive'], timeout: 30000, steps: ['Open My Sessions on a phone.'], exp: '48px controls; rows 60px+; no sideways scroll. (A person should still try them with a thumb.)',
+  async run(env){
+    for(const w of [390, 320]){ const {sb} = await L.library(env, 8, {width: w}); sb.fn('openSessionsAll'); const h = sel => sb.q(sel).getBoundingClientRect(); assert(h('.so-search-input').height >= 44, 'Search height ' + h('.so-search-input').height); assert(h('.so-ctl').height >= 44 && h('.so-ctl-filter').height >= 44, 'Sort/Filter height'); const fav = h('.so-fav'); assert(fav.width >= 44 && fav.height >= 44, 'Bookmark ' + fav.width + 'x' + fav.height); assert(h('.so-row').height >= 60, 'Row height ' + h('.so-row').height); const c = sb.q('#content'); assert(c.scrollWidth - c.clientWidth <= 1, `Sideways scroll at ${w}px`); sb.destroy(); }
   }});
 
 QA.register(tests);

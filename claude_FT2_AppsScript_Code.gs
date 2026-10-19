@@ -174,7 +174,8 @@ const SESSIONS_HEADERS = [
   'id', 'name', 'createdBy', 'createdAt', 'totalMin', 'exCount', 'targetDuration',
   'practiceDate', 'location', 'templateId', 'rating', 'comment', 'favorited',
   'visibility', 'phasesJson', 'updatedAt',
-  'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'startTime'
+  'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'startTime',
+  'lastUsedAt', 'locationPref'   // lastUsedAt = when the coach last opened / copied / edited it; locationPref = Indoor / Outdoor / Either as chosen in Custom Session
 ];
 
 // A start time is stored as plain "HH:MM" text, but Sheets likes to turn "17:00" into a real time-of-day cell, which then
@@ -333,7 +334,7 @@ function upsertSession(session, requestingCoach) {
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(session.shareToken || ''))) session.shareToken = '';
   const row = SESSIONS_HEADERS.map(h => {
     if (h === 'phasesJson') return JSON.stringify(session.phases || []);
-    if (h === 'updatedAt') return Date.now();
+    if (h === 'updatedAt') return Number(session.updatedAt) || Date.now();   // the app sends the time of the last real EDIT; a save without one is stamped now
     return session[h] !== undefined && session[h] !== null ? session[h] : '';
   });
   const destRow = rowIndex === -1 ? sheet.getLastRow() + 1 : rowIndex;

@@ -1915,6 +1915,40 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .ss-viewall svg{width:15px;height:15px;}
 .ss-empty{margin-top:12px;padding:16px;border:1px dashed var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink-soft);font-size:var(--fs-base);line-height:1.45;}
 .ss-empty-title{font-weight:700;color:var(--ink);margin-bottom:2px;}
+.hide{display:none !important;}
+/* ---- My Sessions library + compact session rows ---- */
+.so-list{overflow:hidden;}
+.so-row{display:flex;align-items:center;gap:4px;padding:4px 4px 4px 14px;min-height:72px;cursor:pointer;}
+.so-row + .so-row{border-top:1px solid var(--line);}
+.so-row:active{background:var(--chalk-dim);}
+.so-body{flex:1;min-width:0;padding:6px 0;}
+.so-name{font-size:var(--fs-md);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.so-meta{font-size:var(--fs-sm);color:var(--ink);margin-top:1px;font-weight:600;}
+.so-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.so-fav{flex-shrink:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-soft);}
+.so-fav svg{width:22px;height:22px;}
+.so-fav.on{color:var(--turf);}
+.so-fav.on svg g,.so-fav.on svg path{fill:currentColor;}
+.so-search{position:relative;margin-top:14px;}
+.so-search-input{width:100%;height:48px;padding:0 44px 0 42px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink);font-family:inherit;font-size:var(--fs-input,16px);font-weight:600;outline:none;-webkit-appearance:none;appearance:none;}
+.so-search-input:focus{border-color:var(--turf);box-shadow:var(--ring-focus);}
+.so-search-input::-webkit-search-cancel-button{display:none;}
+.so-search-ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);display:flex;color:var(--ink-soft);pointer-events:none;}
+.so-search-ic svg{width:19px;height:19px;}
+.so-search-x{position:absolute;right:2px;top:2px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-soft);}
+.so-search-x svg{width:16px;height:16px;}
+.so-controls{display:flex;gap:8px;margin-top:10px;}
+.so-ctl{flex:1;min-width:0;height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg-surface);color:var(--ink);font-family:inherit;}
+.so-ctl svg{width:17px;height:17px;flex-shrink:0;color:var(--ink-soft);}
+.so-ctl-k{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:700;}
+.so-ctl-v{font-size:var(--fs-base);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:left;}
+.so-ctl-filter{flex:0 0 auto;min-width:112px;}
+.so-ctl-filter.on{border-color:var(--ink);background:var(--chalk-dim);}
+.so-count{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;margin:12px 2px 8px;}
+.so-empty-actions{display:flex;gap:10px;justify-content:center;margin-top:12px;}
+.so-empty-actions .btn{flex:0 1 160px;}
+.more-item.so-sort-opt.on{font-weight:800;}
+.so-sheet-footer{position:sticky;bottom:0;background:var(--bg-surface);padding:12px 0 2px;margin-top:10px;}   /* Apply / Clear All stay reachable while the long filter list scrolls */
 
 
 /* ---------- Create / Edit Template ---------- */
@@ -7433,6 +7467,7 @@ function normalizeCloudSession(c){
     phases: Array.isArray(c.phases) ? c.phases : [],
     practiceDate: c.practiceDate || '', startTime: c.startTime || '', location: c.location || 'outdoor',
     templateId: c.templateId || null,
+    updatedAt: Number(c.updatedAt) || 0, lastUsedAt: Number(c.lastUsedAt) || 0, locationPref: c.locationPref || '',
     rating: Number(c.rating) || 0, comment: c.comment || '', favorited: !!c.favorited,
     visibility: c.visibility === 'private' ? 'private' : 'shared',
     shareToken: c.shareToken ? String(c.shareToken) : '',
@@ -7457,7 +7492,14 @@ async function syncSessionsFromSheet(){
     const merged = cloud.map(c => {
       seenIds.add(String(c.id));
       const local = localById.get(String(c.id));
-      return (local && local._syncPending) ? local : normalizeCloudSession(c);
+      if(local && local._syncPending) return local;
+      const n = normalizeCloudSession(c);
+      if(local){     // keep what this device knows when the sheet doesn't (an older Apps Script drops these columns, or stamps updatedAt itself)
+        n.lastUsedAt = Math.max(n.lastUsedAt || 0, local.lastUsedAt || 0);
+        if(local.updatedAt) n.updatedAt = local.updatedAt;
+        if(!n.locationPref && local.locationPref) n.locationPref = local.locationPref;
+      }
+      return n;
     });
     state.savedSessions.forEach(s => { if(!seenIds.has(String(s.id))) merged.push(s); }); // local-only, never yet synced (e.g. saved while offline)
     state.savedSessions = merged;
@@ -7475,8 +7517,9 @@ async function syncSessionsFromSheet(){
 // row (see upsertSession() server-side) -- this one function covers create, rename, rate,
 // favorite, visibility, and add/remove-exercise, since every one of those already ends with the
 // caller mutating the local session object and calling render().
-async function pushSessionToSheet(session){
-  session._syncPending = true;
+async function pushSessionToSheet(session, opts){
+  const quiet = !!(opts && opts.quiet);      // quiet = a background bookkeeping save (e.g. "last used"): no Not-synced flag, no redraw
+  if(!quiet) session._syncPending = true;
   if(!APPS_SCRIPT_URL) return;
   try{
     const {_syncPending, ...payload} = session;
@@ -7489,11 +7532,11 @@ async function pushSessionToSheet(session){
     const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'upsert', session:payload, requestingCoach: state.coachName}) });
     const data = await res.json();
     if(!data || !data.ok) throw new Error((data && data.error) || 'Save did not confirm');
-    session._syncPending = false;
+    if(!quiet) session._syncPending = false;
   } catch(err){
     console.warn('Session push failed, will retry next sync:', err.message);
   }
-  render();
+  if(!quiet) render();
 }
 async function deleteSessionFromSheet(id){
   if(!APPS_SCRIPT_URL) return;
@@ -9075,6 +9118,11 @@ const state = {
   validValuesSource: 'unknown',         // 'unknown' | 'live' | 'offline' -- only synced lazily, the first time Settings > Tag Valid Values is opened
   viewingValidValues: false,            // whether Settings is showing the Tag Valid Values sub-page
   viewingTrainingSettings: false,       // whether Settings is showing the Training Session Settings sub-page
+  sessionsQuery: '',             // My Sessions library: the search box text
+  sessionsSort: 'used',          // My Sessions library sort (a view preference, remembered): used | saved | oldest | date | name
+  sessionsFilters: {age:'', focus:'', duration:'', location:'', style:'', fav:false},   // My Sessions library filters
+  sessionsFilterSheet: null,     // the filter pop-up's working copy while it is open (null = closed)
+  sessionsSortSheet: false,
   sessionsViewAll: false,        // Sessions: false = the hub (Continue / Recent / Templates), true = the full saved-session list
   templatesOrigin: null,         // 'sessions' when the template library/editor was opened from Sessions (so Back returns there)
   viewingTemplatesList: false,          // whether Settings is showing the Training Session Templates (practice-template library) sub-page
@@ -9269,7 +9317,7 @@ function renderBottomnav(){
   el.innerHTML = `
     ${item('home','Home',ICONS.homeFilled,"nav('home')")}
     ${item('exercises','Exercises',ICONS.ballOutline,"nav('exercises', {fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false, editingSavedSessionId:null, pickingPhase:null, sectionFilter:null, quickFilterValue:null})")}
-    ${item('sessions','Sessions',ICONS.doc,"nav('sessions',{sessionsViewAll:false, viewingTemplatesList:false, editingTemplateId:null, templatesOrigin:null});syncSessionsFromSheet()")}
+    ${item('sessions','Sessions',ICONS.doc,"resetSessionsLibraryView();nav('sessions',{sessionsViewAll:false, viewingTemplatesList:false, editingTemplateId:null, templatesOrigin:null});syncSessionsFromSheet()")}
     ${item('settings','Settings',ICONS.gear,"nav('settings',{templatesOrigin:null, ...(state.templatesOrigin==='sessions' ? {viewingTemplatesList:false, editingTemplateId:null} : {})})")}
   `;
 }
@@ -11745,6 +11793,8 @@ function renderOverlay(){
   html += savedSheetHtml();
   html += sessionMoreSheetHtml();
   html += saveFirstSheetHtml();
+  html += sessionsFilterSheetHtml();
+  html += sessionsSortSheetHtml();
   html += shareSheetHtml();
   html += shareFlashHtml();
   html += printSheetHtml();
@@ -12946,7 +12996,7 @@ const savedDragCtl = makeDragReorderController({
   },
   onDrop(){
     const s = state.savedSessions.find(x => x.id === state.viewingSessionId);
-    if(s && s.createdBy === state.coachName) pushSessionToSheet(s);
+    if(s && s.createdBy === state.coachName){ touchSession(s, true); pushSessionToSheet(s); }
   },
 });
 function savedExGripDown(e, key, id){ savedDragCtl.down(e, key, id); }
@@ -13154,9 +13204,11 @@ function completeSession(opts){
   const id = 'S' + Date.now() + Math.random().toString(36).slice(2,7);
   const wantedName = state.sessionName.trim() || `${dayName()} Session — ${state.savedSessions.length+1}`;
   const name = uniqueSessionName(wantedName);
+  const now = Date.now();
   const newSession = {
     id, name,
-    totalMin: total, exCount: count, createdAt: Date.now(), createdBy: state.coachName,
+    totalMin: total, exCount: count, createdAt: now, updatedAt: now, lastUsedAt: now, createdBy: state.coachName,   // created / last edited / last used -- three different things
+    locationPref: (state.csDraftGenerated && state.csReviewCfg && state.csReviewCfg.location) || '',   // 'either' is only known for a Custom Session
     targetDuration: state.targetDuration, phases: phasesSnapshot,
     practiceDate: state.practiceDate, startTime: state.practiceStartTime || '', location: state.practiceLocation, templateId: state.activeTemplateId,
     rating: 0, comment: '', favorited: false, visibility: 'shared',
@@ -13300,6 +13352,8 @@ function confirmDuplicateSession(){
   const id = state.confirmDuplicateSessionId;
   state.confirmDuplicateSessionId = null;
   if(currentTotalMinutes().count > 0) resetBuilderDraft();
+  const orig = state.savedSessions.find(x => x.id === id);
+  if(orig && orig.createdBy === state.coachName) markSessionUsed(orig);      // Copy Session is a meaningful use of the original (the copy itself is saved later, as a new session)
   duplicateSessionToBuilder(id);
 }
 function duplicateSessionToBuilder(id){
@@ -13717,7 +13771,12 @@ function renderPracticeSetup(){
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
-function openSessionDetail(id){ state.editingSessionDetail = false; nav('sessionDetail', {viewingSessionId:id}); prefetchShareLink(id); }
+function openSessionDetail(id){
+  state.editingSessionDetail = false;
+  const s = state.savedSessions.find(x => x.id === id);
+  if(s && s.createdBy === state.coachName) markSessionUsed(s);      // opening one of your own sessions counts as using it (the Sessions list merely drawing does not)
+  nav('sessionDetail', {viewingSessionId:id}); prefetchShareLink(id);
+}
 // Save Changes (bottom button / header check): commits a title still being typed, syncs the session and leaves edit mode. Everything else
 // (exercises added / removed / reordered, length, rating) is already stored the moment it is changed.
 function saveSavedSessionChanges(){
@@ -13740,7 +13799,7 @@ function renameSavedSession(id, val){
     if(v && v !== s.name){
       const u = uniqueSessionName(v, s.id);
       if(u !== v) note = `Renamed to “${u}” — that name was taken`;
-      s.name = u; pushSessionToSheet(s);
+      s.name = u; touchSession(s, true); pushSessionToSheet(s);
     }
   }
   render();
@@ -13754,7 +13813,7 @@ function setSavedSessionStartTime(id, val){
 function setSavedSessionDuration(id, val){
   const s = state.savedSessions.find(s=>s.id===id);
   const n = parseInt(val, 10);
-  if(s && !isNaN(n) && n>0){ s.targetDuration = n; pushSessionToSheet(s); }
+  if(s && !isNaN(n) && n>0){ s.targetDuration = n; touchSession(s, true); pushSessionToSheet(s); }
   render();
 }
 function toggleSessionFavorite(id){
@@ -13792,7 +13851,7 @@ function removeExerciseFromSavedSession(sessionId, exerciseId, savedName){
   });
   s.phases = s.phases.filter(p => p.exercises.length);
   recomputeSavedSessionStats(s);
-  if(removedName){ showToast(`Removed "${removedName}" from ${s.name}`); pushSessionToSheet(s); }
+  if(removedName){ showToast(`Removed "${removedName}" from ${s.name}`); touchSession(s, true); pushSessionToSheet(s); }
   render();
 }
 function addExerciseToSavedSession(sessionId, exerciseId){
@@ -13808,6 +13867,7 @@ function addExerciseToSavedSession(sessionId, exerciseId){
   }
   target.exercises.push({id: ex.id, name: ex.name, duration: ex.duration||10, technicalScore: ex.technicalScore ?? null, tacticalScore: ex.tacticalScore ?? null, physicalScore: ex.physicalScore ?? null, cognitiveScore: ex.cognitiveScore ?? null, hasScoreSnapshot: true});
   recomputeSavedSessionStats(s);
+  touchSession(s, true);
   showToast(`Added "${ex.name}" to ${s.name}`);
   render();
   pushSessionToSheet(s);
@@ -13884,7 +13944,7 @@ function resumeDraftFromSessions(){
   nav((state.csDraftGenerated && state.csReviewCfg) ? 'customSessionReview' : 'build');
 }
 function openSessionsAll(){ state.sessionsViewAll = true; render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
-function closeSessionsAll(){ state.sessionsViewAll = false; render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
+function closeSessionsAll(){ state.sessionsViewAll = false; resetSessionsLibraryView(); render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
 function openMyTemplatesFromSessions(){
   nav('settings', {viewingTemplatesList:true, editingTemplateId:null, templatesOrigin:'sessions'});
 }
@@ -13892,13 +13952,116 @@ function createTemplateFromSessions(){
   teStartDraft(null);
   nav('settings', {viewingTemplatesList:true, editingTemplateId:state.templateDraft.id, templatesOrigin:'sessions'});
 }
+/* ============ SAVED SESSIONS ORGANIZATION ============
+   A coach's saved sessions are organised automatically (Recently Used, Recently Saved, Session Date, Name) and found with Search and Filters;
+   the one thing the coach controls by hand is Favorites (the existing bookmark on the session record: `favorited`). No folders.
+   Three different dates live on a session: createdAt (first saved), updatedAt (last EDITED), lastUsedAt (last opened / copied / edited) --
+   plus practiceDate, the day the coach intends to run it. Sorting is only ever a view: s order in state.savedSessions never changes. */
+const SESSION_SORTS = [['used','Recently Used'], ['saved','Recently Saved'], ['oldest','Oldest'], ['date','Session Date'], ['name','Name A–Z']];
+const SO_RECENT_COUNT = 5;
+const SO_FILTER_SECTIONS = [
+  {key:'age', label:'Age Group', opts:() => CS_AGE_GROUPS.map(a => [a, a])},
+  {key:'focus', label:'Focus Area', opts:() => FOCUS_AREAS.map(f => [f.id, f.title])},
+  {key:'duration', label:'Duration', opts:() => CS_DURATIONS.map(d => [String(d), d + ' min'])},
+  {key:'location', label:'Location', opts:() => [['indoor','Indoor'], ['outdoor','Outdoor'], ['either','Either']]},
+  {key:'style', label:'Session Style', opts:() => CS_STYLES.map(x => [x[0], x[1]])},
+];
+function emptySessionFilters(){ return {age:'', focus:'', duration:'', location:'', style:'', fav:false}; }
+function sessionUsedAt(s){ return Number(s.lastUsedAt) || Number(s.updatedAt) || Number(s.createdAt) || 0; }   // lastUsedAt, else updatedAt, else createdAt -- never invented
+function touchSession(s, edited){ const now = Date.now(); if(edited) s.updatedAt = now; s.lastUsedAt = now; }
+const soUsedTimers = {};
+function markSessionUsed(s){
+  touchSession(s, false);
+  clearTimeout(soUsedTimers[s.id]);
+  soUsedTimers[s.id] = setTimeout(() => { pushSessionToSheet(s, {quiet:true}); }, 1500);     // saved quietly in the background so other devices learn it too
+}
+function sessionDateValue(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s.practiceDate || ''));
+  return m ? new Date(+m[1], +m[2]-1, +m[3]).getTime() : (Number(s.createdAt) || 0);       // no session date: fall back to the day it was saved
+}
+function sortSessions(list, sort){
+  const byCreated = (x, y) => (Number(y.createdAt) || 0) - (Number(x.createdAt) || 0);
+  const cmp = ({
+    used: (x, y) => sessionUsedAt(y) - sessionUsedAt(x),
+    saved: byCreated,
+    oldest: (x, y) => (Number(x.createdAt) || 0) - (Number(y.createdAt) || 0),
+    date: (x, y) => sessionDateValue(y) - sessionDateValue(x),
+    name: (x, y) => String(x.name || '').localeCompare(String(y.name || ''), undefined, {sensitivity:'base', numeric:true}),
+  })[sort] || ((x, y) => sessionUsedAt(y) - sessionUsedAt(x));
+  return list.slice().sort((x, y) => cmp(x, y) || byCreated(x, y));
+}
+const soSearchCache = new WeakMap();
+function sessionSearchText(s){
+  const focus = (csFocusArea(s.focusArea) || {}).title || '';
+  const style = (CS_STYLES.find(x => x[0] === s.sessionStyle) || [])[1] || '';
+  const key = [s.name, focus, s.ageGroup, style].join('|');
+  const hit = soSearchCache.get(s);
+  if(hit && hit.key === key) return hit.text;
+  const text = key.toLowerCase();
+  soSearchCache.set(s, {key, text});
+  return text;
+}
+function sessionMatchesFilters(s, f){
+  if(f.age && s.ageGroup !== f.age) return false;
+  if(f.focus && s.focusArea !== f.focus) return false;
+  if(f.duration && Number(s.targetDuration) !== Number(f.duration)) return false;
+  if(f.style && s.sessionStyle !== f.style) return false;
+  if(f.fav && !s.favorited) return false;
+  if(f.location){
+    if(f.location === 'either'){ if(s.locationPref !== 'either') return false; }
+    else if(s.locationPref === 'either' || s.location !== f.location) return false;
+  }
+  return true;
+}
+function activeSessionFilterCount(f){ return ['age', 'focus', 'duration', 'location', 'style'].filter(k => f[k]).length + (f.fav ? 1 : 0); }
+function mySessionsAll(){ return state.savedSessions.filter(s => s.createdBy === state.coachName); }
+// the library's visible list: search -> filters -> sort
+function mySessionsView(){
+  const q = String(state.sessionsQuery || '').trim().toLowerCase();
+  const f = state.sessionsFilters;
+  const words = q ? q.split(/\s+/) : [];
+  const list = mySessionsAll().filter(s => sessionMatchesFilters(s, f) && (!words.length || words.every(w => sessionSearchText(s).includes(w))));
+  return sortSessions(list, state.sessionsSort);
+}
+function sessionMetaParts(s){
+  const parts = [sessionShortDate(s), `${Number(s.targetDuration) || Number(s.totalMin) || 0} min`];
+  parts.push(s.locationPref === 'either' ? 'Either' : (s.location === 'indoor' ? 'Indoor' : 'Outdoor'));
+  return parts;
+}
+// One compact row for a saved session, used by Recent, Favorites and the My Sessions library.
+function soRowHtml(s){
+  const id = escJsAttr(s.id);
+  const focus = (csFocusArea(s.focusArea) || {}).title;
+  const third = [`${s.exCount} exercise${s.exCount === 1 ? '' : 's'}`, focus ? escHtml(focus) : '', s.ageGroup ? escHtml(s.ageGroup) : ''].filter(Boolean).join(' &middot; ');
+  return `
+  <div class="so-row" role="button" tabindex="0" data-sid="${escAttr(s.id)}" onclick="openSessionDetail('${id}')">
+    <div class="so-body">
+      <div class="so-name">${escHtml(s.name)}</div>
+      <div class="so-meta">${sessionMetaParts(s).map(escHtml).join(' &middot; ')}</div>
+      <div class="so-sub">${third}${s._syncPending ? ' &middot; <span style="color:var(--warn);">Not synced yet</span>' : ''}</div>
+    </div>
+    <button class="so-fav ${s.favorited ? 'on' : ''}" onclick="event.stopPropagation(); toggleSessionFavorite('${id}')" aria-pressed="${!!s.favorited}" aria-label="${s.favorited ? 'Remove from favorites' : 'Add to favorites'}" title="${s.favorited ? 'Remove from favorites' : 'Add to favorites'}">${s.favorited ? ICONS.bookmarkFilled : ICONS.bookmark}</button>
+  </div>`;
+}
+function resetSessionsLibraryView(){ state.sessionsQuery = ''; state.sessionsFilters = emptySessionFilters(); state.sessionsFilterSheet = null; state.sessionsSortSheet = false; }
+function sessionsViewModeToggleHtml(mode){
+  return `
+    <div class="view-toggle" style="margin-top:10px;">
+      <button class="view-toggle-btn ${mode==='mine'?'active':''}" onclick="setSessionsViewMode('mine')">${ICONS.user} My Sessions</button>
+      <button class="view-toggle-btn ${mode==='community'?'active':''}" onclick="setSessionsViewMode('community')">${ICONS.globe} Community</button>
+    </div>
+    ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
+}
+
 function renderSessions(){
   if(state.sessionsViewAll) return renderSessionsAll();
   const mode = state.sessionsViewMode || 'mine';
-  const mine = state.savedSessions.filter(s => s.createdBy === state.coachName);
+  const mine = mySessionsAll();
   const community = state.savedSessions.filter(s => s.visibility !== 'private');
-  const all = (mode==='mine' ? mine : community).slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-  const shown = all.slice(0, 5);
+  const shown = mode === 'mine'
+    ? sortSessions(mine, 'used').slice(0, SO_RECENT_COUNT)                                                        // Recently Used, newest first
+    : community.slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0)).slice(0, SO_RECENT_COUNT);              // Community keeps its own, unchanged list
+  const favorites = mode === 'mine' ? sortSessions(mine.filter(s => s.favorited), 'used') : [];
   const {count: draftCount} = currentTotalMinutes();
   const hasDraft = draftCount > 0;
 
@@ -13916,19 +14079,35 @@ function renderSessions(){
       </button>
     </section>` : '';
 
-  const toggle = `
-    <div class="view-toggle" style="margin-top:10px;">
-      <button class="view-toggle-btn ${mode==='mine'?'active':''}" onclick="setSessionsViewMode('mine')">${ICONS.user} My Sessions</button>
-      <button class="view-toggle-btn ${mode==='community'?'active':''}" onclick="setSessionsViewMode('community')">${ICONS.globe} Community</button>
-    </div>
-    ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
-
+  const rowFn = mode === 'mine' ? soRowHtml : sessionsHubRowHtml;
   const recentBody = shown.length
-    ? `<div class="hm-list" style="margin-top:12px;">${shown.map(sessionsHubRowHtml).join('')}</div>
-       <button class="ss-viewall" onclick="openSessionsAll()"><span>${mode==='mine' ? 'View All Sessions' : 'View All Community Sessions'}</span>${ICONS.chevronRight}</button>`
+    ? `<div class="hm-list so-list" style="margin-top:12px;">${shown.map(rowFn).join('')}</div>
+       <button class="ss-viewall" onclick="openSessionsAll()"><span>${mode==='mine' ? 'See All Sessions' : 'View All Community Sessions'}</span>${ICONS.chevronRight}</button>`
     : (mode==='mine'
         ? `<div class="ss-empty"><div class="ss-empty-title">No saved sessions yet.</div><div>Your completed sessions will appear here.</div></div>`
         : `<div class="ss-empty"><div class="ss-empty-title">Community Sessions</div><div>Sessions shared by the FT2 coaching community will appear here.</div></div>`);
+
+  const favoritesHtml = favorites.length ? `
+    <section class="ss-section">
+      <h2 class="ss-h2">Favorites</h2>
+      <div class="hm-list so-list" style="margin-top:12px;">${favorites.slice(0, SO_RECENT_COUNT).map(soRowHtml).join('')}</div>
+      ${favorites.length > SO_RECENT_COUNT ? `<button class="ss-viewall" onclick="showFavoriteSessions()"><span>All ${favorites.length} Favorites</span>${ICONS.chevronRight}</button>` : ''}
+    </section>` : '';
+
+  const mySessionsRow = mode === 'mine' && mine.length ? `
+    <section class="ss-section">
+      <h2 class="ss-h2">My Sessions</h2>
+      <div class="settings-group" style="margin-top:12px;">
+        <button class="settings-row" onclick="openSessionsAll()">
+          <span class="settings-row-icon teal">${ICONS.doc}</span>
+          <span class="settings-row-text">
+            <span class="settings-row-title">${mine.length} saved session${mine.length===1?'':'s'}</span>
+            <span class="settings-row-desc">Search, filter and sort your whole library</span>
+          </span>
+          <span class="settings-row-chevron">${ICONS.chevronRight}</span>
+        </button>
+      </div>
+    </section>` : '';
 
   const hasTemplates = state.practiceTemplates.length > 0;
   const templatesHtml = `
@@ -13963,46 +14142,143 @@ function renderSessions(){
     ${continueHtml}
     <section class="ss-section">
       <h2 class="ss-h2">Recent Sessions</h2>
-      ${toggle}
+      ${sessionsViewModeToggleHtml(mode)}
       ${recentBody}
     </section>
+    ${favoritesHtml}
+    ${mySessionsRow}
     ${templatesHtml}
   </div>`;
 }
+
+/* ---- the My Sessions library: search, sort, filter ---- */
+function sessionsLibraryListHtml(){
+  const list = mySessionsView();
+  if(!list.length){
+    const hasQ = !!String(state.sessionsQuery || '').trim(), nFilt = activeSessionFilterCount(state.sessionsFilters);
+    return `<div class="ss-empty" style="text-align:center;">
+      <div class="ss-empty-title">No sessions found.</div>
+      <div>${hasQ && nFilt ? 'Nothing matches that search with these filters.' : hasQ ? 'Nothing matches that search.' : 'Nothing matches these filters.'}</div>
+      <div class="so-empty-actions">
+        ${hasQ ? `<button class="btn btn-edge btn-ghost" onclick="clearSessionsSearch()">Clear Search</button>` : ''}
+        ${nFilt ? `<button class="btn btn-edge btn-ghost" onclick="clearSessionFilters()">Clear Filters</button>` : ''}
+      </div></div>`;
+  }
+  return `<div class="hm-list so-list">${list.map(soRowHtml).join('')}</div>`;
+}
+function sessionsLibraryCountText(){
+  const total = mySessionsAll().length, n = mySessionsView().length;
+  return n === total ? `${total} session${total === 1 ? '' : 's'}` : `${n} of ${total} sessions`;
+}
+let soSearchTimer = null;
+function onSessionsSearch(v){
+  state.sessionsQuery = v;
+  clearTimeout(soSearchTimer);
+  soSearchTimer = setTimeout(refreshSessionsLibrary, 120);        // redraw only the list (keeps the keyboard open)
+}
+function refreshSessionsLibrary(){
+  const list = document.getElementById('soList'), cnt = document.getElementById('soCount');
+  if(!list){ render(); return; }
+  list.innerHTML = sessionsLibraryListHtml(); if(cnt) cnt.textContent = sessionsLibraryCountText();
+  const x = document.getElementById('soClear'); if(x) x.classList.toggle('hide', !state.sessionsQuery);
+}
+function clearSessionsSearch(){ state.sessionsQuery = ''; const el = document.getElementById('soSearch'); if(el) el.value = ''; refreshSessionsLibrary(); }
+function clearSessionFilters(){ state.sessionsFilters = emptySessionFilters(); state.sessionsFilterSheet = null; render(); }
+function showFavoriteSessions(){ resetSessionsLibraryView(); state.sessionsFilters.fav = true; state.sessionsViewMode = 'mine'; openSessionsAll(); }
+function openSessionsFilter(){ state.sessionsFilterSheet = {...state.sessionsFilters}; renderOverlay(); }
+function closeSessionsFilter(){ state.sessionsFilterSheet = null; renderOverlay(); }
+function setSessionsFilterDraft(key, val){
+  const d = state.sessionsFilterSheet; if(!d) return;
+  if(key === 'fav') d.fav = !!val; else d[key] = d[key] === val ? '' : val;      // tapping the chosen one again clears it (= All)
+  renderOverlay();
+}
+function applySessionFilters(){ if(state.sessionsFilterSheet) state.sessionsFilters = {...state.sessionsFilterSheet}; state.sessionsFilterSheet = null; render(); }
+function clearAllSessionFilters(){ state.sessionsFilters = emptySessionFilters(); state.sessionsFilterSheet = null; render(); }
+function openSessionsSort(){ state.sessionsSortSheet = true; renderOverlay(); }
+function closeSessionsSort(){ state.sessionsSortSheet = false; renderOverlay(); }
+function setSessionsSort(v){
+  if(SESSION_SORTS.some(x => x[0] === v)) state.sessionsSort = v;
+  state.sessionsSortSheet = false; render(); saveAppStateToStorage();
+}
+function sessionsFilterSheetHtml(){
+  const d = state.sessionsFilterSheet; if(!d) return '';
+  const n = activeSessionFilterCount(d);
+  const chip = (key, val, label, on) => `<button class="opt ${on ? 'active' : ''}" aria-pressed="${on}" onclick="setSessionsFilterDraft('${key}','${escJsAttr(val)}')">${escHtml(label)}</button>`;
+  return `<div class="sheet-backdrop" onclick="closeSessionsFilter()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <div class="qp-sheet-header" style="margin-bottom:6px;"><h3 style="margin:0;">Filter Sessions</h3><button class="qp-close-btn" onclick="closeSessionsFilter()" title="Close" aria-label="Close">${ICONS.x}</button></div>
+    ${SO_FILTER_SECTIONS.map(sec => `<h3>${sec.label}</h3><div class="optrow">${chip(sec.key, '', 'All', !d[sec.key])}${sec.opts().map(([v, l]) => chip(sec.key, v, l, d[sec.key] === v)).join('')}</div>`).join('')}
+    <h3>Favorites</h3><div class="optrow">
+      <button class="opt ${d.fav ? '' : 'active'}" aria-pressed="${!d.fav}" onclick="setSessionsFilterDraft('fav', false)">All Sessions</button>
+      <button class="opt ${d.fav ? 'active' : ''}" aria-pressed="${!!d.fav}" onclick="setSessionsFilterDraft('fav', true)">Favorites Only</button>
+    </div>
+    <div class="sheet-footer so-sheet-footer"><button class="btn btn-ghost" onclick="clearAllSessionFilters()">Clear All</button><button class="btn btn-primary" onclick="applySessionFilters()">Apply Filters${n ? ' &middot; ' + n : ''}</button></div>
+  </div>`;
+}
+function sessionsSortSheetHtml(){
+  if(!state.sessionsSortSheet) return '';
+  return `<div class="sheet-backdrop" onclick="closeSessionsSort()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <h3>Sort Sessions</h3>
+    <div class="more-list">${SESSION_SORTS.map(([k, l]) => `<button class="more-item so-sort-opt ${state.sessionsSort === k ? 'on' : ''}" onclick="setSessionsSort('${k}')" aria-pressed="${state.sessionsSort === k}"><span class="more-ic">${state.sessionsSort === k ? ICONS.check : ''}</span><span>${escHtml(l)}</span></button>`).join('')}</div>
+  </div>`;
+}
+
 function renderSessionsAll(){
   const mode = state.sessionsViewMode || 'mine';
-  const mine = state.savedSessions.filter(s => s.createdBy === state.coachName);
-  const community = state.savedSessions.filter(s => s.visibility !== 'private');
-  const list = (mode==='mine' ? mine : community).slice().reverse().sort((a,b) => (b.favorited?1:0) - (a.favorited?1:0));
-
-  const toggle = `
-    <div class="view-toggle" style="margin-top:10px;">
-      <button class="view-toggle-btn ${mode==='mine'?'active':''}" onclick="setSessionsViewMode('mine')">${ICONS.user} My Sessions</button>
-      <button class="view-toggle-btn ${mode==='community'?'active':''}" onclick="setSessionsViewMode('community')">${ICONS.globe} Community</button>
-    </div>
-    ${state.sessionsSyncSource==='offline' ? `<div class="sync-banner">${ICONS.image}<span>Couldn't reach the shared session sheet just now — showing the last known list. Reopen this tab once you're back online to refresh it.</span></div>` : ''}`;
-
+  const toggle = sessionsViewModeToggleHtml(mode);
   const backRow = `<div class="nav-sticky-back nav-sticky-root">${navBackRowHtml('Sessions', 'closeSessionsAll()')}</div>`;
-  if(!list.length){
+
+  if(mode !== 'mine'){          // Community: the existing list, unchanged
+    const list = state.savedSessions.filter(s => s.visibility !== 'private').slice().reverse().sort((a,b) => (b.favorited?1:0) - (a.favorited?1:0));
+    if(!list.length){
+      return `${backRow}
+      <div class="section-pad" style="padding-top:0;">
+        <div class="eyebrow">Sessions</div>
+        ${toggle}
+        <div class="empty-state">
+          ${ICONS.empty}
+          <p>No shared sessions from the group yet.<br>Sessions you and your friends mark Shared will show up here.</p>
+        </div>
+      </div>`;
+    }
     return `${backRow}
     <div class="section-pad" style="padding-top:0;">
-      <div class="eyebrow">Sessions</div>
+      <div class="eyebrow">Community</div>
+      <div class="sh" style="margin-top:2px;"><h2>${list.length} shared</h2></div>
+      ${toggle}
+      <div style="margin-top:14px;">${list.map(sessionRowHtml).join('')}</div>
+    </div>`;
+  }
+
+  const total = mySessionsAll().length;
+  if(!total){
+    return `${backRow}
+    <div class="section-pad" style="padding-top:0;">
+      ${navPageTitleHtml('My Sessions', '')}
       ${toggle}
       <div class="empty-state">
         ${ICONS.empty}
-        <p>${mode==='mine' ? 'No sessions saved yet.<br>Build one and hit "Save Session" to see it here.' : 'No shared sessions from the group yet.<br>Sessions you and your friends mark Shared will show up here.'}</p>
+        <p>You haven't saved any sessions yet.</p>
       </div>
-      ${mode==='mine' ? `<button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="nav('build')">Build a Session</button>` : ''}
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="requestBuildNewSession()">Create Session</button>
     </div>`;
   }
+  const nFilt = activeSessionFilterCount(state.sessionsFilters);
+  const sortLabel = (SESSION_SORTS.find(x => x[0] === state.sessionsSort) || SESSION_SORTS[0])[1];
   return `${backRow}
-  <div class="section-pad" style="padding-top:0;">
-    <div class="eyebrow">${mode==='mine' ? 'My Sessions' : 'Community'}</div>
-    <div class="sh" style="margin-top:2px;"><h2>${list.length} ${mode==='mine'?'saved':'shared'}</h2></div>
+  <div class="section-pad so-page" style="padding-top:0;">
+    ${navPageTitleHtml('My Sessions', '')}
     ${toggle}
-    <div style="margin-top:14px;">
-      ${list.map(sessionRowHtml).join('')}
+    <div class="so-search">
+      <span class="so-search-ic">${ICONS.search}</span>
+      <input id="soSearch" type="search" class="so-search-input" placeholder="Search sessions" value="${escAttr(state.sessionsQuery)}" oninput="onSessionsSearch(this.value)" autocomplete="off" autocapitalize="off" aria-label="Search sessions">
+      <button id="soClear" class="so-search-x ${state.sessionsQuery ? '' : 'hide'}" onclick="clearSessionsSearch()" aria-label="Clear search">${ICONS.x}</button>
     </div>
+    <div class="so-controls">
+      <button class="so-ctl" onclick="openSessionsSort()" aria-label="Sort: ${escAttr(sortLabel)}"><span class="so-ctl-k">Sort</span><span class="so-ctl-v">${escHtml(sortLabel)}</span>${ICONS.chevronDown}</button>
+      <button class="so-ctl so-ctl-filter ${nFilt ? 'on' : ''}" onclick="openSessionsFilter()" aria-label="Filter${nFilt ? ', ' + nFilt + ' active' : ''}">${ICONS.filter}<span class="so-ctl-v">Filter${nFilt ? ' &middot; ' + nFilt : ''}</span></button>
+    </div>
+    <div class="so-count" id="soCount">${sessionsLibraryCountText()}</div>
+    <div id="soList">${sessionsLibraryListHtml()}</div>
   </div>`;
 }
 
@@ -15037,6 +15313,7 @@ function saveAppStateToStorage(){
       csFocusAreaId: state.csFocusAreaId,
       csTitle: state.csTitle, csTitleEdited: state.csTitleEdited, csDate: state.csDate, csStartTime: state.csStartTime,
       csDuration: state.csDuration, csLocation: state.csLocation, csAgeGroup: state.csAgeGroup, csSessionStyle: state.csSessionStyle,
+      sessionsSort: state.sessionsSort,
     };
     localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
   }catch(e){ /* storage unavailable (private browsing, quota, etc.) -- app still works, just won't persist */ }
@@ -15073,6 +15350,7 @@ function loadAppStateFromStorage(){
       state.csAgeGroup = snap.csAgeGroup ?? null;
       state.csSessionStyle = snap.csSessionStyle ?? null;
     }
+    if(SESSION_SORTS.some(x => x[0] === snap.sessionsSort)) state.sessionsSort = snap.sessionsSort;
     if(Array.isArray(snap.enabledPhaseKeys) && snap.enabledPhaseKeys.length) state.enabledPhaseKeys = new Set(snap.enabledPhaseKeys);
     if(Array.isArray(snap.phaseOrder) && snap.phaseOrder.length) state.phaseOrder = snap.phaseOrder;
     if(Array.isArray(snap.practiceTemplates)){

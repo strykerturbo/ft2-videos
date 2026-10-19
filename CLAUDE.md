@@ -516,6 +516,13 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   The structure header and a new bottom `.te-total-bar` show the total in red with "Over 100%" / "Under 100%", `Save Template` is `disabled` unless the total is exactly 100 (and `teSaveTemplate` still refuses with a toast), and `teMinutes` shows each
   section's raw share while the total isn't 100. Toggling a section on/off and adding/removing a custom section still re-balance to 100 (unchanged). `.te-page{margin-bottom:-30px}` makes the space under the last button equal the 14px above it.
   QA: TM-006/TM-008 rewritten for this rule; DI-011/012 settle to 100 (`QA.lib.tmplSettle`) before saving.
+- **Saved Sessions organization (2026-10).** Sessions page = Continue (draft only) / Recent Sessions (5 most recently USED, `sortSessions(...,'used')`, mine only; Community keeps its old list) / Favorites (only if any) / My Sessions entry / Templates.
+  "See All Sessions" opens the library (`renderSessionsAll`, mine mode): search (`#soSearch`, redraws only `#soList`), Sort sheet (Recently Used default, Recently Saved, Oldest, Session Date, Name A-Z; `state.sessionsSort` is remembered in the app snapshot) and a Filter sheet
+  (age, focus, duration, location incl. Either, style, favorites; "Filter · N"). Rows are `soRowHtml` (title / date · min · place / N exercises · focus · age + 48px bookmark). Search/filter/sort are views -- `state.savedSessions` order never changes.
+  Data model: `createdAt` (first saved), `updatedAt` (last EDIT: rename, length, add/remove/reorder exercises), `lastUsedAt` (opened by its owner, Copy Session on it, or edited), `practiceDate` = the session date, `favorited` = the bookmark,
+  new `locationPref` ('either' is only known for Custom Sessions). `sessionUsedAt()` = lastUsedAt -> updatedAt -> createdAt (never invented). `markSessionUsed` saves quietly in the background (`pushSessionToSheet(s,{quiet:true})`: no "Not synced" flag).
+  Copy Session still makes an unsaved DRAFT (saving it mints a new id / createdAt) and counts as "using" the original. `claude_FT2_AppsScript_Code.gs` gained `lastUsedAt` + `locationPref` columns and now stores the client's `updatedAt`
+  (REDEPLOY as a new VERSION of the existing deployment to sync them across devices; until then the app keeps them locally and merges). Tests SS-025..SS-034.
 
 ## Where things live
 
