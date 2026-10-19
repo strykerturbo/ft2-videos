@@ -10127,7 +10127,8 @@ function renderSettings(){
    exist in the codebase but nothing on Home links to them for now. */
 function homeGreeting(){
   const h = new Date().getHours();
-  return (h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening') + ', Coach';
+  const who = String(state.coachName || '').trim().replace(/^coach\s+/i, '');   // "Coach Tisan" typed already? don't say "Coach Coach"
+  return (h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening') + ', Coach' + (who ? ' ' + who : '');
 }
 function toggleHomeFeed(){ state.homeFeedOpen = !state.homeFeedOpen; render(); }
 function homeSessionRowHtml(s){
@@ -10216,7 +10217,7 @@ function renderHome(){
   return `
   <div class="section-pad hm-page">
     <div class="hm-greet">
-      <h1>${homeGreeting()}</h1>
+      <h1>${escHtml(homeGreeting())}</h1>
       <div class="hm-greet-sub">Ready to plan, coach and develop.</div>
     </div>
     ${authBannerHtml()}

@@ -188,5 +188,10 @@ sec('SEC-030', 'Joining works end to end: join with name + club code, reopen the
     sb.click('Already joined on another phone?', '#content'); fill('Hana Coach', 'WRONG123'); await sb.fn('submitGate'); await sb.until(() => /isn.t right/.test(sb.text('#content .te-name-err')), 5000, 'the wrong-code message'); eq(sb.S.coachName, '', 'A wrong code worked');
     fill('Hana Coach', code); await sb.fn('submitGate'); await sb.until(() => sb.S.coachName === 'Hana Coach', 6000, 'the second phone'); assert(sb.S.authToken && sb.S.authToken !== tokenOne, 'No fresh token'); }});
 
+add('H-013', C.core, 'Home', 'The Home greeting names the coach ("Good Morning, Coach Tisan"), never says "Coach Coach", and shows a hostile name as plain text.', {
+  severity: 'Minor', tags: ['home'], steps: ['Open Home as different coaches.'], exp: 'Greeting includes the name.',
+  async run(env){ const sb = await env.boot({coach: 'Tisan'}); const g = () => sb.text('#content h1'); assert(/^Good (Morning|Afternoon|Evening), Coach Tisan$/.test(g()), 'Greeting was: ' + g());
+    sb.S.coachName = 'Coach Maria'; sb.fn('render'); assert(/, Coach Maria$/.test(g()), 'Greeting was: ' + g()); sb.win.__x = []; sb.S.coachName = '<img src=x onerror="window.__x.push(1)">'; sb.fn('render'); await sb.sleep(40); eq(sb.win.__x.length, 0, 'A coach name ran code'); assert(g().includes('<img src=x'), 'Name not shown as text'); sb.S.coachName = ''; sb.fn('render'); }});
+
 QA.register(tests);
 })();
