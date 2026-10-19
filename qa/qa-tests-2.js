@@ -274,8 +274,8 @@ add('CS-019', C.use, 'Custom Step 2-4', 'Generating again over an edited session
   severity: 'Major', tags: ['custom'], steps: ['Edit the generated session, go back and Generate again.'], exp: 'Confirmation before replacing.',
   async run(env){ const sb = await L.toStep4(env); const id = L.draftIds(sb)[0]; const key = sb.e('PHASES').find(p => sb.S.phaseData[p.key].includes(id)).key; sb.fn('removeFromPhase', key, id); sb.fn('csBackToStep2'); sb.fn('csGoToGenerate'); eq(sb.S.confirmGenerateOpen, true, 'Confirmation'); }});
 add('CS-020', C.core, 'Custom Step 4', 'Saving a custom session stores the focus area, age group and style with it.', {
-  smoke: true, severity: 'Critical', tags: ['custom', 'save', 'share'], steps: ['Generate, tap Save Session.'], exp: 'Saved session has focusArea / ageGroup / sessionStyle and a share token.',
-  async run(env){ const sb = await L.toStep4(env); sb.click('Save Session'); const s = sb.S.savedSessions[0]; eq(s.focusArea, 'keep_the_ball', 'focusArea'); eq(s.ageGroup, 'U10', 'ageGroup'); eq(s.sessionStyle, 'balanced', 'sessionStyle'); assert(/^[A-Za-z0-9]{24}$/.test(s.shareToken), 'Share token'); }});
+  smoke: true, severity: 'Critical', tags: ['custom', 'save', 'share'], steps: ['Generate, tap Save Session.'], exp: 'Saved session has focusArea / ageGroup / sessionStyle (and is private, with no share link, until the coach shares it).',
+  async run(env){ const sb = await L.toStep4(env); sb.click('Save Session'); const s = sb.S.savedSessions[0]; eq(s.focusArea, 'keep_the_ball', 'focusArea'); eq(s.ageGroup, 'U10', 'ageGroup'); eq(s.sessionStyle, 'balanced', 'sessionStyle'); eq(s.visibility, 'private', 'A custom session must also start private'); eq(s.shareToken, '', 'No share link until the coach shares'); }});
 add('CS-021', C.nav, 'Custom Step 4', 'Add exercise on Step 4 opens the picker with a Back to Session Review button, and the exercise lands in that phase.', {
   severity: 'Critical', tags: ['custom', 'library', 'nav'], steps: ['On Step 4 tap Add exercise under a phase, add one, tap Back.'], exp: 'Back button present; returns to Step 4 with the new exercise.',
   async run(env){

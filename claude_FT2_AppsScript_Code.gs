@@ -1,266 +1,372 @@
 /**
- * FT2 — private read-only exercise feed, PLUS a shared saved-session store, for the Coaches App.
+ * FT2 Coaches - backend (Google Apps Script web app) - SECURITY-HARDENED VERSION (Oct 2026).
  *
- * SETUP:
- * 1. Open your Google Sheet (FT2_Full_Exercise_Repository_Updated) — keep it PRIVATE, don't
- *    change any sharing settings on the sheet itself.
- * 2. Extensions menu → Apps Script. This opens a script editor already bound to this sheet.
- * 3. Delete any starter code in Code.gs and paste this whole file in its place.
- * 4. Change SHEET_TAB_NAME below if your exercise data isn't on a tab literally named "Exercises".
- *    You do NOT need to create the Sessions tab yourself -- the script creates it automatically
- *    (with the right header row) the first time anyone saves a practice.
- * 5. Click Deploy → New deployment → gear icon next to "Select type" → Web app.
- *      - Description: anything, e.g. "FT2 read feed"
- *      - Execute as: Me (your account)
- *      - Who has access: Anyone
- *        (this makes the SCRIPT's URL reachable by anyone who has it — the sheet itself
- *         stays private the whole time; the script is the only thing exposed. Note this now
- *         also accepts writes for saved sessions, not just reads -- see "A NOTE ON SECURITY"
- *         near the bottom of this file before treating this as anything beyond a handful of
- *         trusted friends.)
- * 6. Click Deploy. Authorize it when Google prompts you (first time only) — watch for the
- *    authorization popup; if a browser blocks it silently, the deployment can look finished
- *    without actually going live, and the /exec URL will 404.
- * 7. Copy the Web app URL it gives you — it already ends in /exec (that's the whole URL, don't
- *    append another "/exec" to it anywhere). To sanity-check the saved-sessions feature after
- *    deploying, paste this into a browser address bar: <that URL>?sheet=sessions -- e.g. if your
- *    URL is https://script.google.com/macros/s/XXXX/exec, test
- *    https://script.google.com/macros/s/XXXX/exec?sheet=sessions -- it should return [] the first
- *    time (the Sessions tab is created empty on first use).
- * 8. Paste that URL into the app's app.js as APPS_SCRIPT_URL, replacing the empty string.
+ * What it does:
+ *   1. Serves the exercise library to the app (public, read-only, CLIENT-SAFE columns only).
+ *   2. Stores every coach's saved sessions in a "Sessions" tab, behind REAL per-coach sign-in.
+ *   3. Serves a read-only "shared session" page for a share link (only for sessions the coach chose to share).
  *
- * IMPORTANT — updating existing code: Apps Script does NOT auto-update a live deployment when
- * you just save the script. After pasting new code in, go to Deploy → Manage deployments → click
- * the pencil/edit icon on the existing "Web app" deployment → set Version to "New version" → Deploy.
- * This keeps the same /exec URL (so you don't have to change APPS_SCRIPT_URL in the app) while
- * actually shipping the new code. Creating a brand new deployment instead issues a DIFFERENT
- * /exec URL and silently orphans the old one.
+ * WHO IS THE COACH?  The server decides - never the app.
+ *   - A coach has an account in the "Coaches" tab: a name plus a passphrase (stored only as a salted, repeatedly-hashed value).
+ *   - Creating an account needs the CLUB ACCESS CODE (a Script Property you set once - see SETUP below), so strangers who find the
+ *     URL cannot create accounts or claim a name.
+ *   - Signing in (name + passphrase) returns a long random sign-in token. The app sends that token with every request; the server
+ *     stores only its hash and looks up the coach from it. A coach NAME sent in a request is never used to decide anything.
+ *   - Too many wrong passphrases lock a name for 15 minutes.
  *
- * KNOWN CAVEAT (Aug 2026): the hosted Artifact copy of the app has a strict content security
- * policy that blocks fetch() to any external host except Google Fonts — so this endpoint gets
- * silently skipped there and the app falls back to bundled data, even with a working deployment.
- * The live sync only actually runs on a self-hosted copy (GitHub Pages, Netlify, etc.).
+ * WHAT CAN A COACH DO?
+ *   - read / edit / delete / create ONLY their own sessions;
+ *   - read OTHER coaches' sessions only if those are marked Shared (Community) - and without those coaches' notes, rating, favourite
+ *     flag or share link;
+ *   - open a share link only while its session is Shared (making a session Private switches its link off immediately).
  *
- * ROW FILTERING (added Aug 29, 2026): sheet.getDataRange() can include "ghost" rows — rows that
- * once had content or formatting but are now blank, plus any stray non-exercise rows (notes,
- * spacers) that get pasted in by accident. Previously every row after the header was returned
- * as-is, so these ghost/stray rows silently inflated the exercise count in the app (e.g. showing
- * 109 exercises when only 100 are real). doGet() now skips any row whose "Exercise ID" AND
- * "Exercise Name" are both blank, which is a safe filter — a genuine exercise always has at least
- * one of those two filled in, and a truly blank/ghost row has neither.
- *
- * SAVED SESSIONS (added Sep 2026): a second tab, "Sessions", now stores every coach's saved
- * practices so they sync across devices and can be shared with the friend group instead of living
- * only in one browser's local storage. See the SAVED SESSIONS section near the bottom of this file.
+ * SETUP (one time, and again after pasting new code):
+ *   1. Open the Google Sheet -> Extensions -> Apps Script. Paste this whole file over the old code and save.
+ *   2. Choose a CLUB ACCESS CODE (a phrase you will share with your coaching friends). Type it between the quotes of
+ *      NEW_CLUB_CODE just below, pick the function "setupClubCode" in the toolbar and press Run (authorize if asked).
+ *      Then DELETE the phrase from NEW_CLUB_CODE again (it is now stored as a Script Property) and save.
+ *   3. Deploy -> Manage deployments -> pencil -> Version: "New version" -> Deploy. (Keeps the same /exec URL.)
+ *   4. Existing coaches: the first time each one signs in, the app asks them to create their account (name + passphrase + club
+ *      code). The first person to register a name owns it and its old sessions. To reset a coach who forgot their passphrase, delete
+ *      their row in the "Coaches" tab (and any of their rows in "Auth"); they register again with the same name.
+ *   Keep the Sheet itself PRIVATE. Execute as: Me. Who has access: Anyone (the script enforces who sees what).
  */
 
 const SHEET_TAB_NAME = 'Exercises';
+const SESSIONS_TAB_NAME = 'Sessions';
+const COACHES_TAB_NAME = 'Coaches';
+const AUTH_TAB_NAME = 'Auth';
+const NEW_CLUB_CODE = '';   // <- type your club access code here, run setupClubCode once, then blank it again
+
+const API_VERSION = 2;
+const LIMITS = {
+  maxBodyChars: 200000,       // whole request
+  coachNameMin: 2, coachNameMax: 40,
+  passMin: 8, passMax: 100,
+  nameMax: 120, commentMax: 2000, labelMax: 60, exNameMax: 200, idMax: 64,
+  phasesMax: 14, exercisesMax: 80,
+  sessionsPerCoach: 1000,
+  tokensPerCoach: 6, tokenTtlDays: 180,
+  loginFailLimit: 8, loginFailWindowSec: 900,
+  hashRounds: 2000,
+};
+const SECTIONS_ = ['Warmup', 'Athletic', 'Duels', 'Rondos', 'SSGs', 'Scrimmage'];
+const FOCUS_IDS_ = ['keep_the_ball', 'play_forward', 'create_and_score', 'beat_players', 'defend_together', 'win_it_back', 'transition_quickly', 'master_the_ball'];
+const STYLES_ = ['technical', 'balanced', 'game_based'];
+
+// The exercise columns the app actually uses. Everything else in the sheet (Notes, Source, Source Image, anything you add later)
+// stays private unless it is added to this list on purpose.
+const PUBLIC_EXERCISE_COLUMNS = [
+  'Exercise ID', 'Exercise Name', 'Section', 'Category', 'Difficulty', 'Age Group', 'Duration (min)', 'Focus Areas',
+  'Setup', 'Description', 'Coaching Points', 'Variations', 'Diagram URL', 'Video URL',
+  'Format Tags', 'Engagement Tags', 'Technical Tags', 'Technical Score', 'Tactical Tags', 'Tactical Score',
+  'Physical Tags', 'Physical Score', 'Cognitive Tags', 'Cognitive Score', 'Location'
+];
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Entry points                                                                                                       */
+/* ------------------------------------------------------------------------------------------------------------------ */
 
 function doGet(e) {
-  // Saved-session reads are routed to a separate handler; everything else below this check is
-  // the ORIGINAL exercise-feed behavior, completely unchanged. ?coach=<name> identifies who's
-  // asking (the same free-text name the app's "Who's Coaching?" screen collects) so a private
-  // session only ever gets sent back to the coach who owns it -- see readSessions() below.
-  if (e && e.parameter && e.parameter.sheet === 'sessions') {
-    // ?share=<token> is the "send a saved session to a friend" link: it returns ONE session, found
-    // by its long random token, trimmed down to just the plan -- see readSharedSession() below.
-    if (e.parameter.share) {
-      return jsonResponse(readSharedSession(e.parameter.share));
-    }
-    const requestingCoach = (e.parameter.coach || '').toString();
-    return jsonResponse(readSessions(requestingCoach));
+  const p = (e && e.parameter) || {};
+  if (p.sheet === 'sessions') {
+    // The ONLY public sessions request: one session by its long random share token, trimmed to the plan itself.
+    if (p.share) return jsonResponse(readSharedSession(p.share));
+    // The old "list everything for ?coach=<name>" request is gone: listing needs a signed-in coach (POST action "list").
+    return jsonResponse({ error: 'auth_required' });
   }
+  if (p.sheet === 'validvalues') return jsonResponse({ error: 'not_available' });
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_TAB_NAME);
-  if (!sheet) {
-    return jsonResponse({ error: 'Tab "' + SHEET_TAB_NAME + '" not found. Check SHEET_TAB_NAME in the script.' });
-  }
-
+  if (!sheet) return jsonResponse({ error: 'Tab "' + SHEET_TAB_NAME + '" not found. Check SHEET_TAB_NAME in the script.' });
   const values = sheet.getDataRange().getValues();
   const headers = values[0];
   const idCol = headers.indexOf('Exercise ID');
   const nameCol = headers.indexOf('Exercise Name');
-
+  const keep = headers.map(h => PUBLIC_EXERCISE_COLUMNS.indexOf(String(h)) !== -1);
   const rows = values.slice(1)
     .filter(row => {
-      // Skip ghost/blank/stray rows: a real exercise always has an ID or a Name.
       const id = idCol > -1 ? String(row[idCol] || '').trim() : '';
       const name = nameCol > -1 ? String(row[nameCol] || '').trim() : '';
       return id !== '' || name !== '';
     })
     .map(row => {
       const obj = {};
-      headers.forEach((header, i) => { obj[header] = row[i]; });
+      headers.forEach((h, i) => { if (keep[i]) obj[h] = row[i]; });   // client-safe columns only
       return obj;
     });
-
   return jsonResponse(rows);
 }
 
-// Handles every WRITE the app makes: saving a new practice, renaming one, rating/commenting,
-// adding or discarding an exercise, flipping Shared/Private, or deleting a practice entirely.
-// The client always sends the *whole* current session object and this always replaces the whole
-// row -- one action ("upsert") covers every kind of edit, since there's no benefit to modeling
-// granular per-field updates for a dataset this small.
-//
-// requestingCoach is the acting coach's name (again, the same free-text name from "Who's
-// Coaching?") -- separate from session.createdBy in the payload, which is just whatever the
-// session object already says and proves nothing on its own. upsertSession()/deleteSessionRow()
-// check this against who the row is ACTUALLY stored as belonging to before allowing an edit or
-// delete of an existing row. This is still name-based, not a real login -- see "A NOTE ON
-// SECURITY" near the bottom -- but it closes the "anyone can rename/delete anyone's session with
-// zero information" gap the old version had.
 function doPost(e) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000); // up to 10s -- avoids two friends' saves corrupting each other if they land at the same moment
+  let lock = null;
   try {
-    const body = JSON.parse(e.postData.contents);
-    const requestingCoach = (body.requestingCoach || '').toString();
-    if (body.action === 'upsert') {
-      upsertSession(body.session, requestingCoach);
-      return jsonResponse({ ok: true });
-    }
-    if (body.action === 'delete') {
-      deleteSessionRow(body.session && body.session.id, requestingCoach);
-      return jsonResponse({ ok: true });
-    }
-    return jsonResponse({ ok: false, error: 'Unknown action: ' + body.action });
+    const raw = (e && e.postData && e.postData.contents) || '';
+    if (raw.length > LIMITS.maxBodyChars) return jsonResponse({ ok: false, error: 'too_large' });
+    let body;
+    try { body = JSON.parse(raw); } catch (err) { return jsonResponse({ ok: false, error: 'bad_request' }); }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return jsonResponse({ ok: false, error: 'bad_request' });
+
+    lock = LockService.getScriptLock();
+    lock.waitLock(10000);   // two friends' saves can't corrupt each other
+    const action = String(body.action || '');
+    if (action === 'register') return jsonResponse(registerCoach_(body));
+    if (action === 'login') return jsonResponse(loginCoach_(body));
+    // Everything below needs a valid sign-in token. The coach is looked up from the token - nothing the caller says about WHO they are is used.
+    const coach = authenticate_(body.token);
+    if (!coach) return jsonResponse({ ok: false, error: 'auth' });
+    if (action === 'logout') { revokeToken_(body.token); return jsonResponse({ ok: true }); }
+    if (action === 'list') return jsonResponse({ ok: true, v: API_VERSION, name: coach.name, sessions: readSessions_(coach) });
+    if (action === 'upsert') return jsonResponse(upsertSession_(body.session, coach));
+    if (action === 'delete') return jsonResponse(deleteSession_(body.id, coach));
+    return jsonResponse({ ok: false, error: 'unknown_action' });
   } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
+    if (err && err.ft2) return jsonResponse({ ok: false, error: err.code, message: err.message });
+    return jsonResponse({ ok: false, error: 'server_error' });   // never echo internals
   } finally {
-    lock.releaseLock();
+    if (lock) { try { lock.releaseLock(); } catch (x) {} }
   }
 }
 
 function jsonResponse(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+function fail_(code, message) { const e = new Error(message || code); e.ft2 = true; e.code = code; throw e; }
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Small helpers                                                                                                      */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+function hex_(bytes) { return bytes.map(b => ('0' + (b & 255).toString(16)).slice(-2)).join(''); }
+function sha256_(text) { return hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(text), Utilities.Charset.UTF_8)); }
+function randomHex_(n) { let s = ''; while (s.length < n) s += Utilities.getUuid().replace(/-/g, ''); return s.slice(0, n); }
+function sameText_(a, b) {   // compares without stopping at the first difference
+  a = String(a); b = String(b);
+  let d = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return d === 0;
+}
+function hashPassphrase_(salt, pass) {
+  let h = sha256_(salt + ':' + pass);
+  for (let i = 0; i < LIMITS.hashRounds; i++) h = sha256_(h + ':' + salt + ':' + i);
+  return h;
+}
+function coachKey_(name) { return String(name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+function validCoachName_(name) {
+  name = String(name || '').trim().replace(/\s+/g, ' ');
+  if (name.length < LIMITS.coachNameMin || name.length > LIMITS.coachNameMax) return '';
+  if (!/^[A-Za-z0-9À-ɏ][A-Za-z0-9À-ɏ .'\-]*$/.test(name)) return '';   // letters / digits / space . ' - (cannot start with = + - @)
+  return name;
+}
+function cleanText_(v, max, label) {
+  if (v === undefined || v === null) return '';
+  if (typeof v !== 'string' && typeof v !== 'number') fail_('invalid', label + ' must be text');
+  const s = String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').replace(/\r\n?/g, '\n');
+  if (s.length > max) fail_('invalid', label + ' is too long');
+  return s;
+}
+function numIn_(v, min, max, label, dflt) {
+  if (v === undefined || v === null || v === '') return dflt;
+  const n = Number(v);
+  if (!isFinite(n) || n < min || n > max) fail_('invalid', label + ' is out of range');
+  return n;
+}
+// Cells that hold coach-typed text are forced to PLAIN TEXT so a value like  =IMPORTDATA(...)  can never run as a spreadsheet formula.
+function setPlainText_(sheet, row, firstCol, count) {
+  sheet.getRange(row, firstCol, 1, count).setNumberFormat('@');
 }
 
-/**
- * MULTI-SELECT TAG DROPDOWNS — use the native Sheets feature, not a script (corrected Aug 28, 2026)
- *
- * An earlier version of this file added an onEdit() workaround here to fake multi-select via a
- * single-select dropdown. That was wrong — Google Sheets DOES support this natively: set a tag
- * column's Data Validation to "Dropdown (from a range)" with "Chip" display style, then check
- * "Allow multiple selections" in the validation rule panel. No script needed for this at all.
- *
- * One thing that DOES matter for the app: the native multi-select writes its picks into the cell
- * comma-separated (e.g. "Passing, Receiving"), not semicolon-separated like earlier manual entries
- * in this sheet. The app's splitTags() function (in app.js) has been updated to accept both
- * delimiters, so this doesn't require reformatting anything already in the sheet — just make sure
- * you're running the updated app files (Aug 28, 2026 or later).
- *
- * Do NOT also install a custom onEdit() trigger alongside the native multi-select feature — the
- * two would fight over the same cell edits (the native feature already manages the comma-joined
- * list itself; a script reacting to the same edit could double-append or corrupt it).
- */
+function getTab_(name, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) { sheet = ss.insertSheet(name); sheet.appendRow(headers); return sheet; }
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  headers.forEach(h => { if (existing.indexOf(h) === -1) { existing.push(h); sheet.getRange(1, existing.length).setValue(h); } });
+  return sheet;
+}
 
-/**
- * ============ SAVED SESSIONS (added Sep 2026) ============
- *
- * A "Sessions" tab in this same spreadsheet, auto-created (with the header row below) the first
- * time anyone saves a practice -- no manual spreadsheet setup needed beyond pasting this script.
- *
- * Each saved practice's nested phases/exercises data is stored as ONE JSON-stringified column
- * (phasesJson) rather than spread across many columns -- the standard, pragmatic way to fit a
- * nested object into a flat spreadsheet row without inventing a multi-table schema for a dataset
- * this small. Every other column is a plain, human-readable value if you ever want to glance at
- * the tab directly (you generally shouldn't need to edit it by hand).
- */
-const SESSIONS_TAB_NAME = 'Sessions';
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Accounts and sign-in                                                                                               */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+const COACH_HEADERS = ['key', 'name', 'salt', 'hash', 'createdAt'];
+const AUTH_HEADERS = ['tokenHash', 'coachKey', 'createdAt', 'expiresAt'];
+
+// Run this once from the editor (see SETUP step 2).
+function setupClubCode() {
+  const code = String(NEW_CLUB_CODE || '').trim();
+  if (code.length < 6) throw new Error('Type a club access code of at least 6 characters into NEW_CLUB_CODE first.');
+  PropertiesService.getScriptProperties().setProperty('CLUB_CODE_HASH', sha256_('ft2-club:' + code));
+  getTab_(COACHES_TAB_NAME, COACH_HEADERS); getTab_(AUTH_TAB_NAME, AUTH_HEADERS);
+  Logger.log('Club access code saved. Now blank NEW_CLUB_CODE in the script and save.');
+}
+
+function findCoach_(key) {
+  const sheet = getTab_(COACHES_TAB_NAME, COACH_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === key) return { row: i + 1, key: String(values[i][0]), name: String(values[i][1]), salt: String(values[i][2]), hash: String(values[i][3]) };
+  }
+  return null;
+}
+
+function registerCoach_(body) {
+  const stored = PropertiesService.getScriptProperties().getProperty('CLUB_CODE_HASH');
+  if (!stored) return { ok: false, error: 'setup_required' };
+  if (!sameText_(sha256_('ft2-club:' + String(body.clubCode || '').trim()), stored)) return { ok: false, error: 'bad_club_code' };
+  const name = validCoachName_(body.name);
+  if (!name) return { ok: false, error: 'invalid', message: 'Use 2-40 letters, numbers, spaces, . \' or -' };
+  const pass = String(body.passphrase || '');
+  if (pass.length < LIMITS.passMin || pass.length > LIMITS.passMax) return { ok: false, error: 'invalid', message: 'Passphrase must be ' + LIMITS.passMin + '-' + LIMITS.passMax + ' characters' };
+  const key = coachKey_(name);
+  if (findCoach_(key)) return { ok: false, error: 'name_taken' };
+  const sheet = getTab_(COACHES_TAB_NAME, COACH_HEADERS);
+  const salt = randomHex_(32);
+  const row = sheet.getLastRow() + 1;
+  setPlainText_(sheet, row, 1, COACH_HEADERS.length);
+  sheet.getRange(row, 1, 1, COACH_HEADERS.length).setValues([[key, name, salt, hashPassphrase_(salt, pass), String(Date.now())]]);
+  return { ok: true, v: API_VERSION, name: name, token: issueToken_(key) };
+}
+
+function loginCoach_(body) {
+  const key = coachKey_(body.name);
+  if (!key || key.length > LIMITS.coachNameMax + 5) return { ok: false, error: 'bad_credentials' };
+  const cache = CacheService.getScriptCache();
+  const failKey = 'fail:' + sha256_(key);
+  const fails = Number(cache.get(failKey) || 0);
+  if (fails >= LIMITS.loginFailLimit) return { ok: false, error: 'rate_limited' };
+  const coach = findCoach_(key);
+  const pass = String(body.passphrase || '');
+  if (!coach) {
+    // An unknown name gets exactly the same answer (and counts as a failed try) as a wrong passphrase, so names can't be probed.
+    cache.put(failKey, String(fails + 1), LIMITS.loginFailWindowSec);
+    return { ok: false, error: 'bad_credentials' };
+  }
+  if (pass.length > LIMITS.passMax || !sameText_(hashPassphrase_(coach.salt, pass), coach.hash)) {
+    cache.put(failKey, String(fails + 1), LIMITS.loginFailWindowSec);
+    return { ok: false, error: 'bad_credentials' };
+  }
+  cache.remove(failKey);
+  return { ok: true, v: API_VERSION, name: coach.name, token: issueToken_(coach.key) };
+}
+
+function issueToken_(coachKey) {
+  const sheet = getTab_(AUTH_TAB_NAME, AUTH_HEADERS);
+  const now = Date.now();
+  const values = sheet.getDataRange().getValues();
+  // forget expired tokens, and keep a coach's newest few
+  const mine = [];
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (Number(values[i][3]) < now) { sheet.deleteRow(i + 1); continue; }
+    if (String(values[i][1]) === coachKey) mine.push(i + 1);
+  }
+  if (mine.length >= LIMITS.tokensPerCoach) mine.slice(LIMITS.tokensPerCoach - 1).forEach(r => sheet.deleteRow(r));   // rows are listed newest-last, so drop the oldest below
+  const token = randomHex_(64);
+  const row = sheet.getLastRow() + 1;
+  setPlainText_(sheet, row, 1, AUTH_HEADERS.length);
+  sheet.getRange(row, 1, 1, AUTH_HEADERS.length).setValues([[sha256_('tok:' + token), coachKey, String(now), String(now + LIMITS.tokenTtlDays * 86400000)]]);
+  return token;
+}
+
+function authenticate_(token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{64}$/.test(token)) return null;
+  const hash = sha256_('tok:' + token);
+  const sheet = getTab_(AUTH_TAB_NAME, AUTH_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (!sameText_(String(values[i][0]), hash)) continue;
+    if (Number(values[i][3]) < Date.now()) return null;
+    const coach = findCoach_(String(values[i][1]));
+    return coach ? { key: coach.key, name: coach.name } : null;
+  }
+  return null;
+}
+
+function revokeToken_(token) {
+  const hash = sha256_('tok:' + String(token || ''));
+  const sheet = getTab_(AUTH_TAB_NAME, AUTH_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  for (let i = values.length - 1; i >= 1; i--) if (String(values[i][0]) === hash) sheet.deleteRow(i + 1);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Saved sessions                                                                                                     */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
 const SESSIONS_HEADERS = [
   'id', 'name', 'createdBy', 'createdAt', 'totalMin', 'exCount', 'targetDuration',
   'practiceDate', 'location', 'templateId', 'rating', 'comment', 'favorited',
   'visibility', 'phasesJson', 'updatedAt',
   'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'startTime',
-  'lastUsedAt', 'locationPref'   // lastUsedAt = when the coach last opened / copied / edited it; locationPref = Indoor / Outdoor / Either as chosen in Custom Session
+  'lastUsedAt', 'locationPref', 'ownerKey'   // ownerKey = the coach account that owns the row (set by the server, never taken from the app)
 ];
+const TEXT_COLUMNS_ = ['id', 'name', 'createdBy', 'templateId', 'comment', 'visibility', 'phasesJson', 'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'location', 'locationPref', 'ownerKey', 'practiceDate', 'startTime'];
 
-// A start time is stored as plain "HH:MM" text, but Sheets likes to turn "17:00" into a real time-of-day cell, which then
-// reads back as a Date. This converts either shape to "HH:MM" so the app always gets text.
 function startTimeText_(v) {
   if (v instanceof Date) {
-    const pad = n => String(n).padStart(2, '0');
+    const pad = n => (n < 10 ? '0' : '') + n;
     return pad(v.getHours()) + ':' + pad(v.getMinutes());
   }
   return v === undefined || v === null ? '' : String(v);
 }
-
-function getSessionsSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SESSIONS_TAB_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SESSIONS_TAB_NAME);
-    sheet.appendRow(SESSIONS_HEADERS);
-    return sheet;
+function dateText_(v) {
+  if (v instanceof Date) {
+    const pad = n => (n < 10 ? '0' : '') + n;
+    return v.getFullYear() + '-' + pad(v.getMonth() + 1) + '-' + pad(v.getDate());
   }
-  // A Sessions tab made before a column was added gets the missing header(s) appended to the right
-  // of the existing ones, so nothing already saved moves and no manual sheet edit is needed.
-  const lastCol = Math.max(sheet.getLastColumn(), 1);
-  const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
-  SESSIONS_HEADERS.forEach(h => {
-    if (existing.indexOf(h) === -1) {
-      existing.push(h);
-      sheet.getRange(1, existing.length).setValue(h);
-    }
-  });
-  return sheet;
+  return v === undefined || v === null ? '' : String(v);
+}
+function getSessionsSheet_() { return getTab_(SESSIONS_TAB_NAME, SESSIONS_HEADERS); }
+
+function rowObject_(headers, row) {
+  const obj = {};
+  headers.forEach((h, i) => { obj[h] = row[i]; });
+  return obj;
+}
+function ownerKeyOf_(obj) { return String(obj.ownerKey || '') || coachKey_(obj.createdBy); }   // old rows (no ownerKey yet) belong to the name they were saved under
+function parsePhases_(obj) { try { const p = JSON.parse(obj.phasesJson || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; } }
+function isTrue_(v) { return v === true || v === 'true' || v === 'TRUE'; }
+
+function sessionForClient_(obj, viewer) {
+  const mine = ownerKeyOf_(obj) === viewer.key;
+  const out = {
+    id: String(obj.id), name: String(obj.name || ''), createdBy: String(obj.createdBy || ''),
+    createdAt: Number(obj.createdAt) || 0, updatedAt: Number(obj.updatedAt) || 0, lastUsedAt: Number(obj.lastUsedAt) || 0,
+    totalMin: Number(obj.totalMin) || 0, exCount: Number(obj.exCount) || 0, targetDuration: Number(obj.targetDuration) || 0,
+    practiceDate: dateText_(obj.practiceDate), startTime: startTimeText_(obj.startTime),
+    location: obj.location === 'indoor' ? 'indoor' : 'outdoor', locationPref: String(obj.locationPref || ''),
+    templateId: obj.templateId ? String(obj.templateId) : null,
+    focusArea: String(obj.focusArea || ''), ageGroup: String(obj.ageGroup || ''), sessionStyle: String(obj.sessionStyle || ''),
+    visibility: obj.visibility === 'shared' ? 'shared' : 'private',
+    phases: parsePhases_(obj),
+  };
+  if (mine) {         // the owner's own private extras
+    out.rating = Number(obj.rating) || 0; out.comment = String(obj.comment || ''); out.favorited = isTrue_(obj.favorited); out.shareToken = String(obj.shareToken || '');
+  } else {            // everyone else gets the plan only: no notes, rating, favourite flag or share link
+    out.rating = 0; out.comment = ''; out.favorited = false; out.shareToken = '';
+  }
+  return out;
 }
 
-function readSessions(requestingCoach) {
+function readSessions_(coach) {
   const sheet = getSessionsSheet_();
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return []; // header row only, nothing saved yet
+  if (values.length < 2) return [];
   const headers = values[0];
-  const idCol = headers.indexOf('id');
-  const createdByCol = headers.indexOf('createdBy');
-  const visibilityCol = headers.indexOf('visibility');
-  return values.slice(1)
-    .filter(row => String(row[idCol] || '').trim() !== '') // skip any blank/ghost rows, same principle as the Exercises tab above
-    .filter(row => {
-      // A private session only ever goes back to the coach who saved it -- everyone else's sync
-      // simply never receives it, instead of downloading every private row and hiding it only in
-      // that device's own UI (which is what the client used to have to do on its own).
-      if (row[visibilityCol] !== 'private') return true;
-      return String(row[createdByCol]) === String(requestingCoach);
-    })
-    .map(row => {
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = row[i]; });
-      try {
-        obj.phases = JSON.parse(obj.phasesJson || '[]');
-      } catch (err) {
-        obj.phases = [];
-      }
-      delete obj.phasesJson;
-      // A session's share token is a private link key: only its owner's own sync gets it back.
-      if (String(obj.createdBy) !== String(requestingCoach)) obj.shareToken = '';
-      obj.startTime = startTimeText_(obj.startTime);
-      obj.favorited = (obj.favorited === true || obj.favorited === 'true' || obj.favorited === 'TRUE');
-      // practiceDate is written as a plain "YYYY-MM-DD" string, but that shape is exactly what
-      // Sheets' own input parser auto-detects as a real date and silently converts the cell to --
-      // so it can come back here as a JS Date object instead of the string the client sent. Left
-      // alone, JSON.stringify() turns that Date into a full ISO timestamp ("...T00:00:00.000Z"),
-      // which index.html's formatPracticeDateShort() can't parse and silently blanks out (this is
-      // exactly what caused Practice Date to show blank on the Session Detail screen). Converting
-      // back to YYYY-MM-DD here using the Date's own local fields (not toISOString(), which can
-      // shift the day for a coach west of UTC) heals both older rows already written this way and
-      // any that slip through despite the plain-text write in upsertSession() below.
-      if (obj.practiceDate instanceof Date) {
-        const d = obj.practiceDate;
-        const pad = n => String(n).padStart(2, '0');
-        obj.practiceDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      }
-      return obj;
-    });
+  const out = [];
+  for (let i = 1; i < values.length; i++) {
+    const obj = rowObject_(headers, values[i]);
+    if (String(obj.id || '').trim() === '') continue;
+    const mine = ownerKeyOf_(obj) === coach.key;
+    if (!mine && obj.visibility !== 'shared') continue;     // someone else's private session is never sent
+    out.push(sessionForClient_(obj, coach));
+  }
+  return out;
 }
 
-// The public, read-only lookup behind a shared link. Finds the one row whose shareToken matches and
-// returns ONLY what the Shared Session page needs. Deliberately left out: notes (comment), rating,
-// favorite, who made it, visibility, ids of other sessions, and the Exercises-tab data. A missing or
-// unknown token gets {error:'not_found'} with no hint about why.
+// The public, read-only lookup behind a share link. Only a SHARED session, found by its long random token, trimmed to the plan.
 function readSharedSession(token) {
   token = String(token || '');
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return { error: 'not_found' };
@@ -271,124 +377,144 @@ function readSharedSession(token) {
   const tokenCol = headers.indexOf('shareToken');
   if (tokenCol === -1) return { error: 'not_found' };
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][tokenCol]) !== token) continue;
-    const row = {};
-    headers.forEach((h, c) => { row[h] = values[i][c]; });
-    let phases = [];
-    try { phases = JSON.parse(row.phasesJson || '[]'); } catch (err) { phases = []; }
-    let practiceDate = row.practiceDate;
-    if (practiceDate instanceof Date) {
-      const pad = n => String(n).padStart(2, '0');
-      practiceDate = practiceDate.getFullYear() + '-' + pad(practiceDate.getMonth() + 1) + '-' + pad(practiceDate.getDate());
-    }
+    if (!sameText_(String(values[i][tokenCol]), token)) continue;
+    const row = rowObject_(headers, values[i]);
+    if (row.visibility !== 'shared') return { error: 'not_found' };   // Private = the link is off
+    const phases = parsePhases_(row);
     return {
-      name: row.name || 'Untitled Practice',
-      totalMin: Number(row.totalMin) || 0,
-      exCount: Number(row.exCount) || 0,
-      targetDuration: Number(row.targetDuration) || 0,
-      practiceDate: practiceDate || '',
-      startTime: startTimeText_(row.startTime),
+      name: row.name || 'Untitled Session',
+      totalMin: Number(row.totalMin) || 0, exCount: Number(row.exCount) || 0, targetDuration: Number(row.targetDuration) || 0,
+      practiceDate: dateText_(row.practiceDate), startTime: startTimeText_(row.startTime),
       location: row.location === 'indoor' ? 'indoor' : 'outdoor',
-      focusArea: row.focusArea || '',
-      ageGroup: row.ageGroup || '',
-      sessionStyle: row.sessionStyle || '',
-      phases: (Array.isArray(phases) ? phases : []).map(p => ({
-        label: p.label || '',
-        section: p.section || null,
-        exercises: (Array.isArray(p.exercises) ? p.exercises : []).map(e => ({
-          id: e.id, name: e.name || '', duration: Number(e.duration) || 0
-        }))
+      focusArea: row.focusArea || '', ageGroup: row.ageGroup || '', sessionStyle: row.sessionStyle || '',
+      phases: phases.map(p => ({
+        label: String((p && p.label) || ''), section: (p && p.section) || null,
+        exercises: ((p && Array.isArray(p.exercises)) ? p.exercises : []).map(e => ({ id: String((e && e.id) || ''), name: String((e && e.name) || ''), duration: Number(e && e.duration) || 0 }))
       }))
     };
   }
   return { error: 'not_found' };
 }
 
-function upsertSession(session, requestingCoach) {
-  if (!session || !session.id) throw new Error('Missing session.id');
-  const sheet = getSessionsSheet_();
-  const values = sheet.getDataRange().getValues();
-  const headers = values[0];
-  const createdByCol = headers.indexOf('createdBy');
-  let rowIndex = -1; // 1-based sheet row of an existing match, if any
-  let existingCreatedBy = null;
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(session.id)) {
-      rowIndex = i + 1;
-      existingCreatedBy = values[i][createdByCol];
-      break;
-    }
-  }
-  if (rowIndex === -1) {
-    // Creating a brand-new row -- only allowed to create it as yourself, so a coach can't push a
-    // new session that immediately claims to belong to someone else.
-    if (String(session.createdBy) !== String(requestingCoach)) {
-      throw new Error('Cannot save a session as another coach');
-    }
-  } else if (String(existingCreatedBy) !== String(requestingCoach)) {
-    // Editing a row that already belongs to someone else (rename, rate, add/remove exercise,
-    // flip visibility, etc.) -- the previous version allowed this unconditionally.
-    throw new Error('Not authorized to edit this session');
-  }
-  // Only a long random token is accepted as a share token; anything else is stored as "not shared".
-  if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(session.shareToken || ''))) session.shareToken = '';
-  const row = SESSIONS_HEADERS.map(h => {
-    if (h === 'phasesJson') return JSON.stringify(session.phases || []);
-    if (h === 'updatedAt') return Number(session.updatedAt) || Date.now();   // the app sends the time of the last real EDIT; a save without one is stamped now
-    return session[h] !== undefined && session[h] !== null ? session[h] : '';
+// Checks and cleans a session sent by the app. Anything not listed here is dropped; anything out of range is rejected.
+function validateSession_(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) fail_('invalid', 'Missing session');
+  const id = String(raw.id || '');
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(id)) fail_('invalid', 'Bad session id');
+  const name = cleanText_(raw.name, LIMITS.nameMax, 'Title').trim();
+  if (!name) fail_('invalid', 'A session needs a title');
+  if (!Array.isArray(raw.phases)) fail_('invalid', 'Missing phases');
+  if (raw.phases.length > LIMITS.phasesMax) fail_('invalid', 'Too many sections');
+  let exTotal = 0;
+  const phases = raw.phases.map(p => {
+    if (!p || typeof p !== 'object') fail_('invalid', 'Bad section');
+    if (!Array.isArray(p.exercises)) fail_('invalid', 'Bad section');
+    const section = (p.section === null || p.section === undefined || p.section === '') ? null : String(p.section);
+    if (section !== null && SECTIONS_.indexOf(section) === -1) fail_('invalid', 'Unknown section');
+    exTotal += p.exercises.length;
+    if (exTotal > LIMITS.exercisesMax) fail_('invalid', 'Too many exercises');
+    return {
+      label: cleanText_(p.label, LIMITS.labelMax, 'Section name'), section: section,
+      exercises: p.exercises.map(e => {
+        if (!e || typeof e !== 'object') fail_('invalid', 'Bad exercise');
+        const eid = String(e.id === undefined || e.id === null ? '' : e.id);
+        if (!/^[A-Za-z0-9_.\-]{1,64}$/.test(eid)) fail_('invalid', 'Bad exercise id');
+        const ex = { id: eid, name: cleanText_(e.name, LIMITS.exNameMax, 'Exercise name'), duration: numIn_(e.duration, 0, 240, 'Exercise length', 10) };
+        ['technicalScore', 'tacticalScore', 'physicalScore', 'cognitiveScore'].forEach(k => { const n = e[k] === null || e[k] === undefined ? null : numIn_(e[k], 0, 5, k, null); if (n !== null) ex[k] = n; });
+        return ex;
+      })
+    };
   });
-  const destRow = rowIndex === -1 ? sheet.getLastRow() + 1 : rowIndex;
-  // Force the practiceDate cell to Plain Text *before* writing the row -- otherwise Sheets sees
-  // the "YYYY-MM-DD" string and auto-converts the cell to a real date, which is what corrupts it
-  // on the next read (see the practiceDate handling in readSessions() above). Setting the format
-  // has to happen before setValues(); doing it after only changes the display, not the type
-  // Sheets already committed the cell to.
-  const practiceDateCol = SESSIONS_HEADERS.indexOf('practiceDate');
-  if (practiceDateCol !== -1) {
-    sheet.getRange(destRow, practiceDateCol + 1).setNumberFormat('@');
-  }
-  const startTimeCol = SESSIONS_HEADERS.indexOf('startTime');   // same trick: keep "17:00" as text, not a time cell
-  if (startTimeCol !== -1) {
-    sheet.getRange(destRow, startTimeCol + 1).setNumberFormat('@');
-  }
-  if (rowIndex === -1) {
-    sheet.getRange(destRow, 1, 1, row.length).setValues([row]);
-  } else {
-    sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
-  }
+  const loc = raw.location === 'indoor' ? 'indoor' : 'outdoor';
+  const pref = raw.locationPref ? String(raw.locationPref) : '';
+  if (['', 'indoor', 'outdoor', 'either'].indexOf(pref) === -1) fail_('invalid', 'Bad location');
+  const focus = raw.focusArea ? String(raw.focusArea) : '';
+  if (focus && FOCUS_IDS_.indexOf(focus) === -1) fail_('invalid', 'Unknown focus area');
+  const age = raw.ageGroup ? String(raw.ageGroup) : '';
+  if (age && !/^U\d{1,2}$/.test(age)) fail_('invalid', 'Bad age group');
+  const style = raw.sessionStyle ? String(raw.sessionStyle) : '';
+  if (style && STYLES_.indexOf(style) === -1) fail_('invalid', 'Unknown session style');
+  const date = raw.practiceDate ? String(raw.practiceDate) : '';
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) fail_('invalid', 'Bad date');
+  const start = raw.startTime ? String(raw.startTime) : '';
+  if (start && !/^\d{1,2}:\d{2}$/.test(start)) fail_('invalid', 'Bad start time');
+  const tmpl = raw.templateId ? String(raw.templateId) : '';
+  if (tmpl && !/^[A-Za-z0-9_-]{1,64}$/.test(tmpl)) fail_('invalid', 'Bad template id');
+  const now = Date.now();
+  return {
+    id: id, name: name,
+    createdAt: numIn_(raw.createdAt, 0, now + 86400000, 'createdAt', now),
+    updatedAt: numIn_(raw.updatedAt, 0, now + 86400000, 'updatedAt', now),
+    lastUsedAt: numIn_(raw.lastUsedAt, 0, now + 86400000, 'lastUsedAt', 0),
+    totalMin: numIn_(raw.totalMin, 0, 1000, 'Total minutes', 0), exCount: numIn_(raw.exCount, 0, LIMITS.exercisesMax, 'Exercise count', 0),
+    targetDuration: numIn_(raw.targetDuration, 1, 300, 'Length', 60),
+    practiceDate: date, startTime: start, location: loc, locationPref: pref, templateId: tmpl,
+    rating: Math.round(numIn_(raw.rating, 0, 5, 'Rating', 0)), comment: cleanText_(raw.comment, LIMITS.commentMax, 'Notes'),
+    favorited: raw.favorited === true || raw.favorited === 'true',
+    visibility: raw.visibility === 'shared' ? 'shared' : 'private',
+    focusArea: focus, ageGroup: age, sessionStyle: style,
+    shareToken: /^[A-Za-z0-9_-]{16,64}$/.test(String(raw.shareToken || '')) ? String(raw.shareToken) : '',
+    phases: phases
+  };
 }
 
-function deleteSessionRow(id, requestingCoach) {
-  if (!id) return;
+function upsertSession_(rawSession, coach) {
+  const s = validateSession_(rawSession);
   const sheet = getSessionsSheet_();
   const values = sheet.getDataRange().getValues();
   const headers = values[0];
-  const createdByCol = headers.indexOf('createdBy');
+  const idCol = headers.indexOf('id'), tokenCol = headers.indexOf('shareToken');
+  let rowIndex = -1, existing = null, owned = 0;
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
-      if (String(values[i][createdByCol]) !== String(requestingCoach)) {
-        throw new Error('Not authorized to delete this session');
-      }
-      sheet.deleteRow(i + 1);
-      return;
-    }
+    if (String(values[i][idCol]) === s.id) { rowIndex = i + 1; existing = rowObject_(headers, values[i]); }
+    if (ownerKeyOf_(rowObject_(headers, values[i])) === coach.key) owned++;
   }
+  if (existing) {
+    if (ownerKeyOf_(existing) !== coach.key) fail_('forbidden', 'Not your session');          // decided by the account behind the token
+    s.createdAt = Number(existing.createdAt) || s.createdAt;                                  // fixed when first saved
+  } else if (owned >= LIMITS.sessionsPerCoach) {
+    fail_('invalid', 'Too many saved sessions');
+  }
+  // A share link only exists while the session is Shared, and every link belongs to exactly one session.
+  if (s.visibility !== 'shared') s.shareToken = '';
+  if (s.shareToken) {
+    for (let i = 1; i < values.length; i++) if (String(values[i][tokenCol]) === s.shareToken && String(values[i][idCol]) !== s.id) fail_('invalid', 'Share link already in use');
+  }
+  const record = Object.assign({}, s, { createdBy: coach.name, ownerKey: coach.key, phasesJson: JSON.stringify(s.phases) });
+  const row = SESSIONS_HEADERS.map(h => (record[h] !== undefined && record[h] !== null ? record[h] : ''));
+  const destRow = rowIndex === -1 ? sheet.getLastRow() + 1 : rowIndex;
+  // Plain-text cells FIRST (so "=..." / "+..." / "-..." / "@..." typed by a coach is stored as text, never as a formula), then the values.
+  const textCols = TEXT_COLUMNS_.map(h => SESSIONS_HEADERS.indexOf(h) + 1).filter(c => c > 0);
+  textCols.forEach(c => sheet.getRange(destRow, c).setNumberFormat('@'));
+  sheet.getRange(destRow, 1, 1, row.length).setValues([row]);
+  return { ok: true, session: sessionForClient_(rowObject_(SESSIONS_HEADERS, row), coach) };
+}
+
+function deleteSession_(id, coach) {
+  id = String(id || '');
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(id)) fail_('invalid', 'Bad session id');
+  const sheet = getSessionsSheet_();
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idCol = headers.indexOf('id');
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][idCol]) !== id) continue;
+    if (ownerKeyOf_(rowObject_(headers, values[i])) !== coach.key) fail_('forbidden', 'Not your session');
+    sheet.deleteRow(i + 1);
+    return { ok: true };
+  }
+  return { ok: true };   // already gone
 }
 
 /**
- * A NOTE ON SECURITY: this deployment (Execute as Me / Who has access: Anyone) means anyone who
- * has your /exec URL can call doGet/doPost -- there's no login check. Sep 2026 update: reads and
- * writes are now checked against the plain-text coach name the app already collects ("Who's
- * Coaching?") -- a private session is only ever sent back to the coach who owns it, and an
- * edit/delete of an existing session is only allowed when the requesting name matches who it's
- * actually stored as belonging to. That closes "any request can silently rename/delete/read
- * anyone's session with zero information," which the previous version allowed outright.
- *
- * It is still NOT real authentication: nothing here cryptographically proves who's making a
- * request, so a request that deliberately types someone else's exact coach name is still able to
- * act as them (the same way it could type that name into the app's own "Who's Coaching?" screen).
- * That remains an acceptable trade-off for a handful of trusted friends who have the app link, not
- * something to grow past a small trusted group without adding real per-user authentication
- * (e.g. a per-coach secret/token, or real Google-account-based login) and server-side access
- * rules built on top of it.
+ * ABOUT SECURITY (Oct 2026): this version replaces the old name-based trust.
+ *  - Identity comes from a server-issued token tied to an account whose passphrase the server verifies (salted + repeatedly hashed).
+ *  - Account creation needs the club access code, so only people you give it to can join; wrong-passphrase attempts are rate-limited.
+ *  - Every read / edit / delete of a session is decided from that identity. Other coaches' private sessions, notes, ratings and share
+ *    links are never sent. A share link works only while its session is Shared.
+ *  - Coach-typed text is stored in plain-text cells so it cannot run as a spreadsheet formula; incoming data is size- and shape-checked.
+ *  - The exercise feed returns only the columns the app uses (PUBLIC_EXERCISE_COLUMNS). It is still readable without signing in, because
+ *    people opening a share link need it - keep anything private out of those columns.
+ * Remaining limits: the web app is "Anyone can call it", the club code is a shared secret (rotate it by running setupClubCode again),
+ * and there is no email-based passphrase reset (delete the coach's row in the Coaches tab instead).
  */

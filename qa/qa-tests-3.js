@@ -10,7 +10,8 @@ Object.assign(L, {
   /* A saved session whose share link is ready (token pushed to the mock server). */
   async withShareReady(env, o){
     const sb = await L.withSaved(env, 1, o); const s = sb.S.savedSessions[0]; await sb.sleep(30);
-    sb.fn('openSessionDetail', s.id); await sb.until(() => sb.S.shareReady[s.id], 5000, 'the share link to be prepared');
+    sb.fn('toggleSessionVisibility', s.id);        // sessions are Private until the coach shares; this is the same state Share Session's confirmation leaves behind
+    await sb.sleep(30); sb.fn('openSessionDetail', s.id); await sb.until(() => sb.S.shareReady[s.id], 5000, 'the share link to be prepared');
     return {sb, s};
   },
   async recipient(env, sb, token, o){ return env.boot(Object.assign({backend: sb.ctx.backend, coach: null, query: '?s=' + token, fetchMode: 'mock'}, o || {})); },
@@ -97,12 +98,12 @@ add('TM-018', C.vis, 'Template editor', 'Template editor layout on a phone: comp
   type: 'Manual', severity: 'Polish', tags: ['templates', 'visual'], steps: ['Open the editor on a phone in light and dark.'], exp: 'Tidy, nothing clipped, clear selected states.', run: null});
 
 /* ================================================================ SHARING (SH-001 .. SH-014) */
-add('SH-001', C.integ, 'Sharing', 'Every saved session is given its own 24-character share token at the moment it is saved.', {
-  smoke: true, severity: 'Critical', tags: ['share', 'save'], steps: ['Save several sessions.'], exp: 'Each has a unique 24-character token.',
-  async run(env){ const sb = await L.withSaved(env, 5); const t = sb.S.savedSessions.map(s => s.shareToken); t.forEach(x => assert(/^[A-Za-z0-9]{24}$/.test(x), 'Bad token ' + x)); eq(new Set(t).size, 5, 'Distinct tokens'); }});
+add('SH-001', C.integ, 'Sharing', 'Share links are created only when a coach chooses to share: none at save time, then a unique 24-character token for each shared session.', {
+  smoke: true, severity: 'Critical', tags: ['share', 'save'], steps: ['Save several sessions, then share them.'], exp: 'No token before sharing; unique 24-character tokens after.',
+  async run(env){ const sb = await L.withSaved(env, 5); sb.S.savedSessions.forEach(x => eq(x.shareToken, '', 'A token existed before the coach shared')); sb.S.savedSessions.forEach(x => eq(x.visibility, 'private', 'Not private by default')); for(const x of sb.S.savedSessions){ sb.S.shareConfirmId = x.id; await sb.fn('confirmShareSession'); } await sb.sleep(50); const t = sb.S.savedSessions.map(x => x.shareToken); t.forEach(x => assert(/^[A-Za-z0-9]{24}$/.test(x), 'Bad token ' + x)); eq(new Set(t).size, 5, 'Distinct tokens'); }});
 add('SH-002', C.integ, 'Sharing', 'The share link is the app address plus ?s=<token> and the token is accepted by the link reader.', {
   smoke: true, severity: 'Critical', tags: ['share'], steps: ['Build a share link.'], exp: 'https://.../index.html?s=<token>; passes the token rule.',
-  async run(env){ const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const url = sb.fn('shareUrlFor', s.shareToken); assert(/^https?:\/\/.+\?s=[A-Za-z0-9]{24}$/.test(url), 'Link shape: ' + url); assert(sb.e('SHARE_TOKEN_RE').test(s.shareToken), 'Token rejected by SHARE_TOKEN_RE'); }});
+  async run(env){ const {sb, s} = await L.withShareReady(env); const url = sb.fn('shareUrlFor', s.shareToken); assert(/^https?:\/\/.+\?s=[A-Za-z0-9]{24}$/.test(url), 'Link shape: ' + url); assert(sb.e('SHARE_TOKEN_RE').test(s.shareToken), 'Token rejected by SHARE_TOKEN_RE'); }});
 add('SH-003', C.integ, 'Sharing', 'Opening your own saved session quietly prepares the link: the token is stored on the server and read back.', {
   severity: 'Major', tags: ['share', 'sync'], steps: ['Open a saved session, wait a moment.'], exp: 'Server has the session; link ready for a one-tap share.',
   async run(env){ const {sb, s} = await L.withShareReady(env); assert(sb.ctx.backend.sessions.has(s.id), 'Server does not have the session'); eq(sb.ctx.backend.sessions.get(s.id).shareToken, s.shareToken, 'Server token'); assert(sb.S.shareReady[s.id].url.includes(s.shareToken), 'Prepared URL'); }});

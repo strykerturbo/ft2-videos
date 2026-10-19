@@ -22,7 +22,8 @@ QA.CATEGORIES = [
 QA.TYPES = ['Automated', 'Manual', 'Hybrid'];
 const COACH_KEY = 'ft2_coach_name_v1';
 const APP_STATE_KEY = 'ft2-app-state-v1';
-QA.KEYS = {COACH_KEY, APP_STATE_KEY};
+const AUTH_KEY = 'ft2_auth_v1';
+QA.KEYS = {COACH_KEY, APP_STATE_KEY, AUTH_KEY};
 
 /* ---------------------------------------------------------------- tiny helpers */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -63,6 +64,10 @@ QA.loadSource = async function(force){
   // The 3-second "Building Your Session" screen is shortened in the sandbox (unless a test asks for the real timing).
   const p3 = 'const GEN_MIN_DISPLAY_MS = 3000;';
   if(patched.includes(p3)){ patched = patched.replace(p3, 'const GEN_MIN_DISPLAY_MS = (window.__QA_FASTGEN ? 150 : 3000);'); patches.push('genWait'); }
+  // The shipped Content-Security-Policy forbids eval(), which this harness uses to read the app's internal state, so the SANDBOX copy (only) gets
+  // 'unsafe-eval'. The real policy text is still checked, unmodified, by the security tests (they read src.text).
+  const pc = "script-src 'self' 'unsafe-inline'";
+  if(patched.includes(pc)){ patched = patched.replace(pc, pc + " 'unsafe-eval'"); patches.push('csp-for-harness'); }
   sourceCache = {
     text, patched, patches,
     hash: await hashText(text),
@@ -245,9 +250,13 @@ QA.boot = async function(opts){
   opts = Object.assign({coach: 'QA Coach', query: '', fetchMode: 'mock', width: 390, height: 844}, opts || {});
   const src = await QA.loadSource();
   const store = opts.store || new Map();
-  const backend = opts.backend || new MockBackend();
+  const backend = opts.backend || await QA.makeBackend();      // the REAL Apps Script code running on a pretend Sheet (qa-server.js)
   if(opts.live) backend.live = true;
   if(opts.coach) store.set(COACH_KEY, opts.coach);
+  if(opts.coach && opts.auth !== false){          // a coach who has already signed in on this pretend server: the app holds the server's token
+    const known = backend.tokens[opts.coach] ? {name: opts.coach, token: backend.tokens[opts.coach]} : backend.signIn(opts.coach);
+    store.set(AUTH_KEY, JSON.stringify({coach: known.name, token: known.token}));
+  }
   if(opts.seed) Object.keys(opts.seed).forEach(k => store.set(k, typeof opts.seed[k] === 'string' ? opts.seed[k] : JSON.stringify(opts.seed[k])));
   const ctx = {
     store, backend, errors: [], warnings: [], shareLog: [], clipboard: [], fetchLog: [], printLog: [], openLog: [], downloads: [],

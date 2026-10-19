@@ -534,8 +534,8 @@ add('SS-011', C.core, 'Saved Session', 'Make Private / Make Shared toggles visib
   smoke: true, severity: 'Major', tags: ['saved', 'privacy'],
   steps: ['More > Make Private, then Make Shared.'], exp: 'Visibility flips each time.',
   async run(env){
-    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; eq(s.visibility, 'shared', 'Starts shared');
-    sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'private', 'After 1st'); sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'shared', 'After 2nd');
+    const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; eq(s.visibility, 'private', 'Starts private');
+    sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'shared', 'After 1st'); sb.fn('toggleSessionVisibility', s.id); eq(s.visibility, 'private', 'After 2nd');
   }});
 add('SS-012', C.core, 'Saved Session', 'Print PDF / Create Image opens the print sheet for that session.', {
   smoke: true, severity: 'Major', tags: ['saved', 'print'],

@@ -524,6 +524,18 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   Copy Session still makes an unsaved DRAFT (saving it mints a new id / createdAt) and counts as "using" the original. `claude_FT2_AppsScript_Code.gs` gained `lastUsedAt` + `locationPref` columns and now stores the client's `updatedAt`
   (REDEPLOY as a new VERSION of the existing deployment to sync them across devices; until then the app keeps them locally and merges). Tests SS-025..SS-034.
 
+- **SECURITY HARDENING (2026-10, supersedes the "no passwords" identity note above).** The server now establishes identity itself; the coach name sent by the app is never trusted.
+  Coaches create an account (name + passphrase + the shared club access code) or sign in; the Apps Script returns a 64-hex token (only its hash is stored, `Auth` tab; passphrases are salted hashes in the `Coaches` tab).
+  The app keeps the token in `ft2_auth_v1` and sends it on every session request (`ft2Api()`: POST only; `?sheet=sessions` without `share=` now answers `auth_required`). Ownership is `ownerKey` (lower-cased name, set by the server);
+  sessions saved before accounts belong to whoever first registers that name. **Private is the default** (`completeSession`, server default); a share link exists only while `visibility==='shared'` -- Make Private clears the token and the old link
+  returns not_found; Share Session on a private session asks first (`shareConfirmSheetHtml`). Others only ever receive shared sessions with notes/rating/favourite/link blanked; the public exercise feed is whitelisted (`PUBLIC_EXERCISE_COLUMNS`:
+  no Notes/Source). The server validates/limits everything (`LIMITS`, `validateSession_`), writes plain-text cells (no formula injection), rate-limits sign-in. The client escapes every shared text at output (`escHtml`) and rebuilds cloud sessions defensively (`normalizeCloudSession`).
+  A CSP `<meta>` is in `<head>` but keeps `'unsafe-inline'` because the app uses inline `onclick=` handlers -- it blocks eval, plugins, foreign hosts and base/form hijack, NOT inline script injection; escaping is the real defence. Moving to addEventListener would allow dropping it.
+  **Deploying:** push the new `claude_FT2_AppsScript_Code.gs` as a NEW VERSION of the existing deployment, run `setupClubCode('<code>')` once from the Apps Script editor, give friends the code; each coach creates an account (first claimer of a name owns its old sessions).
+  An OLD client against the NEW server cannot sync (no token); a NEW client against the OLD server gets `unknown_action` and keeps working locally -- deploy the server first.
+  **QA:** `qa/qa-server.js` runs the real `.gs` file on a pretend Sheet (`QA.newServer()`, `QA.ServerBackend`), so every test exercises the real server rules; `qa/qa-tests-6.js` = SEC-001..SEC-030 security regression tests (run them after ANY change to auth, sharing, escaping, the `.gs` file or the CSP).
+  The QA sandbox copy of index.html adds `'unsafe-eval'` to the CSP in memory only. Known remaining gaps are listed in the hardening report: club code is one shared secret, exercise feed readable without sign-in, no passphrase reset, shared-session view is link-based.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
