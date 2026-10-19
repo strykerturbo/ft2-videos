@@ -71,12 +71,12 @@ add('EX-007', C.data, 'Exercise Library', 'Bookmarking an exercise toggles and i
     const sb = await env.boot(); const id = sb.exercises()[0].id; sb.fn('toggleBookmark', {stopPropagation(){}}, id); assert(sb.S.bookmarks.has(id), 'Not bookmarked');
     const sb2 = await L.reopen(sb); assert(sb2.S.bookmarks.has(id), 'Bookmark lost after reopening'); sb2.fn('toggleBookmark', {stopPropagation(){}}, id); assert(!sb2.S.bookmarks.has(id), 'Not removed');
   }});
-add('EX-008', C.core, 'Exercise Library', 'The top bookmark button shows only bookmarked exercises.', {
+add('EX-008', C.core, 'Exercise Library', 'The top bookmark button opens Favorites, which lists exactly the bookmarked exercises (and the Exercise Library still lists them all).', {
   severity: 'Minor', tags: ['library'],
-  steps: ['Bookmark two exercises, tap the bookmark in the top bar.'], exp: 'Exactly those two are shown, with a "Show all" option.',
+  steps: ['Bookmark two exercises, tap the bookmark in the top bar.'], exp: 'Favorites shows exactly those two.',
   async run(env){
-    const sb = await env.boot(); const ids = sb.exercises().slice(0, 2).map(e => e.id); ids.forEach(id => sb.S.bookmarks.add(id)); sb.fn('openBookmarks');
-    eq(sb.exercises().filter(e => sb.fn('matchesFilters', e)).length, 2, 'Bookmarked-only list'); assert(sb.has('Show all', '#content'), '"Show all" missing'); sb.fn('clearBookmarkFilter');
+    const sb = await env.boot(); const ids = sb.exercises().slice(0, 2).map(e => e.id); ids.forEach(id => sb.S.bookmarks.add(id)); sb.clickSel('#topbar button[aria-label="Favorites"]');
+    eq(sb.S.screen, 'favorites', 'Screen'); eq(sb.qa('#favList .ex-card').length, 2, 'Bookmarked exercises on Favorites'); sb.fn('nav', 'exercises'); assert(sb.qa('.ex-card').length > 2, 'The library should still list every exercise');
   }});
 add('EX-009', C.core, 'Exercise Library', 'Tile and List views both list the exercises.', {
   severity: 'Polish', tags: ['library'],

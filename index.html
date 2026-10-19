@@ -668,8 +668,8 @@ a{color:inherit;text-decoration:none;}
   padding:3px 8px;border-radius:8px;
 }
 .ex-bookmark{
-  position:absolute;top:4px;right:4px;
-  width:32px;height:32px;border-radius:50%;
+  position:absolute;top:-2px;right:-2px;          /* 44px tap target; the icon sits exactly where it did in the old 32px one */
+  width:44px;height:44px;border-radius:50%;
   background:none;border:none;
   display:flex;align-items:center;justify-content:center;
 }
@@ -1926,6 +1926,13 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .so-name{font-size:var(--fs-md);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .so-meta{font-size:var(--fs-sm);color:var(--ink);margin-top:1px;font-weight:600;}
 .so-sub{font-size:var(--fs-sm);color:var(--ink-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fav-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 14px;}
+.fav-tab{justify-content:center;min-height:48px;padding:6px 2px;font-size:var(--fs-sm);}
+.fav-sh{margin:20px 0 8px;display:flex;align-items:baseline;justify-content:space-between;}
+.fav-count{font-size:var(--fs-sm);color:var(--ink-soft);font-weight:600;}
+.fav-empty{padding:36px 8px;}
+.fav-empty svg{width:34px;height:34px;color:var(--ink-soft);}
+.fav-missing .so-name{color:var(--ink-soft);}
 .so-fav{flex-shrink:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-soft);}
 .so-fav svg{width:22px;height:22px;}
 .so-fav.on{color:var(--turf);}
@@ -7817,6 +7824,7 @@ async function submitGate(){
   const name = String(r.name || f.name);
   state.coachName = name; state.authToken = String(r.token || ''); state.authStatus = 'ok';
   saveCoachNameToStorage(name); saveAuthToken(name, state.authToken);
+  adoptFavoritesFor(name);
   state.savedSessions.forEach(s => { if(String(s.createdBy||'').trim().toLowerCase() === name.toLowerCase()) s.createdBy = name; });   // same coach, server's spelling
   state.gate = {mode:'join', error:'', busy:false, name:''};
   render();
@@ -7829,6 +7837,7 @@ function continueOnThisPhone(){
   if(!f.name){ state.gate = {mode:state.gate.mode, error:'Enter your name first.', busy:false, name:''}; render(); return; }
   state.coachName = f.name; state.authToken = ''; state.authStatus = 'local';
   saveCoachNameToStorage(f.name); clearAuthToken();
+  adoptFavoritesFor(f.name);
   state.gate = {mode:'join', error:'', busy:false, name:''};
   render();
 }
@@ -8015,6 +8024,7 @@ function reconcileExerciseIds(){
   if(remap.size){
     const rm = id => remap.has(id) ? remap.get(id) : id;
     state.bookmarks = new Set([...state.bookmarks].map(rm));
+    { const ft = {}; Object.keys(state.favTimes.exercise || {}).forEach(k => { ft[rm(k)] = state.favTimes.exercise[k]; }); state.favTimes.exercise = ft; }
     PHASES.forEach(p => { state.phaseData[p.key] = (state.phaseData[p.key] || []).map(rm); });
     state.extraSections.forEach(sec => { sec.exercises = (sec.exercises || []).map(rm); });
     Object.keys(state.reviewGroupOrder || {}).forEach(k => {
@@ -9146,6 +9156,7 @@ function backFromDetail(){
     renderOverlay();
     return;
   }
+  if(state.fromFavorites){ nav('favorites', {fromFavorites:false}); return; }
   if(state.fromSharedSession){ nav('sharedSession', {fromSharedSession:false}); return; }
   if(state.fromReview){ nav(state.fromCustomReview ? 'customSessionReview' : 'review'); return; }
   // Adding to a saved session from the library: Back returns to that library list, not past it.
@@ -9163,6 +9174,7 @@ function backFromDetail(){
    destination. The final fallthrough is nav('exercises'): that's Find Exercises while picking for a
    phase (pickingPhase still set), the standalone Exercise Library otherwise. */
 function detailBackLabel(){
+  if(state.fromFavorites) return 'Favorites';
   if(state.fromSharedSession) return 'Shared Session';
   if(state.fromReview) return 'Session Review';
   if(state.fromSavedSession && state.editingSavedSessionId) return 'Exercises';
@@ -9234,7 +9246,11 @@ const state = {
   trainingProfileInfoOpen: false, // whether the "i" explanation next to the "Training profile" heading is expanded
   sessionBalanceInfoOpen: false,  // whether the "i" explanation next to "Session Balance" (Review's Time Breakdown) is expanded
   filters: { durations: new Set(), tags: new Set(), bookmarkedOnly: false, difficulty: new Set(), focusCategories: new Set(), location: new Set() },
-  bookmarks: new Set(),
+  bookmarks: new Set(),                // favorited EXERCISE ids (the exercise half of the Favorites hub -- see FAVORITES below)
+  templateFavs: new Set(),             // favorited TEMPLATE ids
+  favTimes: {session:{}, exercise:{}, template:{}},   // when each thing was favorited (orders the Favorites page); sessions themselves keep `favorited`
+  favOwner: '', favStash: {},          // whose favorites are loaded right now / other coaches' favorites on this same phone, set aside
+  favTab: 'all', favQuery: '', favBack: null, fromFavorites: false,
   targetDuration: 75,
   editingDuration: false,     // whether the custom-duration input is active
   buildDetailsExpanded: false, // whether the compact duration/location editor is expanded on the Build Practice page (batch 69)
@@ -9358,6 +9374,7 @@ function nav(screen, extra={}){
   // "Add" there just added a duplicate instead of completing the replace.
   if(state.replaceContext && screen !== 'exercises' && screen !== 'detail') state.replaceContext = null;
   if(screen !== 'detail' && screen !== 'sharedSession' && !('fromSharedSession' in extra)) extra = {...extra, fromSharedSession:false};
+  if(screen !== 'detail' && screen !== 'sessionDetail' && !('fromFavorites' in extra)) extra = {...extra, fromFavorites:false};   // only Exercise Detail / Saved Session can say "Back to Favorites"
   setState({screen, ...extra}); const c=document.getElementById('content'); if(c) c.scrollTop=0;
 }
 
@@ -9371,7 +9388,7 @@ function showToast(msg){
 /* ============ TOP BAR ============ */
 function renderTopbar(){
   const el = document.getElementById('topbar');
-  const bmActive = state.filters.bookmarkedOnly;
+  const bmActive = state.screen === 'favorites';
   el.innerHTML = `
     <div class="brand brand-home" role="button" tabindex="0" aria-label="FT2 home" onclick="nav('home')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nav('home');}">
       <div class="logo-badge">${LOGO_MARK}</div>
@@ -9382,7 +9399,7 @@ function renderTopbar(){
     </div>
     <div class="topbar-icons">
       <button class="icon-btn" onclick="openSearch()" title="Search">${ICONS.search}</button>
-      <button class="icon-btn" style="${bmActive?'background:var(--cone);color:var(--pitch-dark);':''}" onclick="openBookmarks()" title="Bookmarks">${bmActive?ICONS.bookmarkFilled:ICONS.bookmark}</button>
+      <button class="icon-btn" style="${bmActive?'background:var(--cone);color:var(--pitch-dark);':''}" onclick="openFavorites()" title="Favorites" aria-label="Favorites" aria-pressed="${bmActive}">${bmActive?ICONS.bookmarkFilled:ICONS.bookmark}</button>
       <button class="avatar" onclick="nav('settings')" title="Coach profile" aria-label="Open coach profile">TA</button>
     </div>`;
 }
@@ -9410,8 +9427,187 @@ function toggleTheme(){
   render();
 }
 
-function openBookmarks(){
-  nav('exercises', {sectionFilter:null, search:'', pickingPhase:null, quickFilterValue:null, filters:{...state.filters, bookmarkedOnly:true}});
+/* ============ FAVORITES (the bookmark icon = "everything I've saved") ============
+   One hub for Sessions, Exercises and Templates. A favorite is just a relationship to an object that already exists -- nothing is copied:
+   exercises -> state.bookmarks, templates -> state.templateFavs, sessions -> the session's own `favorited` flag (which syncs). favTimes remembers WHEN
+   (newest first). isFavorite / setFavorite / toggleFavorite are the one doorway every bookmark button goes through, so the state can never disagree.
+   Removing a favorite never deletes the session / exercise / template. Exercise + template favorites live on this phone (like templates), kept per coach. */
+const FAV_ALL_LIMIT = 4, FAV_SEARCH_MIN = 8;
+const FAV_TABS = [['all','All'],['sessions','Sessions'],['exercises','Exercises'],['templates','Templates']];
+const FAV_TYPES = {
+  session:  {tab:'sessions',  title:'Sessions',  one:'session'},
+  exercise: {tab:'exercises', title:'Exercises', one:'exercise'},
+  template: {tab:'templates', title:'Templates', one:'template'},
+};
+function favKey(name){ return String(name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+function favTime(type, id){ const t = state.favTimes && state.favTimes[type]; return (t && Number(t[id])) || 0; }
+function isFavorite(type, id){
+  if(type === 'exercise') return state.bookmarks.has(id);
+  if(type === 'template') return state.templateFavs.has(id);
+  if(type === 'session'){ const x = state.savedSessions.find(s => s.id === id); return !!(x && x.favorited); }
+  return false;
+}
+function setFavorite(type, id, on){
+  on = !!on;
+  if(type === 'exercise'){ if(on) state.bookmarks.add(id); else state.bookmarks.delete(id); }
+  else if(type === 'template'){ if(on) state.templateFavs.add(id); else state.templateFavs.delete(id); }
+  else if(type === 'session'){
+    const x = state.savedSessions.find(s => s.id === id);
+    if(!x || x.createdBy !== state.coachName) return;          // only your own sessions can be favorited
+    x.favorited = on; pushSessionToSheet(x);
+  } else return;
+  if(!state.favTimes[type]) state.favTimes[type] = {};
+  if(on) state.favTimes[type][id] = Date.now(); else delete state.favTimes[type][id];
+}
+function toggleFavorite(type, id){ setFavorite(type, id, !isFavorite(type, id)); }
+function removeFavorite(type, id){ setFavorite(type, id, false); render(); }
+/* Everything this coach has favorited, newest first. `obj` is the live session / exercise / template, or null when it has since gone
+   (the page then shows a quiet "no longer available" row instead of a broken card). Nothing is deleted here -- a library that has not finished loading must not wipe anybody's favorites. */
+function favoriteItems(){
+  const out = [];
+  state.savedSessions.forEach(x => { if(x.favorited && x.createdBy === state.coachName) out.push({itemType:'session', itemId:x.id, createdAt:favTime('session', x.id) || sessionUsedAt(x), obj:x}); });
+  [...state.bookmarks].forEach(id => out.push({itemType:'exercise', itemId:id, createdAt:favTime('exercise', id), obj:exById(id) || null}));
+  [...state.templateFavs].forEach(id => out.push({itemType:'template', itemId:id, createdAt:favTime('template', id), obj:getTemplate(id) || null}));
+  return out.sort((a, b) => b.createdAt - a.createdAt);
+}
+function favItemName(it){ return it.obj ? String(it.obj.name || '') : ''; }
+function favVisibleItems(){
+  const q = String(state.favQuery || '').trim().toLowerCase();
+  const all = favoriteItems();
+  return q ? all.filter(it => favItemName(it).toLowerCase().includes(q)) : all;
+}
+/* Favorites belong to the coach, not the phone: when a different coach starts using this phone, the previous coach's exercise / template favorites are set aside
+   and theirs (if any) come back. (Sessions are already per coach -- they carry their owner.) */
+function adoptFavoritesFor(name){
+  const key = favKey(name); if(!key) return;
+  if(state.favOwner === key) return;
+  if(state.favOwner){
+    state.favStash[state.favOwner] = {bookmarks:[...state.bookmarks], templateFavs:[...state.templateFavs], favTimes:state.favTimes};
+    const mine = state.favStash[key];
+    state.bookmarks = new Set((mine && mine.bookmarks) || []);
+    state.templateFavs = new Set((mine && mine.templateFavs) || []);
+    state.favTimes = (mine && mine.favTimes) || {session:{}, exercise:{}, template:{}};
+    delete state.favStash[key];
+  }
+  state.favOwner = key;     // first time (or an older app version): whatever is on this phone already belongs to this coach
+  state.favQuery = '';
+}
+const FAV_BACK_KEYS = ['detailId','viewingSessionId','pickingPhase','sectionFilter','quickFilterValue','fromBuild','fromBuildList','fromReview','fromCustomReview','fromSavedSession','fromSavedSessionId','editingSavedSessionId','fromHome','fromSharedSession','sessionsViewAll','sessionsViewMode','viewingTemplatesList','editingTemplateId','templatesOrigin','pickReturnTo','customSessionStep'];
+function openFavorites(){
+  if(state.screen === 'favorites'){ const c = document.getElementById('content'); if(c) c.scrollTop = 0; return; }
+  const fromHub = state.fromFavorites || state.templatesOrigin === 'favorites';     // came here from a favorite and tapped the icon again: keep the original way back
+  if(!fromHub){
+    const keep = {screen:state.screen}; FAV_BACK_KEYS.forEach(k => { keep[k] = state[k]; });
+    state.favBack = keep;
+  }
+  if(state.templatesOrigin === 'favorites'){ state.viewingTemplatesList = false; state.editingTemplateId = null; state.templateDraft = null; state.templateDraftOrig = ''; state.templatesOrigin = null; }
+  nav('favorites', {favQuery:''});
+}
+function openBookmarks(){ openFavorites(); }
+function favBackLabel(){
+  const b = state.favBack; if(!b) return 'Home';
+  switch(b.screen){
+    case 'home': return 'Home';
+    case 'exercises': return b.pickingPhase ? 'Find Exercises' : 'Exercises';
+    case 'detail': return 'Exercise';
+    case 'sessions': return 'Sessions';
+    case 'sessionDetail': return 'Saved Session';
+    case 'build': return 'Build Session';
+    case 'review': case 'customSessionReview': return 'Session Review';
+    case 'practiceSetup': return 'Session Setup';
+    case 'settings': return b.editingTemplateId ? 'Template' : 'Settings';
+    case 'sharedSession': return 'Home';
+    default: return 'Back';
+  }
+}
+function backFromFavorites(){
+  const b = state.favBack; state.favBack = null;
+  if(!b || !screens[b.screen] || b.screen === 'favorites' || b.screen === 'sharedSession'){ nav('home'); return; }
+  if(b.screen === 'detail' && !exById(b.detailId)){ nav('home'); return; }
+  if(b.screen === 'sessionDetail' && !state.savedSessions.some(x => x.id === b.viewingSessionId)){ nav('sessions'); return; }
+  const {screen, ...rest} = b;
+  nav(screen, {...rest, fromFavorites:false});
+}
+function setFavTab(tab){ state.favTab = FAV_TABS.some(t => t[0] === tab) ? tab : 'all'; state.favQuery = ''; render(); const c = document.getElementById('content'); if(c) c.scrollTop = 0; }
+let favSearchTimer = null;
+function onFavSearch(v){ state.favQuery = v; clearTimeout(favSearchTimer); favSearchTimer = setTimeout(refreshFavList, 120); }
+function clearFavSearch(){ state.favQuery = ''; const el = document.getElementById('favSearch'); if(el) el.value = ''; refreshFavList(); }
+function refreshFavList(){
+  const list = document.getElementById('favList'); if(!list){ render(); return; }
+  list.innerHTML = favListHtml();
+  const x = document.getElementById('favClear'); if(x) x.classList.toggle('hide', !state.favQuery);
+  initLazyMedia();
+}
+// Opening a favorite uses the normal screens; Back returns to Favorites.
+function openFavoriteExercise(id){ nav('detail', {detailId:id, fromFavorites:true, fromHome:false, fromBuild:false, fromBuildList:false, fromReview:false, fromSavedSession:false}); }
+function openFavoriteSession(id){ openSessionDetail(id, {fromFavorites:true}); }
+function openFavoriteTemplate(id){
+  if(!getTemplate(id)){ showToast('That template is no longer available'); return; }
+  nav('settings', {viewingTemplatesList:true, editingTemplateId:null, templatesOrigin:'favorites'});
+  openTemplateEditor(id);
+}
+function favMissingRowHtml(it){
+  return `<div class="so-row fav-missing" role="group">
+    <div class="so-body"><div class="so-name">No longer available</div><div class="so-sub">This ${FAV_TYPES[it.itemType].one} has been removed. Remove the bookmark to tidy up.</div></div>
+    <button class="so-fav on" onclick="removeFavorite('${it.itemType}','${escJsAttr(it.itemId)}')" aria-pressed="true" aria-label="Remove from favorites" title="Remove from favorites">${ICONS.bookmarkFilled}</button>
+  </div>`;
+}
+function favSectionBodyHtml(type, items){
+  const real = items.filter(it => it.obj), gone = items.filter(it => !it.obj);
+  let html = '';
+  if(type === 'session' && items.length) html = `<div class="hm-list so-list">${items.map(it => it.obj ? soRowHtml(it.obj, 'openFavoriteSession') : favMissingRowHtml(it)).join('')}</div>`;
+  else if(type === 'exercise') html = (real.length ? `<div class="ex-grid">${real.map(it => exCard(it.obj, {open:'openFavoriteExercise'})).join('')}</div>` : '') + (gone.length ? `<div class="hm-list so-list" style="margin-top:12px;">${gone.map(favMissingRowHtml).join('')}</div>` : '');
+  else if(type === 'template') html = `<div class="tmpl-lib-list">${items.map(it => it.obj ? templateLibRowHtml(it.obj, false, true) : favMissingRowHtml(it)).join('')}</div>`;
+  return html;
+}
+function favSectionHtml(type, items, limited){
+  const meta = FAV_TYPES[type]; const shown = limited ? items.slice(0, FAV_ALL_LIMIT) : items;
+  return `<div class="fav-section" data-type="${type}">
+    <div class="sh fav-sh"><h2>${meta.title}</h2><span class="fav-count">${items.length} item${items.length === 1 ? '' : 's'}</span></div>
+    ${favSectionBodyHtml(type, shown)}
+    ${limited && items.length > shown.length ? `<button class="ss-viewall" onclick="setFavTab('${meta.tab}')"><span>See All ${meta.title}</span>${ICONS.chevronRight}</button>` : ''}
+  </div>`;
+}
+function favEmptyHtml(tab, hasQuery){
+  if(hasQuery) return `<div class="ss-empty" style="text-align:center;"><div class="ss-empty-title">Nothing found.</div><div>No favorites match “${escHtml(state.favQuery)}”.</div><div class="so-empty-actions"><button class="btn btn-edge btn-ghost" onclick="clearFavSearch()">Clear Search</button></div></div>`;
+  const t = {
+    sessions:  ['No favorite sessions yet.', 'Bookmark sessions you want to open again quickly.'],
+    exercises: ['No favorite exercises yet.', 'Bookmark exercises you want to quickly access later.'],
+    templates: ['No favorite templates yet.', 'Bookmark templates you want to start from again.'],
+    all:       ['Save exercises, sessions, and templates to quickly find them here.', 'Tap the bookmark icon on anything you want to keep.'],
+  }[tab] || [];
+  return `<div class="empty-state fav-empty">${ICONS.bookmark}<p><strong>${t[0]}</strong></p><p>${t[1]}</p></div>`;
+}
+function favListHtml(){
+  const tab = state.favTab || 'all'; const hasQuery = !!String(state.favQuery || '').trim();
+  const items = favVisibleItems();
+  const by = type => items.filter(it => it.itemType === type);
+  if(tab === 'all'){
+    if(!items.length) return favEmptyHtml('all', hasQuery);
+    return ['session','exercise','template'].map(t => by(t).length ? favSectionHtml(t, by(t), !hasQuery) : '').join('');
+  }
+  const type = Object.keys(FAV_TYPES).find(k => FAV_TYPES[k].tab === tab);
+  const mine = by(type);
+  return mine.length ? favSectionHtml(type, mine, false) : favEmptyHtml(tab, hasQuery);
+}
+function renderFavorites(){
+  const tab = state.favTab || 'all';
+  const total = favoriteItems().length;
+  const backRow = `<div class="nav-sticky-back nav-sticky-root">${navBackRowHtml(favBackLabel(), 'backFromFavorites()')}</div>`;
+  const hasQuery = !!String(state.favQuery || '').trim();
+  return `${backRow}
+  <div class="section-pad so-page" style="padding-top:0;">
+    ${navPageTitleHtml('Favorites', 'Your saved sessions, exercises, and templates.')}
+    <div class="fav-tabs" role="tablist" aria-label="Favorites filter">
+      ${FAV_TABS.map(([k, l]) => `<button class="view-toggle-btn fav-tab ${tab === k ? 'active' : ''}" role="tab" aria-selected="${tab === k}" onclick="setFavTab('${k}')">${l}</button>`).join('')}
+    </div>
+    ${(total >= FAV_SEARCH_MIN || hasQuery) ? `<div class="so-search">
+      <span class="so-search-ic">${ICONS.search}</span>
+      <input id="favSearch" type="search" class="so-search-input" placeholder="Search your favorites" value="${escAttr(state.favQuery)}" oninput="onFavSearch(this.value)" autocomplete="off" autocapitalize="off" aria-label="Search your favorites">
+      <button id="favClear" class="so-search-x ${state.favQuery ? '' : 'hide'}" onclick="clearFavSearch()" aria-label="Clear search">${ICONS.x}</button>
+    </div>` : ''}
+    <div id="favList">${favListHtml()}</div>
+  </div>`;
 }
 function clearBookmarkFilter(){
   state.filters.bookmarkedOnly = false;
@@ -9431,6 +9627,8 @@ function clearBookmarkFilter(){
 function activeNavKey(){
   const sc = state.screen;
   if(sc === 'home') return 'home';
+  if(sc === 'favorites') return null;          // the top-bar bookmark is its home; no bottom tab lights up
+  if(sc === 'settings' && state.templatesOrigin === 'favorites') return null;
   if(sc === 'settings') return (state.templatesOrigin === 'sessions' && (state.viewingTemplatesList || state.editingTemplateId)) ? 'sessions' : 'settings';
   if(sc === 'sharedSession') return 'sessions';
   if(['practiceSetup','build','review','sessions','sessionDetail','quickStartCustom','customSessionSetup','customSessionGenerating','customSessionReview'].includes(sc)) return 'sessions';
@@ -9476,6 +9674,7 @@ function createTemplate(){
   render();
   const c = document.getElementById('content'); if(c) c.scrollTop = 0;
 }
+function toggleTemplateFavorite(id){ toggleFavorite('template', id); render(); }
 function openTemplateEditor(id){
   teStartDraft(id);
   state.editingTemplateId = id;
@@ -9492,6 +9691,7 @@ function discardTemplateDraft(){
   state.templateSectionModal = null;
   state.templateDraft = null; state.templateDraftOrig = '';
   state.editingTemplateId = null;
+  if(state.templatesOrigin === 'favorites'){ state.viewingTemplatesList = false; state.templatesOrigin = null; nav('favorites'); return; }
   render();
 }
 function cancelDiscardTemplate(){ state.confirmDiscardTemplateOpen = false; renderOverlay(); }
@@ -9513,6 +9713,7 @@ function confirmDeleteSessionNow(){
   const id = state.confirmDeleteSessionId;
   if(state.screen === 'sessionDetail' && state.viewingSessionId === id) nav('sessions');
   state.savedSessions = state.savedSessions.filter(s=>s.id!==id);
+  delete state.favTimes.session[id];
   state.confirmDeleteSessionId = null;
   showToast('Session deleted');
   render();
@@ -9521,6 +9722,7 @@ function confirmDeleteSessionNow(){
 function confirmDeleteTemplateNow(){
   const id = state.confirmDeleteTemplateId;
   state.practiceTemplates = state.practiceTemplates.filter(t=>t.id!==id);
+  state.templateFavs.delete(id); delete state.favTimes.template[id];
   if(state.editingTemplateId === id){ state.editingTemplateId = null; state.templateDraft = null; state.templateDraftOrig = ''; }
   state.confirmDeleteTemplateId = null;
   showToast('Template deleted');
@@ -9803,6 +10005,7 @@ function teSaveTemplate(){
     }
     state.templateDraft = null; state.templateDraftOrig = ''; state.editingTemplateId = null; state.templateSectionModal = null;
     showToast('Template saved');
+    if(state.templatesOrigin === 'favorites'){ state.viewingTemplatesList = false; state.templatesOrigin = null; nav('favorites'); return; }
     render();
     const c = document.getElementById('content'); if(c) c.scrollTop = 0;
   } finally {
@@ -9848,7 +10051,7 @@ function renderTemplateEditor(){
   const isNew = !!d.isNew;
   return `
   <div class="section-pad su-page te-page">
-    ${navStickyBackHtml('Templates', 'closeTemplateEditor()')}
+    ${navStickyBackHtml(state.templatesOrigin === 'favorites' ? 'Favorites' : 'Templates', 'closeTemplateEditor()')}
     <div class="te-titlebar">${navPageTitleHtml(isNew ? 'Create New Template' : 'Edit Template', 'Set the details, then adjust each section.')}</div>
 
     <div class="su-group te-su">
@@ -9962,20 +10165,20 @@ function tmplGripUp(){
 }
 /* One row in a template list -- reused by the Settings library list (tap opens the editor) and
    the Build page's "Load a template" sheet (tap applies it to the current session instead). */
-function templateLibRowHtml(t, forPicker){
+function templateLibRowHtml(t, forPicker, inFavorites){
   const locIcon = t.location==='indoor' ? ICONS.home : t.location==='outdoor' ? ICONS.sun : ICONS.pitch;
   const locLabel = t.location==='indoor' ? 'Indoor' : t.location==='outdoor' ? 'Outdoor' : 'Any location';
   const sectionCount = t.sections.filter(s=>s.enabled!==false).length;
   const sum = templateSum(t.id);
   const isSetupSelected = forPicker && state.templatePickerContext==='setup' && state.setupSelectedTemplateId===t.id;
   return `
-  <div class="tmpl-lib-row ${isSetupSelected?'selected':''}" onclick="${forPicker ? `chooseTemplate('${t.id}')` : `openTemplateEditor('${t.id}')`}">
+  <div class="tmpl-lib-row ${isSetupSelected?'selected':''}" onclick="${forPicker ? `chooseTemplate('${t.id}')` : (inFavorites ? `openFavoriteTemplate('${t.id}')` : `openTemplateEditor('${t.id}')`)}">
     <div class="tmpl-lib-icon">${locIcon}</div>
     <div class="tmpl-lib-info">
       <div class="tmpl-lib-name">${escHtml(t.name || 'Untitled template')}</div>
       <div class="tmpl-lib-meta">${locLabel} &middot; ${t.duration}m &middot; ${sectionCount} section${sectionCount===1?'':'s'}${sum!==100?` &middot; <span style="color:var(--warn);">${sum}% allocated</span>`:''}</div>
     </div>
-    ${forPicker ? (isSetupSelected ? `<span class="setup-card-check static">${ICONS.check}</span>` : '') : `<button class="phase-box-del" onclick="event.stopPropagation(); requestDeleteTemplate('${t.id}')" title="Delete template">${ICONS.trash}</button>`}
+    ${forPicker ? (isSetupSelected ? `<span class="setup-card-check static">${ICONS.check}</span>` : '') : `<button class="so-fav ${isFavorite('template', t.id) ? 'on' : ''}" onclick="event.stopPropagation(); toggleTemplateFavorite('${t.id}')" aria-pressed="${isFavorite('template', t.id)}" aria-label="${isFavorite('template', t.id) ? 'Remove from favorites' : 'Add to favorites'}" title="${isFavorite('template', t.id) ? 'Remove from favorites' : 'Add to favorites'}">${isFavorite('template', t.id) ? ICONS.bookmarkFilled : ICONS.bookmark}</button>${inFavorites ? '' : `<button class="phase-box-del" onclick="event.stopPropagation(); requestDeleteTemplate('${t.id}')" title="Delete template">${ICONS.trash}</button>`}`}
     <span class="tmpl-lib-chevron">${ICONS.chevronRight}</span>
   </div>`;
 }
@@ -11667,21 +11870,22 @@ function activeFilterCount(){
   return state.filters.durations.size + state.filters.tags.size + state.filters.difficulty.size + state.filters.focusCategories.size + state.filters.location.size;
 }
 
-function exCard(ex){
+function exCard(ex, opts){
+  const open = (opts && opts.open) || 'openDetail';
   const inPhase = isExerciseInAnyPhase(ex.id);
   const isBookmarked = state.bookmarks.has(ex.id);
   const st = secStyle(ex.section);
   const cardTags = allTagsFor(ex).slice(0,3);
   return `
-  <div class="ex-card ${inPhase?'added':''}" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">
-    <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="openDetail('${escJsAttr(ex.id)}')">
+  <div class="ex-card ${inPhase?'added':''}" onclick="${open}('${escJsAttr(ex.id)}')" style="cursor:pointer;">
+    <button class="ex-thumb" style="border:none;width:100%;padding:0;background:${st.bg};color:${st.textOn==='dark'?'var(--pitch-dark)':'white'};" onclick="${open}('${escJsAttr(ex.id)}')">
       ${ex.mediaUrl ? mediaTagHtml(ex.mediaUrl, '', 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;', false, `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`) : `<div class="thumb-placeholder">${st.icon}<span class="thumb-placeholder-label">Diagram coming soon</span></div>`}
       ${inPhase ? `<span class="added-badge">${ICONS.check}</span>` : ''}
     </button>
     <button class="ex-bookmark ${isBookmarked?'on':''}" onclick="toggleBookmark(event,'${escJsAttr(ex.id)}')">${isBookmarked?ICONS.bookmarkFilled:ICONS.bookmark}</button>
     <div class="ex-body">
       <div class="ex-sect">${ex.section}${ex.duration?' · '+ex.duration+' min':''}</div>
-      <div class="ex-name" onclick="openDetail('${escJsAttr(ex.id)}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
+      <div class="ex-name" onclick="${open}('${escJsAttr(ex.id)}')" style="cursor:pointer;">${escHtml(ex.name)}</div>
       ${cardTags.length ? `<div class="ex-card-tags">${cardTags.map(t=>`<span class="tagpill sm">${escHtml(t)}</span>`).join('')}</div>` : ''}
       <button class="ex-addbtn ${inPhase?'added':''}" onclick="quickAdd(event,'${escJsAttr(ex.id)}')">
         ${inPhase?`${ICONS.check} Added`:`${ICONS.plus} Add`}
@@ -11758,7 +11962,7 @@ function setQuickFilter(v){ state.quickFilterValue = v; render(); }
 function setViewMode(mode){ state.viewMode = mode; render(); }
 function toggleBookmark(e, id){
   e.stopPropagation();
-  if(state.bookmarks.has(id)) state.bookmarks.delete(id); else state.bookmarks.add(id);
+  toggleFavorite('exercise', id);
   render();
 }
 
@@ -12177,9 +12381,9 @@ function renderOverlay(){
 }
 
 /* ============ EXERCISE DETAIL ============ */
-function openDetail(id){ nav('detail', {detailId:id, fromHome:false}); }
-function openDetailFromHome(id){ nav('detail', {detailId:id, fromHome:true, fromBuild:false, fromReview:false, fromSavedSession:false}); }
-function openDetailFromReview(id){ nav('detail', {detailId:id, fromReview:true, fromCustomReview:state.screen === 'customSessionReview', fromBuild:false, fromSavedSession:false, fromHome:false}); }
+function openDetail(id){ nav('detail', {detailId:id, fromHome:false, fromFavorites:false}); }
+function openDetailFromHome(id){ nav('detail', {detailId:id, fromFavorites:false, fromHome:true, fromBuild:false, fromReview:false, fromSavedSession:false}); }
+function openDetailFromReview(id){ nav('detail', {detailId:id, fromFavorites:false, fromReview:true, fromCustomReview:state.screen === 'customSessionReview', fromBuild:false, fromSavedSession:false, fromHome:false}); }
 function openDetailFromSavedSession(id, sessionId, savedName){
   const sess = state.savedSessions.find(x=>x.id===sessionId);
   let entry = null;
@@ -12187,11 +12391,11 @@ function openDetailFromSavedSession(id, sessionId, savedName){
   const ex = resolveSavedExercise(entry || {id, name: savedName});
   if(!ex){ showToast('That exercise is no longer in the library'); return; }
   id = ex.id;
-  nav('detail', {detailId:id, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, fromHome:false}); }
+  nav('detail', {detailId:id, fromFavorites:false, fromSavedSession:true, fromSavedSessionId:sessionId, fromBuild:false, fromReview:false, fromHome:false}); }
 // Tapping an exercise already added to a Building Session phase -- distinct from fromBuild (which
 // means "came from the Explore Exercises picker" and returns there via backFromDetail()'s
 // fallthrough); this returns straight to the Build page itself.
-function openDetailFromBuild(id){ nav('detail', {detailId:id, fromBuildList:true, fromBuild:false, fromReview:false, fromSavedSession:false, fromHome:false}); }
+function openDetailFromBuild(id){ nav('detail', {detailId:id, fromFavorites:false, fromBuildList:true, fromBuild:false, fromReview:false, fromSavedSession:false, fromHome:false}); }
 
 function renderDetail(){
   const ex = exById(state.detailId);
@@ -13914,11 +14118,11 @@ function renderPracticeSetup(){
 }
 
 /* ============ SAVED SESSIONS LIST + DETAIL ============ */
-function openSessionDetail(id){
+function openSessionDetail(id, extra){
   state.editingSessionDetail = false;
   const s = state.savedSessions.find(x => x.id === id);
   if(s && s.createdBy === state.coachName) markSessionUsed(s);      // opening one of your own sessions counts as using it (the Sessions list merely drawing does not)
-  nav('sessionDetail', {viewingSessionId:id}); prefetchShareLink(id);
+  nav('sessionDetail', {viewingSessionId:id, fromFavorites:false, ...(extra || {})}); prefetchShareLink(id);
 }
 // Save Changes (bottom button / header check): commits a title still being typed, syncs the session and leaves edit mode. Everything else
 // (exercises added / removed / reordered, length, rating) is already stored the moment it is changed.
@@ -13959,9 +14163,9 @@ function setSavedSessionDuration(id, val){
   if(s && !isNaN(n) && n>0){ s.targetDuration = n; touchSession(s, true); pushSessionToSheet(s); }
   render();
 }
+function backFromSessionDetail(){ if(state.fromFavorites){ nav('favorites', {fromFavorites:false}); return; } nav('sessions'); }
 function toggleSessionFavorite(id){
-  const s = state.savedSessions.find(s=>s.id===id);
-  if(s){ s.favorited = !s.favorited; pushSessionToSheet(s); }
+  toggleFavorite('session', id);
   render();
 }
 // Flips a saved session between Shared (visible to the whole friend group in Community) and
@@ -14180,12 +14384,13 @@ function sessionMetaParts(s){
   return parts;
 }
 // One compact row for a saved session, used by Recent, Favorites and the My Sessions library.
-function soRowHtml(s){
+function soRowHtml(s, open){
+  open = typeof open === 'string' ? open : 'openSessionDetail';   // (list.map(soRowHtml) passes an index here)
   const id = escJsAttr(s.id);
   const focus = (csFocusArea(s.focusArea) || {}).title;
   const third = [`${s.exCount} exercise${s.exCount === 1 ? '' : 's'}`, focus ? escHtml(focus) : '', s.ageGroup ? escHtml(s.ageGroup) : ''].filter(Boolean).join(' &middot; ');
   return `
-  <div class="so-row" role="button" tabindex="0" data-sid="${escAttr(s.id)}" onclick="openSessionDetail('${id}')">
+  <div class="so-row" role="button" tabindex="0" data-sid="${escAttr(s.id)}" onclick="${open}('${id}')">
     <div class="so-body">
       <div class="so-name">${escHtml(s.name)}</div>
       <div class="so-meta">${sessionMetaParts(s).map(escHtml).join(' &middot; ')}</div>
@@ -14481,7 +14686,7 @@ function renderSessionDetail(){
   <div class="detail-header sd-top" style="background:var(--pitch);">
     <div class="sd-top-row">
       <div class="sd-top-left">
-        <button class="backbtn" style="margin-bottom:0;" onclick="nav('sessions')" aria-label="Back to Sessions">${ICONS.back}</button>
+        <button class="backbtn" style="margin-bottom:0;" onclick="backFromSessionDetail()" aria-label="Back to ${state.fromFavorites ? 'Favorites' : 'Sessions'}">${ICONS.back}</button>
         <div class="dpill" style="margin-bottom:0;">${ICONS.soccerBallPhoto} Saved Session</div>
       </div>
       <div class="sd-top-right">
@@ -15454,6 +15659,7 @@ function saveAppStateToStorage(){
       activeTemplateId: state.activeTemplateId,
       savedSessions: state.savedSessions,
       bookmarks: [...state.bookmarks],
+      templateFavs: [...state.templateFavs], favTimes: state.favTimes, favOwner: state.favOwner, favStash: state.favStash,
       enabledPhaseKeys: [...state.enabledPhaseKeys],
       phaseOrder: state.phaseOrder,
       practiceTemplates: state.practiceTemplates,
@@ -15508,6 +15714,10 @@ function loadAppStateFromStorage(){
     if(typeof snap.activeTemplateId === 'string' || snap.activeTemplateId === null) state.activeTemplateId = snap.activeTemplateId ?? null;
     if(Array.isArray(snap.savedSessions)) state.savedSessions = snap.savedSessions;
     if(Array.isArray(snap.bookmarks)) state.bookmarks = new Set(snap.bookmarks);
+    if(Array.isArray(snap.templateFavs)) state.templateFavs = new Set(snap.templateFavs.filter(x => typeof x === 'string'));
+    if(snap.favTimes && typeof snap.favTimes === 'object') ['session','exercise','template'].forEach(k => { if(snap.favTimes[k] && typeof snap.favTimes[k] === 'object') state.favTimes[k] = snap.favTimes[k]; });
+    if(typeof snap.favOwner === 'string') state.favOwner = snap.favOwner;
+    if(snap.favStash && typeof snap.favStash === 'object' && !Array.isArray(snap.favStash)) state.favStash = snap.favStash;
     if(snap.csReviewCfg && typeof snap.csReviewCfg === 'object'){ state.csReviewCfg = snap.csReviewCfg; state.csDraftGenerated = !!snap.csDraftGenerated; state.csGeneratedSig = snap.csGeneratedSig || null; state.csReviewNotes = Array.isArray(snap.csReviewNotes) ? snap.csReviewNotes : []; state.csReviewExplain = (snap.csReviewExplain && Array.isArray(snap.csReviewExplain.steps)) ? snap.csReviewExplain : null; state.csPlannedByPhase = (snap.csPlannedByPhase && typeof snap.csPlannedByPhase === 'object') ? snap.csPlannedByPhase : null; }
     if(csFocusArea(snap.csFocusAreaId)){
       state.csFocusAreaId = snap.csFocusAreaId;
@@ -15608,6 +15818,7 @@ const screens = {
   review: renderReview,
   sessions: renderSessions,
   sessionDetail: renderSessionDetail,
+  favorites: renderFavorites,
   sharedSession: renderSharedSession,
   settings: renderSettings,
   quickStartHome: renderQuickStartHome,
@@ -15697,6 +15908,7 @@ initTheme();
 initSheetDrag();
 loadAppStateFromStorage();
 state.coachName = loadCoachName();
+adoptFavoritesFor(state.coachName);
 state.authToken = state.coachName ? loadAuthToken(state.coachName) : '';
 state.authStatus = state.authToken ? 'ok' : (state.coachName ? 'none' : 'none');
 initSharedLink();

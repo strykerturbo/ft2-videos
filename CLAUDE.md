@@ -538,6 +538,12 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   **QA:** `qa/qa-server.js` runs the real `.gs` file on a pretend Sheet (`QA.newServer()`, `QA.ServerBackend`), so every test exercises the real server rules; `qa/qa-tests-6.js` = SEC-001..SEC-030 security regression tests (run them after ANY change to auth, sharing, escaping, the `.gs` file or the CSP).
   The QA sandbox copy of index.html adds `'unsafe-eval'` to the CSP in memory only. Known remaining gaps are listed in the hardening report: club code is one shared secret (anyone holding it can claim a name nobody has claimed yet), exercise feed readable without sign-in, shared-session view is link-based.
 
+- **Favorites hub (2026-10).** The top-bar bookmark opens `renderFavorites()` (screen `favorites`): All / Sessions / Exercises / Templates, newest favorite first, ALL shows 4 per type + "See All", search appears at 8+ favorites.
+  ONE doorway for every bookmark button: `isFavorite / setFavorite / toggleFavorite(type,id)` (types session | exercise | template). Storage stays where it was -- exercises `state.bookmarks`, templates `state.templateFavs`, sessions the session's own `favorited` (synced) --
+  plus `state.favTimes` (when favorited; session times fall back to last-used). Never add a second favorites store. Exercise + template favorites live on this phone only and are kept PER COACH (`adoptFavoritesFor`, `favOwner`/`favStash`); sessions are per coach already.
+  Opening items reuses the normal screens with `fromFavorites` (Exercise Detail, Saved Session) or `templatesOrigin:'favorites'` (template editor), so Back returns to Favorites; Back FROM Favorites uses `state.favBack` (a snapshot of the screen it was opened from). Items that have gone show a
+  "No longer available" row (never deleted automatically -- a library still loading must not wipe favorites). `exCard(ex,{open})` / `soRowHtml(s,open)` take the opener name (note `list.map(soRowHtml)` passes an index, hence the typeof check). The old "bookmarked only" Exercise filter code is unused. Tests FAV-001..014.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
