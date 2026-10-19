@@ -7735,7 +7735,7 @@ function saveCoachNameToStorage(name){
   try { localStorage.setItem(COACH_NAME_STORAGE_KEY, name || ''); } catch(err){ /* storage unavailable -- coach will just be asked again next launch */ }
 }
 /* ============ SIGN-IN ============
-   Who the coach is gets decided by the SERVER: a coach signs in with a name + passphrase (new coaches also need the club access code) and the
+   Who the coach is gets decided by the SERVER: a coach joins once with a name + the club access code (a second phone uses a one-time phone code) and the
    server hands back a long random token that is sent with every saved-session request. The coach name typed in the app proves nothing. */
 const AUTH_STORAGE_KEY = 'ft2_auth_v1';
 function loadAuthToken(coach){
@@ -7757,7 +7757,7 @@ function authBannerHtml(){
   const msg = state.authStatus === 'expired' ? 'Your sign-in expired.' : 'You’re not signed in.';
   return `<div class="sync-banner auth-banner" role="status"><span>${msg} Sessions are saved on this phone only until you sign in.</span><button class="back-pill-flat" style="margin:0;flex-shrink:0;padding:6px 12px;" onclick="reSignIn()">Sign in</button></div>`;
 }
-function reSignIn(){ state.gate = {mode:'signin', error:'', busy:false, name:state.coachName}; state.coachName = ''; saveCoachNameToStorage(''); render(); }
+function reSignIn(){ state.gate = {mode:'join', error:'', busy:false, name:state.coachName}; state.coachName = ''; saveCoachNameToStorage(''); render(); }
 function loadCoachName(){
   try { return localStorage.getItem(COACH_NAME_STORAGE_KEY) || ''; } catch(err){ return ''; }
 }
@@ -7766,56 +7766,46 @@ function saveCoachNameToStorage(name){
 }
 // The gate screen shown instead of the whole app whenever state.coachName is empty (first launch on a device, or after signing out).
 function renderWhoIsCoaching(){
-  const g = state.gate, reg = g.mode === 'register';
+  const g = state.gate, ph = g.mode === 'phone';
   return `
   <div class="section-pad" style="padding-top:36px;">
     <div class="eyebrow">Welcome to FT2</div>
-    <h1 style="font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:700;font-size:var(--fs-display);margin:4px 0 10px;">${reg ? 'Create your account' : 'Sign in'}</h1>
-    <p style="color:var(--ink-soft);font-size:var(--fs-md);line-height:1.5;margin:0 0 18px;">${reg ? 'Choose a name and a passphrase. You’ll need the club access code from your coaching group.' : 'Sign in so your saved sessions follow you here and stay private to you.'}</p>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-0.03em;font-weight:700;font-size:var(--fs-display);margin:4px 0 10px;">${ph ? 'Add this phone' : 'Join FT2'}</h1>
+    <p style="color:var(--ink-soft);font-size:var(--fs-md);line-height:1.5;margin:0 0 18px;">${ph ? 'On your other phone open Settings → Add another phone. Type your name and the code it shows.' : 'Enter your name and the club access code from your coaching group. You only do this once on this phone.'}</p>
     <label class="te-label" for="coachNameInput">Your name</label>
-    <input id="coachNameInput" class="setup-date-input" style="margin:0 0 10px;" placeholder="Your name" maxlength="40" autocomplete="username" value="${escAttr(g.name || '')}" onkeydown="if(event.key==='Enter'){document.getElementById('coachPassInput').focus();}">
-    <label class="te-label" for="coachPassInput">Passphrase</label>
-    <input id="coachPassInput" type="password" class="setup-date-input" style="margin:0 0 10px;" placeholder="${reg ? 'At least 8 characters' : 'Your passphrase'}" maxlength="100" autocomplete="${reg ? 'new-password' : 'current-password'}" onkeydown="if(event.key==='Enter'){submitGate();}">
-    ${reg ? `
-    <label class="te-label" for="coachPass2Input">Repeat passphrase</label>
-    <input id="coachPass2Input" type="password" class="setup-date-input" style="margin:0 0 10px;" maxlength="100" autocomplete="new-password">
-    <label class="te-label" for="coachClubInput">Club access code</label>
-    <input id="coachClubInput" type="password" class="setup-date-input" style="margin:0 0 10px;" maxlength="100" autocomplete="off" onkeydown="if(event.key==='Enter'){submitGate();}">` : ''}
+    <input id="coachNameInput" class="setup-date-input" style="margin:0 0 10px;" placeholder="Your name" maxlength="40" autocomplete="name" value="${escAttr(g.name || '')}" onkeydown="if(event.key==='Enter'){document.getElementById('coachCodeInput').focus();}">
+    <label class="te-label" for="coachCodeInput">${ph ? 'Phone code' : 'Club access code'}</label>
+    <input id="coachCodeInput" class="setup-date-input" style="margin:0 0 10px;${ph ? 'text-transform:uppercase;letter-spacing:0.12em;' : ''}" ${ph ? 'placeholder="8 letters and numbers"' : 'type="password"'} maxlength="100" autocomplete="off" autocapitalize="${ph ? 'characters' : 'off'}" onkeydown="if(event.key==='Enter'){submitGate();}">
     ${g.error ? `<div class="te-name-err" role="alert" style="margin:2px 2px 10px;">${escHtml(g.error)}</div>` : ''}
-    <button class="btn btn-primary" style="width:100%;margin-top:6px;" ${g.busy ? 'disabled' : ''} onclick="submitGate()">${g.busy ? 'One moment…' : (reg ? 'Create account' : 'Sign in')}</button>
-    <button class="btn btn-edge btn-ghost" style="width:100%;margin-top:10px;" onclick="setGateMode('${reg ? 'signin' : 'register'}')">${reg ? 'I already have an account' : 'New here? Create an account'}</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;" ${g.busy ? 'disabled' : ''} onclick="submitGate()">${g.busy ? 'One moment…' : (ph ? 'Add this phone' : 'Join')}</button>
+    <button class="btn btn-edge btn-ghost" style="width:100%;margin-top:10px;" onclick="setGateMode('${ph ? 'join' : 'phone'}')">${ph ? 'Back to joining with the club code' : 'Already joined on another phone?'}</button>
     <button class="ss-viewall" style="margin-top:14px;" onclick="continueOnThisPhone()"><span>Continue on this phone only (no sync)</span></button>
   </div>`;
 }
 function gateFields(){
   const v = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  return {name: v('coachNameInput').trim().replace(/\s+/g, ' '), pass: v('coachPassInput'), pass2: v('coachPass2Input'), club: v('coachClubInput')};
+  return {name: v('coachNameInput').trim().replace(/\s+/g, ' '), code: v('coachCodeInput').trim()};
 }
 function setGateMode(mode){ const f = gateFields(); state.gate = {mode, error:'', busy:false, name:f.name}; render(); }
 const GATE_ERRORS = {
-  bad_credentials: 'That name or passphrase isn’t right. New here? Choose “Create an account”.',
-  rate_limited: 'Too many tries. Wait 15 minutes and try again.',
-  bad_club_code: 'That club access code isn’t right.',
-  name_taken: 'That name is already taken. Choose “I already have an account” to sign in.',
+  bad_club_code: 'That club access code isn’t right. Check it with your coaching group.',
+  bad_phone_code: 'That name or phone code isn’t right, or the code has run out. Get a fresh one on your other phone.',
+  rate_limited: 'Too many wrong tries. Wait 15 minutes and try again.',
+  name_taken: 'That name has already joined on another phone. Tap “Already joined on another phone?” and use the phone code from Settings there.',
   setup_required: 'The club server hasn’t been set up yet. Ask your coach admin.',
   unknown_action: 'The shared server hasn’t been updated yet. You can keep working on this phone.',
   too_large: 'That request was too large.',
 };
 async function submitGate(){
   const g = state.gate; if(g.busy) return;
-  const f = gateFields(), reg = g.mode === 'register';
+  const f = gateFields(), ph = g.mode === 'phone';
   const fail = (msg) => { state.gate = {mode:g.mode, error:msg, busy:false, name:f.name}; render(); };
   if(!f.name){ return fail('Enter your name.'); }
-  if(!f.pass){ return fail('Enter your passphrase.'); }
-  if(reg){
-    if(f.pass.length < 8) return fail('Your passphrase needs at least 8 characters.');
-    if(f.pass !== f.pass2) return fail('The two passphrases don’t match.');
-    if(!f.club.trim()) return fail('Enter the club access code.');
-  }
+  if(!f.code){ return fail(ph ? 'Enter the phone code.' : 'Enter the club access code.'); }
   state.gate = {mode:g.mode, error:'', busy:true, name:f.name}; render();
   let r;
   try{
-    const res = await fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify(reg ? {action:'register', name:f.name, passphrase:f.pass, clubCode:f.club} : {action:'login', name:f.name, passphrase:f.pass})});
+    const res = await fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify(ph ? {action:'pair', name:f.name, code:f.code} : {action:'join', name:f.name, clubCode:f.code})});
     r = await res.json();
   }catch(e){
     return fail('Can’t reach the server right now. Check your connection, or continue on this phone only.');
@@ -7828,7 +7818,7 @@ async function submitGate(){
   state.coachName = name; state.authToken = String(r.token || ''); state.authStatus = 'ok';
   saveCoachNameToStorage(name); saveAuthToken(name, state.authToken);
   state.savedSessions.forEach(s => { if(String(s.createdBy||'').trim().toLowerCase() === name.toLowerCase()) s.createdBy = name; });   // same coach, server's spelling
-  state.gate = {mode:'signin', error:'', busy:false, name:''};
+  state.gate = {mode:'join', error:'', busy:false, name:''};
   render();
   await syncSessionsFromSheet();
   retryPendingSessionPushes();
@@ -7839,15 +7829,52 @@ function continueOnThisPhone(){
   if(!f.name){ state.gate = {mode:state.gate.mode, error:'Enter your name first.', busy:false, name:''}; render(); return; }
   state.coachName = f.name; state.authToken = ''; state.authStatus = 'local';
   saveCoachNameToStorage(f.name); clearAuthToken();
-  state.gate = {mode:'signin', error:'', busy:false, name:''};
+  state.gate = {mode:'join', error:'', busy:false, name:''};
   render();
 }
-// Sign out of this device's account (wired from Settings).
+// Sign out of this device's account. Settings asks first (requestSignOut), because the name stays claimed: coming back needs a phone code from another phone.
+function requestSignOut(){
+  if(!signedIn()){ switchCoach(); return; }
+  state.signOutConfirm = true; renderOverlay();
+}
+function cancelSignOut(){ state.signOutConfirm = false; renderOverlay(); }
+function confirmSignOut(){ state.signOutConfirm = false; renderOverlay(); switchCoach(); }
+function signOutSheetHtml(){
+  if(!state.signOutConfirm) return '';
+  return `<div class="sheet-backdrop" onclick="cancelSignOut()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <h3>Sign out of this phone?</h3>
+    <div class="pe-intro">Your name stays yours. To use FT2 on this phone again you’ll need a phone code from your other phone (Settings → Add another phone). If this is your only phone, ask your club admin to reset you.</div>
+    <div class="sheet-footer"><button class="btn btn-ghost" onclick="cancelSignOut()">Stay signed in</button><button class="btn btn-primary" onclick="confirmSignOut()">Sign out</button></div>
+  </div>`;
+}
+// Settings > Add another phone: gets a one-time code from the server (works once, for 10 minutes).
+async function openPairSheet(){
+  if(!signedIn()){ showToast('Sign in first'); return; }
+  state.pairSheet = {status:'loading', code:'', error:''}; renderOverlay();
+  let r = null;
+  try{ r = await ft2Api('pairStart'); }catch(e){ r = null; }
+  if(!state.pairSheet) return;
+  if(r && r.ok && r.code){ state.pairSheet = {status:'ready', code:String(r.code), error:''}; }
+  else { state.pairSheet = {status:'error', code:'', error:'Couldn’t get a code. Check your connection and try again.'}; }
+  renderOverlay();
+}
+function closePairSheet(){ state.pairSheet = null; renderOverlay(); }
+function pairSheetHtml(){
+  const p = state.pairSheet; if(!p) return '';
+  const body = p.status === 'ready'
+    ? `<div class="pe-intro">On your new phone open FT2, tap “Already joined on another phone?”, then type your name and this code. It works once and runs out in 10 minutes.</div>
+       <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:44px;letter-spacing:0.14em;text-align:center;margin:10px 0 16px;">${escHtml(p.code.slice(0,4))} ${escHtml(p.code.slice(4))}</div>`
+    : p.status === 'error' ? `<div class="pe-intro">${escHtml(p.error)}</div>` : `<div class="pe-intro">Getting your code…</div>`;
+  return `<div class="sheet-backdrop" onclick="closePairSheet()"></div><div class="sheet"><div class="sheet-handle"></div>
+    <h3>Add another phone</h3>${body}
+    <div class="sheet-footer"><button class="btn btn-ghost" onclick="closePairSheet()">Done</button>${p.status === 'error' ? '<button class="btn btn-primary" onclick="openPairSheet()">Try Again</button>' : ''}</div>
+  </div>`;
+}
 function switchCoach(){
   const tok = state.authToken;
   if(tok && APPS_SCRIPT_URL){ try{ fetch(APPS_SCRIPT_URL, {method:'POST', body: JSON.stringify({action:'logout', token:tok})}).catch(()=>{}); }catch(e){} }
   state.authToken = ''; state.authStatus = 'none'; clearAuthToken();
-  state.gate = {mode:'signin', error:'', busy:false, name:''};
+  state.gate = {mode:'join', error:'', busy:false, name:''};
   state.coachName = '';
   saveCoachNameToStorage('');
   render();
@@ -9255,7 +9282,8 @@ const state = {
   templateSaveBusy: false,
   authToken: '',              // the server-issued sign-in token for this coach (kept on this device; the server decides who the coach is)
   authStatus: 'none',         // 'none' (never signed in) | 'ok' | 'expired' | 'local' (chose to work on this phone only)
-  gate: {mode:'signin', error:'', busy:false, name:''},   // the sign-in / create-account screen
+  signOutConfirm: false, pairSheet: null,
+  gate: {mode:'join', error:'', busy:false, name:''},   // the sign-in / create-account screen
   shareConfirmId: null,       // the session whose "Share this session?" confirmation is open
   templateNameError: false,   // true after tapping Save Template with no name: shows the inline "add a title" message
   editingTemplateId: null,        // which template Settings is currently editing -- null shows the library list
@@ -10041,8 +10069,12 @@ function renderSettings(){
         <div class="settings-account-name">Coaching as ${escHtml(state.coachName)}</div>
         <div class="settings-account-desc">${signedIn() ? 'Signed in — sessions sync to the club' : 'Not signed in — sessions stay on this phone'}</div>
       </div>
-      <button class="back-pill-flat" style="margin-bottom:0;padding:6px 12px;flex-shrink:0;" onclick="switchCoach()">${signedIn() ? 'Sign out' : 'Sign in'}</button>
+      <button class="back-pill-flat" style="margin-bottom:0;padding:6px 12px;flex-shrink:0;" onclick="requestSignOut()">${signedIn() ? 'Sign out' : 'Sign in'}</button>
     </div>
+    ${signedIn() ? `<div class="settings-group"><button class="settings-row" onclick="openPairSheet()">
+      <span class="settings-row-icon blue">${ICONS.gear}</span>
+      <span class="settings-row-text"><span class="settings-row-title">Add another phone</span><span class="settings-row-desc">Get a one-time code to use FT2 on a second phone</span></span>
+    </button></div>` : ''}
 
     <div class="settings-section-label">Practice Setup</div>
     <div class="settings-group">
@@ -11901,6 +11933,8 @@ function renderOverlay(){
   html += sessionMoreSheetHtml();
   html += saveFirstSheetHtml();
   html += shareConfirmSheetHtml();
+  html += signOutSheetHtml();
+  html += pairSheetHtml();
   html += sessionsFilterSheetHtml();
   html += sessionsSortSheetHtml();
   html += shareSheetHtml();

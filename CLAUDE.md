@@ -525,7 +525,9 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   (REDEPLOY as a new VERSION of the existing deployment to sync them across devices; until then the app keeps them locally and merges). Tests SS-025..SS-034.
 
 - **SECURITY HARDENING (2026-10, supersedes the "no passwords" identity note above).** The server now establishes identity itself; the coach name sent by the app is never trusted.
-  Coaches create an account (name + passphrase + the shared club access code) or sign in; the Apps Script returns a 64-hex token (only its hash is stored, `Auth` tab; passphrases are salted hashes in the `Coaches` tab).
+  NO PASSWORDS (coach's decision): a coach joins ONCE with their name + the shared club access code (`join`); a name can be claimed only once. The Apps Script returns a 64-hex token (only its hash is stored, `Auth` tab; the `Coaches` tab holds just the name, salt/hash columns are unused),
+  renewed every time it is used. A second phone: Settings > Add another phone (`pairStart`) shows a one-time 8-character code (10 min, one use); the new phone picks "Already joined on another phone?" and sends name + code (`pair`). Signing out asks first (`requestSignOut`) because the name stays claimed.
+  Lost every phone: delete the coach's row in `Coaches` (and `Auth`), they join again. Guessing wrong club / phone codes is rate-limited (20 per 15 min, all callers together).
   The app keeps the token in `ft2_auth_v1` and sends it on every session request (`ft2Api()`: POST only; `?sheet=sessions` without `share=` now answers `auth_required`). Ownership is `ownerKey` (lower-cased name, set by the server);
   sessions saved before accounts belong to whoever first registers that name. **Private is the default** (`completeSession`, server default); a share link exists only while `visibility==='shared'` -- Make Private clears the token and the old link
   returns not_found; Share Session on a private session asks first (`shareConfirmSheetHtml`). Others only ever receive shared sessions with notes/rating/favourite/link blanked; the public exercise feed is whitelisted (`PUBLIC_EXERCISE_COLUMNS`:
@@ -534,7 +536,7 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   **Deploying:** push the new `claude_FT2_AppsScript_Code.gs` as a NEW VERSION of the existing deployment, run `setupClubCode('<code>')` once from the Apps Script editor, give friends the code; each coach creates an account (first claimer of a name owns its old sessions).
   An OLD client against the NEW server cannot sync (no token); a NEW client against the OLD server gets `unknown_action` and keeps working locally -- deploy the server first.
   **QA:** `qa/qa-server.js` runs the real `.gs` file on a pretend Sheet (`QA.newServer()`, `QA.ServerBackend`), so every test exercises the real server rules; `qa/qa-tests-6.js` = SEC-001..SEC-030 security regression tests (run them after ANY change to auth, sharing, escaping, the `.gs` file or the CSP).
-  The QA sandbox copy of index.html adds `'unsafe-eval'` to the CSP in memory only. Known remaining gaps are listed in the hardening report: club code is one shared secret, exercise feed readable without sign-in, no passphrase reset, shared-session view is link-based.
+  The QA sandbox copy of index.html adds `'unsafe-eval'` to the CSP in memory only. Known remaining gaps are listed in the hardening report: club code is one shared secret (anyone holding it can claim a name nobody has claimed yet), exercise feed readable without sign-in, shared-session view is link-based.
 
 ## Where things live
 

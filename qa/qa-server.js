@@ -68,7 +68,7 @@ function makeEnv(){
   const sheets = new Map(), props = new Map(), cache = new Map();
   const ss = { getSheetByName: n => sheets.get(n) || null, insertSheet: n => { const s = new FakeSheet(n); sheets.set(n, s); return s; } };
   return {
-    sheets, props, cache,
+    sheets, props, cache, advanceTime: ms => cache.forEach(e => { e.exp -= ms; }),
     globals: {
       SpreadsheetApp: { getActiveSpreadsheet: () => ss },
       Utilities: { DigestAlgorithm: {SHA_256: 'SHA_256'}, Charset: {UTF_8: 'UTF_8'}, computeDigest: (alg, text) => sha256Bytes(String(text)), getUuid: () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); })) },
@@ -92,7 +92,7 @@ class QAServer {
     o = o || {};
     this.env = makeEnv(); this.club = o.club || 'QA-club-code';
     const names = Object.keys(this.env.globals);
-    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, LIMITS, PUBLIC_EXERCISE_COLUMNS};')(...names.map(n => this.env.globals[n]));
+    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, issueToken_, coachKey_, LIMITS, PUBLIC_EXERCISE_COLUMNS};')(...names.map(n => this.env.globals[n]));
     if(o.clubCode !== false) this.env.props.set('CLUB_CODE_HASH', QA.sha256Hex('ft2-club:' + this.club));
     this.log = [];
   }
@@ -100,10 +100,10 @@ class QAServer {
   get(params){ const out = this.api.doGet({parameter: params || {}}); return JSON.parse(out.getContent()); }
   post(body, rawText){ const out = this.api.doPost({postData: {contents: rawText !== undefined ? rawText : JSON.stringify(body)}}); return JSON.parse(out.getContent()); }
   /* conveniences */
-  register(name, pass, club){ return this.post({action: 'register', name, passphrase: pass || 'a-good-passphrase', clubCode: club === undefined ? this.club : club}); }
-  login(name, pass){ return this.post({action: 'login', name, passphrase: pass || 'a-good-passphrase'}); }
-  /* a signed-in coach: registers if new, otherwise signs in; returns {name, token} */
-  coach(name, pass){ pass = pass || 'a-good-passphrase'; let r = this.login(name, pass); if(!r.ok) r = this.register(name, pass); if(!r.ok) throw new Error('QA could not sign ' + name + ' in: ' + JSON.stringify(r)); return {name: r.name, token: r.token}; }
+  join(name, club){ return this.post({action: 'join', name, clubCode: club === undefined ? this.club : club}); }
+  pair(name, code){ return this.post({action: 'pair', name, code}); }
+  /* a signed-in coach: joins if new; if the name is already claimed, hands out a token the way a phone code would; returns {name, token} */
+  coach(name){ let r = this.join(name); if(!r.ok && r.error === 'name_taken'){ const key = this.api.coachKey_(name); const row = this.sheet('Coaches').getDataRange().getValues().find(x => String(x[0]) === key); r = {ok: true, name: row ? String(row[1]) : name, token: this.api.issueToken_(key)}; } if(!r.ok) throw new Error('QA could not sign ' + name + ' in: ' + JSON.stringify(r)); return {name: r.name, token: r.token}; }
   sheet(name){ return this.env.sheets.get(name) || null; }
   addExercises(headers, rows){ const sh = this.env.globals.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Exercises'); sh.appendRow(headers); rows.forEach(r => sh.appendRow(r)); }
   /* what is physically in the Sessions tab, as objects */
