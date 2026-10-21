@@ -126,7 +126,7 @@ add('EX-015', C.data, 'Exercise Library', 'Every exercise appears exactly once i
 const openDetailFor = async (env, o) => { const sb = await env.boot(o); sb.fn('nav', 'exercises'); sb.qa('#content .ex-name')[2].click(); eq(sb.screen, 'detail', 'Detail'); return sb; };
 add('ED-001', C.core, 'Exercise Detail', 'Detail shows name, phase, duration, format and difficulty.', {
   severity: 'Critical', tags: ['detail'], steps: ['Open any exercise.'], exp: 'Header shows the exercise name and phase; stats row shows Duration, Format, Difficulty.',
-  async run(env){ const sb = await openDetailFor(env); const ex = sb.fn('exById', sb.S.detailId); const t = sb.text('#content'); [ex.name, 'Duration', 'Format', 'Difficulty'].forEach(w => assert(t.includes(w), 'Missing ' + w)); assert(sb.q('#content .detail-eyebrow select').value === ex.section, 'Phase not shown'); }});
+  async run(env){ const sb = await openDetailFor(env); const ex = sb.fn('exById', sb.S.detailId); const t = sb.text('#content'); [ex.name, 'Duration', 'Format', 'Difficulty'].forEach(w => assert(t.includes(w), 'Missing ' + w)); assert(sb.text('#content .detail-eyebrow').includes(ex.section), 'Phase not shown'); }});
 add('ED-002', C.core, 'Exercise Detail', 'Setup, Objective, Coaching points, Variations and Training profile sections are present.', {
   severity: 'Major', tags: ['detail'], steps: ['Scroll the detail page.'], exp: 'All five sections present (a dash when empty).',
   async run(env){ const sb = await openDetailFor(env); ['Setup', 'Objective', 'Coaching points', 'Variations', 'Training profile', 'Tags'].forEach(w => assert(sb.has(w, '#content'), 'Missing ' + w)); }});
@@ -177,9 +177,14 @@ add('ED-009', C.cons, 'Exercise Detail', 'The Back button and the coloured title
 add('ED-010', C.nav, 'Exercise Detail', 'Similar exercises are listed and tapping one opens it.', {
   severity: 'Polish', tags: ['detail'], steps: ['Tap a similar exercise.'], exp: 'That exercise opens.',
   async run(env){ const sb = await openDetailFor(env); const first = sb.S.detailId; const sim = sb.q('#content .sim-card'); assert(sim, 'No similar exercises'); sim.click(); assert(sb.S.detailId !== first, 'Did not open the similar exercise'); }});
-add('ED-011', C.core, 'Exercise Detail', 'Tags are shown and the Add tags sheet opens.', {
-  severity: 'Minor', tags: ['detail'], steps: ['Tap Add tags.'], exp: 'Tag picker sheet opens with categories.',
-  async run(env){ const sb = await openDetailFor(env); sb.clickSel('#content .add-tag-trigger'); assert(sb.S.tagPickerFor || sb.overlayText().length > 10, 'Tag picker did not open'); }});
+add('ED-011', C.core, 'Exercise Detail', 'On an exercise the coach created, tags are shown and the Add tags sheet opens.', {
+  severity: 'Minor', tags: ['detail'], steps: ['Create an exercise, tap Add tags.'], exp: 'Tag picker sheet opens with categories.',
+  async run(env){ const sb = await env.boot(); sb.fn('createNewExercise'); sb.clickSel('#content .add-tag-trigger'); assert(sb.S.tagPickerFor || sb.overlayText().length > 10, 'Tag picker did not open'); }});
+add('ED-018', C.core, 'Exercise Detail', 'Exercises from the club library are READ-ONLY on the detail page (nothing looks typeable, no Add tags, no dropdowns); exercises the coach created can still be edited.', {
+  severity: 'Major', tags: ['detail', 'data'], steps: ['Open a library exercise, then a coach-created one.'], exp: 'Library: no editing controls. Own: editing controls.',
+  async run(env){ const sb = await openDetailFor(env); const ro = () => ({edit: sb.qa('#content [contenteditable="true"]').length, sel: sb.qa('#content select').length, tag: sb.qa('#content .add-tag-trigger').length});
+    const a = ro(); eq(a.edit + a.sel + a.tag, 0, 'A library exercise still shows editing controls ' + JSON.stringify(a)); assert(sb.has('Duration', '#content') && sb.has('Difficulty', '#content') && sb.has('Format', '#content'), 'The read-only stats are missing');
+    sb.fn('createNewExercise'); const b = ro(); assert(b.edit >= 5 && b.sel >= 4 && b.tag === 1, 'A coach-created exercise lost its editing controls ' + JSON.stringify(b)); }});
 add('ED-012', C.core, 'Exercise Detail', 'Changing the location pill updates the exercise.', {
   severity: 'Minor', tags: ['detail', 'data'], steps: ['Change Indoor / Outdoor on the exercise.'], exp: 'Stored on the exercise.',
   async run(env){ const sb = await openDetailFor(env); const id = sb.S.detailId; sb.fn('updateExerciseField', id, 'location', 'indoor', undefined, false); eq(sb.fn('exById', id).location, 'indoor', 'Location'); }});
