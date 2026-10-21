@@ -582,7 +582,7 @@ add('SS-019', C.sec, 'Saved Session', 'Another coach\'s session is read-only: no
   async run(env){
     const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; s.createdBy = 'Another Coach'; L.openSaved(sb, s.id);
     sb.qa('#content .star-btn')[2].click(); eq(s.rating, 0, 'A non-owner changed the rating'); assert(!sb.q('#content .pcard-add-btn'), 'Add Exercise offered to a non-owner');
-    assert(!sb.q('#content [onclick*="removeExerciseFromSavedSession"]'), 'Remove offered to a non-owner'); assert(!sb.has('Share Session', '#content'), 'Share offered');
+    assert(!sb.q('#content [data-onclick*="removeExerciseFromSavedSession"]'), 'Remove offered to a non-owner'); assert(!sb.has('Share Session', '#content'), 'Share offered');
   }});
 add('SS-020', C.data, 'Saved Session', 'A saved session survives closing and reopening the app.', {
   smoke: true, severity: 'Critical', tags: ['saved', 'persistence'],

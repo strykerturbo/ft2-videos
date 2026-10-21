@@ -64,10 +64,16 @@ QA.loadSource = async function(force){
   // The 3-second "Building Your Session" screen is shortened in the sandbox (unless a test asks for the real timing).
   const p3 = 'const GEN_MIN_DISPLAY_MS = 3000;';
   if(patched.includes(p3)){ patched = patched.replace(p3, 'const GEN_MIN_DISPLAY_MS = (window.__QA_FASTGEN ? 150 : 3000);'); patches.push('genWait'); }
-  // The shipped Content-Security-Policy forbids eval(), which this harness uses to read the app's internal state, so the SANDBOX copy (only) gets
-  // 'unsafe-eval'. The real policy text is still checked, unmodified, by the security tests (they read src.text).
-  const pc = "script-src 'self' 'unsafe-inline'";
-  if(patched.includes(pc)){ patched = patched.replace(pc, pc + " 'unsafe-eval'"); patches.push('csp-for-harness'); }
+  // The shipped Content-Security-Policy allows exactly ONE inline script (the app, by its hash) and forbids eval(). The sandbox copy has patches
+  // (above) so its script text differs: its hash is recomputed so the SAME strict policy is enforced in every test, plus 'unsafe-eval' for the
+  // harness only (it reads the app's internal state with eval). The real, unmodified policy text is checked by the security tests (they read src.text).
+  const sm = /<script>([\s\S]*?)<\/script>/.exec(patched);
+  if(sm){
+    const dig = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sm[1])));
+    const b64 = btoa(String.fromCharCode(...dig));
+    const hm = /'sha256-[A-Za-z0-9+\/=]+'/;
+    if(hm.test(patched)){ patched = patched.replace(hm, "'sha256-" + b64 + "' 'unsafe-eval'"); patches.push('csp-for-harness'); }
+  }
   sourceCache = {
     text, patched, patches,
     hash: await hashText(text),
@@ -164,7 +170,7 @@ class Sandbox {
   clickables(scope){
     const root = scope ? this.q(scope) : this.doc;
     if(!root) return [];
-    return this.qa('button, a, [onclick], [role="button"], .navitem, label', root).filter(el => !el.disabled);
+    return this.qa('button, a, [data-onclick], [role="button"], .navitem, label', root).filter(el => !el.disabled);
   }
   findClickable(text, scope, opts){
     const want = this.norm(text), exact = opts && opts.exact;
@@ -237,6 +243,7 @@ class Sandbox {
   }
 }
 QA.Sandbox = Sandbox;
+QA.cspLog = [];               // every Content-Security-Policy violation seen inside a sandbox during the current test
 QA.sandboxes = new Set();      // every sandbox still alive; a test that opens several (e.g. "close and reopen the app") never leaks them
 
 /* Boot a fresh, isolated copy of the app. Options:
@@ -302,8 +309,12 @@ QA.boot = async function(opts){
   window.addEventListener('error', function(ev){ ctx.errors.push((ev.message || 'error') + (ev.filename ? ' @' + String(ev.filename).split('/').pop() + ':' + ev.lineno : '')); });
   window.addEventListener('unhandledrejection', function(ev){ ctx.errors.push('unhandled promise rejection: ' + (ev.reason && ev.reason.message || ev.reason)); });
   var ow = console.warn; console.warn = function(){ ctx.warnings.push(Array.prototype.join.call(arguments, ' ')); };
+  document.addEventListener('securitypolicyviolation', function(ev){ window.parent.QA.cspLog.push(ev.violatedDirective + ' | ' + (ev.blockedURI || '') + ' | ' + String(ev.sample || '').slice(0, 80)); });
 })();`;
-  const html = src.patched.replace(/<head[^>]*>/i, m => `${m}<base href="${QA.ROOT_URL}"><script>${bootScript}<\/script>`);
+  let html = src.patched.replace(/<head[^>]*>/i, m => `${m}<base href="${QA.ROOT_URL}"><script>${bootScript}<\/script>`);
+  // the harness's own boot script is the only other inline script allowed in the sandbox copy of the policy (by hash)
+  const bh = btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(bootScript)))));
+  html = html.replace("'unsafe-eval'", "'unsafe-eval' 'sha256-" + bh + "'");
   document.body.appendChild(frame);
   await new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('The app did not finish loading inside the QA sandbox (15s).')), 15000);
@@ -390,7 +401,7 @@ async function runOne(t, ctx){
   const t0 = performance.now();
   const rec = {id: t.id, status: 'Pass', actual: '', details: '', ms: 0, ts: QA.now(), build: ctx.build, source: 'auto'};
   if(!t.run){ rec.status = 'Not Tested'; rec.actual = 'No automated check.'; return rec; }
-  let sb = null;
+  let sb = null; QA.cspLog.length = 0;
   const env = {
     boot: async o => { sb = await QA.boot(o); return sb; },
     note: s => { rec.actual = rec.actual ? rec.actual + ' ' + s : s; },
@@ -403,6 +414,9 @@ async function runOne(t, ctx){
     if(typeof out === 'string') rec.actual = out;
     else if(out && typeof out === 'object'){ if(out.actual) rec.actual = out.actual; if(out.status) rec.status = out.status; if(out.details) rec.details = out.details; }
     if(!rec.actual) rec.actual = 'Behaved as expected.';
+    // the strict policy blocked a script / inline handler the app tried to run: a real bug, whatever the test was checking
+    const blocked = QA.cspLog.filter(v => /^script-src/.test(v));
+    if(rec.status === 'Pass' && blocked.length && !t.allowCsp){ rec.status = 'Fail'; rec.actual = 'The Content-Security-Policy blocked script the app tried to run: ' + blocked.slice(0, 2).join(' ; '); }
     // an uncaught page error inside the sandbox during a passing test is worth surfacing, but is not a failure by itself
     if(rec.status === 'Pass' && sb && sb.errors.length && !t.allowErrors){
       rec.status = 'Partial'; rec.actual += ' | The app logged ' + sb.errors.length + ' script error(s) while running: ' + sb.errors.slice(0, 2).join(' ; ');

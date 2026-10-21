@@ -162,6 +162,18 @@ function cleanText_(v, max, label) {
   if (s.length > max) fail_('invalid', label + ' is too long');
   return s;
 }
+function clampTime_(v, now, dflt) {
+  const n = Number(v);
+  if (v === undefined || v === null || v === '' || !isFinite(n)) return dflt;
+  return Math.max(1577836800000, Math.min(n, now));
+}
+function newShareToken_() {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const r = randomHex_(48);     // 24 random bytes
+  let out = '';
+  for (let i = 0; i < 24; i++) out += alphabet.charAt(parseInt(r.substr(i * 2, 2), 16) % alphabet.length);
+  return out;
+}
 function numIn_(v, min, max, label, dflt) {
   if (v === undefined || v === null || v === '') return dflt;
   const n = Number(v);
@@ -459,9 +471,9 @@ function validateSession_(raw) {
   const now = Date.now();
   return {
     id: id, name: name,
-    createdAt: numIn_(raw.createdAt, 0, now + 86400000, 'createdAt', now),
-    updatedAt: numIn_(raw.updatedAt, 0, now + 86400000, 'updatedAt', now),
-    lastUsedAt: numIn_(raw.lastUsedAt, 0, now + 86400000, 'lastUsedAt', 0),
+    createdAt: clampTime_(raw.createdAt, now, now),        // the app's clock is only a hint: never in the future, never older than 2020
+    updatedAt: clampTime_(raw.updatedAt, now, now),
+    lastUsedAt: clampTime_(raw.lastUsedAt, now, 0),
     totalMin: numIn_(raw.totalMin, 0, 1000, 'Total minutes', 0), exCount: numIn_(raw.exCount, 0, LIMITS.exercisesMax, 'Exercise count', 0),
     targetDuration: numIn_(raw.targetDuration, 1, 300, 'Length', 60),
     practiceDate: date, startTime: start, location: loc, locationPref: pref, templateId: tmpl,
@@ -469,7 +481,7 @@ function validateSession_(raw) {
     favorited: raw.favorited === true || raw.favorited === 'true',
     visibility: raw.visibility === 'shared' ? 'shared' : 'private',
     focusArea: focus, ageGroup: age, sessionStyle: style,
-    shareToken: /^[A-Za-z0-9_-]{16,64}$/.test(String(raw.shareToken || '')) ? String(raw.shareToken) : '',
+    shareToken: '',            // never taken from the app: the SERVER creates a share link (see upsertSession_)
     phases: phases
   };
 }
@@ -486,15 +498,25 @@ function upsertSession_(rawSession, coach) {
     if (ownerKeyOf_(rowObject_(headers, values[i])) === coach.key) owned++;
   }
   if (existing) {
-    if (ownerKeyOf_(existing) !== coach.key) fail_('forbidden', 'Not your session');          // decided by the account behind the token
+    if (ownerKeyOf_(existing) !== coach.key) {                                                // decided by the account behind the token
+      // Someone else's PRIVATE session must look exactly like one that does not exist (no hint that the id is real).
+      fail_(String(existing.visibility) === 'shared' ? 'forbidden' : 'not_found', 'Not available');
+    }
     s.createdAt = Number(existing.createdAt) || s.createdAt;                                  // fixed when first saved
   } else if (owned >= LIMITS.sessionsPerCoach) {
     fail_('invalid', 'Too many saved sessions');
   }
-  // A share link only exists while the session is Shared, and every link belongs to exactly one session.
-  if (s.visibility !== 'shared') s.shareToken = '';
-  if (s.shareToken) {
-    for (let i = 1; i < values.length; i++) if (String(values[i][tokenCol]) === s.shareToken && String(values[i][idCol]) !== s.id) fail_('invalid', 'Share link already in use');
+  // A share link exists only while the session is Shared, and the SERVER makes it: a Private session has none, a session that is
+  // already Shared keeps its link, and every new Share (including sharing again after Private) gets a brand-new random link - an old
+  // revoked link is never brought back, whatever the app sends.
+  if (s.visibility !== 'shared') {
+    s.shareToken = '';
+  } else if (existing && String(existing.visibility) === 'shared' && /^[A-Za-z0-9]{24}$/.test(String(existing.shareToken || ''))) {
+    s.shareToken = String(existing.shareToken);
+  } else {
+    const used = {};
+    for (let i = 1; i < values.length; i++) used[String(values[i][tokenCol])] = true;
+    do { s.shareToken = newShareToken_(); } while (used[s.shareToken]);
   }
   const record = Object.assign({}, s, { createdBy: coach.name, ownerKey: coach.key, phasesJson: JSON.stringify(s.phases) });
   const row = SESSIONS_HEADERS.map(h => (record[h] !== undefined && record[h] !== null ? record[h] : ''));
@@ -515,7 +537,8 @@ function deleteSession_(id, coach) {
   const idCol = headers.indexOf('id');
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][idCol]) !== id) continue;
-    if (ownerKeyOf_(rowObject_(headers, values[i])) !== coach.key) fail_('forbidden', 'Not your session');
+    const row = rowObject_(headers, values[i]);
+    if (ownerKeyOf_(row) !== coach.key) fail_(String(row.visibility) === 'shared' ? 'forbidden' : 'not_found', 'Not available');
     sheet.deleteRow(i + 1);
     return { ok: true };
   }

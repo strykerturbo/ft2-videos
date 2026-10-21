@@ -92,7 +92,7 @@ class QAServer {
     o = o || {};
     this.env = makeEnv(); this.club = o.club || 'QA-club-code';
     const names = Object.keys(this.env.globals);
-    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, issueToken_, coachKey_, LIMITS, PUBLIC_EXERCISE_COLUMNS};')(...names.map(n => this.env.globals[n]));
+    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, issueToken_, coachKey_, newShareToken_, LIMITS, PUBLIC_EXERCISE_COLUMNS};')(...names.map(n => this.env.globals[n]));
     if(o.clubCode !== false) this.env.props.set('CLUB_CODE_HASH', QA.sha256Hex('ft2-club:' + this.club));
     this.log = [];
   }
