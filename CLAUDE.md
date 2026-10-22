@@ -551,6 +551,9 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 
 - **Undo after removing an exercise from a saved session (2026-10).** `removeExerciseFromSavedSession` now remembers where the exercise was (`state.undoRemove`: block label/section + index + the entry) and shows `showUndoToast()` (6 s, an "Undo" button, `.toast-undo`); `undoRemoveExercise()` re-inserts it in place (recreating an emptied block) without touching later edits, then re-syncs. Only the latest removal is undoable; any ordinary `showToast` ends the offer. Test SS-035; US-003 no longer Partial.
 
+- **Keyboard + screen-reader support (2026-10, audit A-01/A-02).** `installA11y()` (top of the script, after the handler engine): a MutationObserver gives every `[data-onclick]` item that is not a real button/link `role="button" tabindex="0"` (skip with `data-a11y-skip`, e.g. `.ex-card`, whose name + bookmark + Add are the tab stops), and Enter/Space act as a tap. `renderOverlay()` ends with `a11yDialogs()`: every `.sheet` / `.ios-alert` gets role dialog/alertdialog + aria-modal + its `<h3>` as name (sheets without an h3 need an `aria-label`), #content/#topbar/#bottomDock go `inert` while one is open, focus moves in, Tab wraps, Esc "taps" the backdrop (same path as tapping outside), focus returns to the opener, and a redraw keeps the coach's place. New pop-ups just need the usual backdrop-then-`.sheet` pattern with an `<h3>`. Icon buttons need an `aria-label`. Tests AC-001..003.
+  GOTCHA: a QA dashboard tab left open through a full run gets slow (PF-001/PF-003 then report ~2 s); reload the dashboard and re-run before suspecting the app.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
