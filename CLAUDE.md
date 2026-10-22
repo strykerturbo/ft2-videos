@@ -547,6 +547,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
   Opening items reuses the normal screens with `fromFavorites` (Exercise Detail, Saved Session) or `templatesOrigin:'favorites'` (template editor), so Back returns to Favorites; Back FROM Favorites uses `state.favBack` (a snapshot of the screen it was opened from). Items that have gone show a
   "No longer available" row (never deleted automatically -- a library still loading must not wipe favorites). `exCard(ex,{open})` / `soRowHtml(s,open)` take the opener name (note `list.map(soRowHtml)` passes an index, hence the typeof check). The old "bookmarked only" Exercise filter code is unused. Tests FAV-001..014.
 
+- **Landscape phones (2026-10).** One CSS block (`@media (orientation:landscape) and (max-height:520px)`, right after `.detail-header.dh-dock`): full-width shell (notch-safe), slim top bar, bottom tabs with icon + label side by side, smaller Save/Next bar, and the sticky Back pill / Exercise Detail header scroll away instead of docking. Workflow screens go from ~109px to ~253px of scrolling area at 844x390. Test RS-007. Portrait / tablet / desktop are untouched.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on

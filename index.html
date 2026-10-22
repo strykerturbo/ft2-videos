@@ -2260,6 +2260,26 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
    (section + exercise name) docks under the Back link while the details scroll; the bottom half (duration /
    format / difficulty) scrolls away. top:62px tucks 1px under the Back link's own 63px so no seam shows. */
 .detail-header.dh-dock{position:sticky;top:62px;z-index:11;padding-bottom:12px;}
+
+/* ---------- Phone held sideways (landscape) ----------
+   A phone turned sideways is only ~390px tall, so the old fixed bars (top bar + stacked bottom nav + workflow button + docked Back pill) left barely
+   a hundred pixels to scroll, and the 430px-wide column left empty bands at the sides. Here: use the full width (respecting the notch), slim the
+   top bar and bottom tabs (icon and label side by side), shrink the Save/Next button bar, and let the Back pill scroll away instead of docking. */
+@media (orientation:landscape) and (max-height:520px){
+  #shell{max-width:none;box-shadow:none;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
+  .topbar{padding:calc(6px + env(safe-area-inset-top)) 18px 6px;}
+  .bottomnav{padding:3px 9px calc(3px + env(safe-area-inset-bottom));}
+  .navitem{flex-direction:row;gap:8px;padding:5px 3px;border-radius:12px;}
+  .navitem svg{width:22px;height:22px;}
+  .navitem-label{font-size:13px;}
+  #workflowFooter{padding:6px 18px;}
+  #workflowFooter .btn-primary{padding:9px 0;font-size:var(--fs-md);}
+  #content{padding-bottom:calc(52px + env(safe-area-inset-bottom));}
+  #shell.has-workflow-cta #content{padding-bottom:calc(108px + env(safe-area-inset-bottom));}
+  #shell.has-workflow-cta.workflow-tight #content{padding-bottom:calc(100px + env(safe-area-inset-bottom));}
+  .nav-sticky-back,.detail-header.dh-dock{position:static;}
+  .sbb-sticky-wrap{top:0 !important;}
+}
 .detail-header.dh-dock h1{margin:0;}
 .detail-header.dh-dock .detail-eyebrow,.detail-header.dh-dock h1{padding-right:52px;}   /* room for the bookmark in the corner */
 .dh-bm{position:absolute;top:10px;right:12px;width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;}

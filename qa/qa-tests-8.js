@@ -81,5 +81,10 @@ KINDS.forEach(([id, label, prep]) => {
       assert(!report.length, 'INJECTION: ' + report.slice(0, 3).join(' ;; ')); eq(QA.cspLog.filter(v => /^script-src/.test(v)).length, 0, 'The policy blocked scripts while rendering'); }});
 });
 
+add('RS-007', C.vis, 'Responsive', 'Phone held sideways (844x390): the app uses the full width and leaves a usable scrolling area on every screen - at least 220px (it was about 109px on workflow screens), nothing scrolls sideways, and buttons stay tappable.', {
+  severity: 'Major', tags: ['responsive', 'visual'], steps: ['Open every screen at 844x390.'], exp: 'Full width, >=220px of scrolling area.', timeout: 60000,
+  async run(env){ const rows = []; for(const [w, h] of [[844, 390], [740, 360]]){ const {results, sb} = await L.eachScreen(env, (name, sb) => { const c = sb.q('#content'), shell = sb.q('#shell'); const bars = ['#topbar', '#bottomDock'].map(q => { const e = sb.q(q); return e ? e.getBoundingClientRect().height : 0; }); return {name, scroll: Math.round(c.clientHeight - bars[1]), shellW: Math.round(shell.getBoundingClientRect().width), vw: sb.win.innerWidth, over: Math.max(c.scrollWidth - c.clientWidth, sb.doc.documentElement.scrollWidth - sb.win.innerWidth), bars}; }, {width: w, height: h}); results.forEach(r => { assert(r.value, 'Screen did not open: ' + r.name); rows.push({w, ...r.value}); }); sb.destroy(); }
+    const thin = rows.filter(r => r.scroll < 220).map(r => `${r.name}@${r.w}: ${r.scroll}px`); assert(!thin.length, 'Too little scrolling area: ' + thin.slice(0, 4).join(', ')); const narrow = rows.filter(r => r.shellW < r.vw - 1); assert(!narrow.length, 'Not full width: ' + narrow.slice(0, 3).map(r => r.name + '@' + r.w + ' ' + r.shellW + 'px').join(', ')); const over = rows.filter(r => r.over > 0); assert(!over.length, 'Sideways scroll: ' + over.slice(0, 3).map(r => r.name + '@' + r.w + ' +' + r.over).join(', ')); return 'Smallest scrolling area: ' + Math.min(...rows.map(r => r.scroll)) + 'px'; }});
+
 QA.register(tests);
 })();
