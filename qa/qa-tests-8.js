@@ -161,5 +161,9 @@ add('RV-013', C.core, 'Session Review', 'Session Review has no "Time Breakdown" 
     sb.S.targetDuration = tot; sb.fn('render'); r = read(); eq(r.width, 100, 'Bar width at target'); assert(/Right on time/.test(r.note), 'On-time note');
     sb.S.targetDuration = Math.max(5, tot - 15); sb.fn('render'); r = read(); eq(r.width, 100, 'Bar width over target'); assert(r.over && /15 min over/.test(r.note), 'Over note: ' + r.note); const bar = sb.q('.rv-plan-track'); assert(bar.getBoundingClientRect().width > 250, 'The bar is not a long, full-width bar'); }});
 
+add('RV-014', C.core, 'Session Review', 'Each Activate / Develop / Play card on Session Review shows what was picked - "<minutes> min · <count> exercises" - not actual / target numbers; the counts match the cards\' exercise lists.', {
+  severity: 'Minor', tags: ['review', 'math'], steps: ['Open Session Review.'], exp: 'Minutes · count, no slash.', timeout: 40000,
+  async run(env){ const sb = await L.toReview(env); const cards = sb.qa('#content .phase-card'); assert(cards.length >= 3, 'Cards'); cards.forEach(c => { const t = c.querySelector('.phase-time'); const txt = t.textContent.replace(/\s+/g, ' ').trim(); assert(/^\d+ min \u00b7 \d+ exercises?$/.test(txt), 'Unexpected time text: ' + txt); assert(!/\//.test(txt) && !c.querySelector('.phase-over-tag'), 'Still shows actual/target'); const n = Number(txt.match(/\u00b7 (\d+)/)[1]); eq(n, c.querySelectorAll('.phase-exlist > *').length, 'Count vs the card\'s list'); }); }});
+
 QA.register(tests);
 })();
