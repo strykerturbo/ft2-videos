@@ -62,7 +62,7 @@ add('US-001', C.use, 'All screens', 'Touch targets: primary buttons are at least
 add('US-002', C.use, 'All screens', 'Icon-only buttons have a spoken name (aria-label or title), so screen readers can use them.', {
   severity: 'Minor', tags: ['usability', 'accessibility'], timeout: 90000, steps: ['Check every button with no visible text.'], exp: 'Each has a label.',
   async run(env){ const {results, sb} = await L.eachScreen(env, (name, sb) => sb.qa('button, a[href], [role="button"]', sb.q('#shell')).concat(sb.qa('button', sb.q('#overlay'))).filter(el => L.visible(el) && !el.textContent.trim() && !el.getAttribute('aria-label') && !el.getAttribute('title') && !el.querySelector('img[alt]')).map(el => el.className.slice(0, 24) || el.tagName)); sb.destroy(); const bad = results.filter(r => r.value && r.value.length).map(r => `${r.name}: ${brief([...new Set(r.value)], 3)}`); if(bad.length) QA.partial(`Unlabelled icon buttons on ${bad.length} screens - ${brief(bad, 4)}`); }});
-add('US-003', C.use, 'Destructive actions', 'Deleting a session, discarding a draft, deleting or abandoning a template all ask first. (Removing one exercise from a saved session is immediate - noted if so.)', {
+add('US-003', C.use, 'Destructive actions', 'Deleting a session, discarding a draft, deleting or abandoning a template all ask first. (Removing one exercise from a saved session is immediate but offers Undo - noted if not.)', {
   severity: 'Critical', tags: ['usability', 'saved', 'templates'], steps: ['Try each destructive action.'], exp: 'A confirmation before data is lost.',
   async run(env){
     const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; const n = sb.S.savedSessions.length;
@@ -70,7 +70,7 @@ add('US-003', C.use, 'Destructive actions', 'Deleting a session, discarding a dr
     sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('requestDiscardSession'); assert(sb.S.confirmDiscardOpen !== false && sb.fn('currentTotalMinutes').count === 6, 'Discarding the draft happened without asking'); sb.fn('cancelDiscardSession');
     const t = sb.S.practiceTemplates[0]; sb.fn('requestDeleteTemplate', t.id); assert(sb.S.practiceTemplates.includes(t), 'Template deleted without asking'); sb.fn('cancelDeleteTemplate');
     sb.fn('openTemplateEditor', t.id); sb.fn('teSetLocation', t.location === 'indoor' ? 'outdoor' : 'indoor'); sb.fn('closeTemplateEditor'); eq(sb.S.confirmDiscardTemplateOpen, true, 'Abandoning template edits');
-    const before = s.exCount; sb.fn('removeExerciseFromSavedSession', s.id, s.phases[0].exercises[0].id, s.phases[0].exercises[0].name); if(s.exCount === before - 1) QA.partial('Removing an exercise from a saved session happens immediately with only a toast - there is no confirmation or undo.');
+    const before = s.exCount; sb.fn('removeExerciseFromSavedSession', s.id, s.phases[0].exercises[0].id, s.phases[0].exercises[0].name); if(s.exCount === before - 1 && !(sb.S.toastUndo && sb.S.undoRemove)) QA.partial('Removing an exercise from a saved session happens immediately with only a toast - there is no confirmation or undo.');
   }});
 add('US-004', C.use, 'Empty states', 'Every list explains itself when empty (recent sessions, sessions, community, bookmarks, search with no results, empty build/review).', {
   severity: 'Minor', tags: ['usability'], steps: ['Open each list with no data.'], exp: 'A friendly message, never a blank area.',

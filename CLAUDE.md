@@ -549,6 +549,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 
 - **Landscape phones (2026-10).** One CSS block (`@media (orientation:landscape) and (max-height:520px)`, right after `.detail-header.dh-dock`): full-width shell (notch-safe), slim top bar, bottom tabs with icon + label side by side, smaller Save/Next bar, and the sticky Back pill / Exercise Detail header scroll away instead of docking. Workflow screens go from ~109px to ~253px of scrolling area at 844x390. Test RS-007. Portrait / tablet / desktop are untouched.
 
+- **Undo after removing an exercise from a saved session (2026-10).** `removeExerciseFromSavedSession` now remembers where the exercise was (`state.undoRemove`: block label/section + index + the entry) and shows `showUndoToast()` (6 s, an "Undo" button, `.toast-undo`); `undoRemoveExercise()` re-inserts it in place (recreating an emptied block) without touching later edits, then re-syncs. Only the latest removal is undoable; any ordinary `showToast` ends the offer. Test SS-035; US-003 no longer Partial.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
