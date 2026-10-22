@@ -398,10 +398,10 @@ add('NS-024', C.cons, 'Normal Session', 'Every screen in the flow has a Back but
 /* ================================================================ SESSION REVIEW (RV-001 .. RV-012) */
 add('RV-001', C.core, 'Session Review', 'Review shows the session name, totals and every phase with its exercises.', {
   smoke: true, severity: 'Critical', tags: ['review'],
-  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N total minutes · M exercises", Activate / Develop / Play groups with the exercises.',
+  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N min planned" bar against the session length, "M exercises", Activate / Develop / Play groups with the exercises.',
   async run(env){
     const sb = await L.toReview(env); const t = sb.text('#content');
-    ['Session Review', 'Activate', 'Develop', 'Play', 'total minutes', '6 exercises', 'unsaved'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
+    ['Session Review', 'Activate', 'Develop', 'Play', 'min planned', 'min session', '6 exercises', 'unsaved'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
   }});
 add('RV-002', C.core, 'Session Review', 'Each phase group shows planned minutes against its share of the target.', {
   severity: 'Minor', tags: ['review', 'math'],
