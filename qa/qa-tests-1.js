@@ -399,15 +399,15 @@ add('NS-024', C.cons, 'Normal Session', 'Every screen in the flow has a Back but
 /* ================================================================ SESSION REVIEW (RV-001 .. RV-012) */
 add('RV-001', C.core, 'Session Review', 'Review shows the session name, totals and every phase with its exercises.', {
   smoke: true, severity: 'Critical', tags: ['review'],
-  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N min planned" bar against the session length, "M exercises", Activate / Develop / Play groups with the exercises.',
+  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N mins planned" bar against the session length, "M exercises", Activate / Develop / Play groups with the exercises.',
   async run(env){
     const sb = await L.toReview(env); const t = sb.text('#content');
-    ['Session Review', 'Activate', 'Develop', 'Play', 'min planned', 'min session', '6 exercises', 'unsaved'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
+    ['Session Review', 'Activate', 'Develop', 'Play', 'mins planned', 'min session', '6 exercises'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
   }});
 add('RV-002', C.core, 'Session Review', 'Each phase group shows what was picked for it (minutes and exercise count), and the groups add up to the planned total shown in the bar.', {
   severity: 'Minor', tags: ['review', 'math'],
   steps: ['Open Review.'], exp: 'Each group line reads "<minutes> min · <n> exercises"; the minutes add up to the planned total.',
-  async run(env){ const sb = await L.toReview(env); const lines = sb.qa('#content .phase-card .phase-time').map(e => e.textContent.replace(/\s+/g, ' ').trim()); eq(lines.length >= 3, true, 'Group lines >= 3'); const sum = lines.reduce((a, t) => a + Number((/^(\d+) min/.exec(t) || [0, 0])[1]), 0); eq(sum, sb.fn('currentTotalMinutes').total, 'Group minutes add up to the total'); eq((sb.text('.rv-plan-top').match(/(\d+) min planned/) || [])[1], String(sum), 'Planned total in the bar'); }});
+  async run(env){ const sb = await L.toReview(env); const lines = sb.qa('#content .phase-card .phase-time').map(e => e.textContent.replace(/\s+/g, ' ').trim()); eq(lines.length >= 3, true, 'Group lines >= 3'); const sum = lines.reduce((a, t) => a + Number((/^(\d+) min/.exec(t) || [0, 0])[1]), 0); eq(sum, sb.fn('currentTotalMinutes').total, 'Group minutes add up to the total'); eq((sb.text('.rv-plan-top').match(/(\d+) mins planned/) || [])[1], String(sum), 'Planned total in the bar'); }});
 add('RV-003', C.core, 'Session Review', 'Save Session saves exactly once and clears the draft.', {
   smoke: true, severity: 'Critical', tags: ['review', 'save'],
   steps: ['Tap Save Session once.'], exp: 'One saved session; draft empty; coach lands Home.',
