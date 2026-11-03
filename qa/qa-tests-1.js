@@ -298,11 +298,12 @@ add('NS-013', C.core, 'Build Session', 'Exercises can be reordered inside a phas
   steps: ['Add two Warmup exercises.', 'Drag the grip handle of one past the other.'], exp: 'The order changes and stays changed after leaving and returning.', run: null});
 add('NS-014', C.core, 'Build Session', 'The planned-minutes total equals the sum of the exercises\' durations.', {
   smoke: true, severity: 'Critical', tags: ['build', 'math'],
-  steps: ['Add exercises to several phases.', 'Compare the total at the top with the individual durations.'], exp: 'Total = sum of durations; header shows "<total> / <target> MIN PLANNED".',
+  steps: ['Add exercises to several phases.', 'Compare the total at the top with the individual durations.'], exp: 'Total = sum of durations; header shows "<total> / <target> MINS PLANNED" with the exercise count beside it.',
   async run(env){
     const sb = await L.startBuild(env); sb.addExercises(sb.firstIdsPerPhase(2));
     eq(sb.fn('currentTotalMinutes').total, L.sumDraftMinutes(sb), 'currentTotalMinutes() vs sum of durations');
     assert(new RegExp(sb.fn('currentTotalMinutes').total + '\\s*/\\s*' + sb.S.targetDuration, 'i').test(sb.text('#content')), 'Header does not show "<total> / <target>"');
+    const lbl = sb.text('#content .bp-progress-label'); assert(/MINS PLANNED/.test(lbl) && new RegExp(sb.fn('currentTotalMinutes').count + ' EXERCISES').test(lbl), 'Progress label: ' + lbl); assert(!/EXERCISE/i.test(sb.text('#content .bp-meta-line')), 'The exercise count is still in the date line');
   }});
 add('NS-015', C.use, 'Build Session', 'The page makes it obvious when the session is under or over the target length.', {
   severity: 'Minor', tags: ['build', 'math'],
