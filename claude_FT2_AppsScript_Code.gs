@@ -44,7 +44,7 @@ const API_VERSION = 2;
 const LIMITS = {
   maxBodyChars: 200000,       // whole request
   coachNameMin: 2, coachNameMax: 40,
-  nameMax: 120, commentMax: 2000, labelMax: 60, exNameMax: 200, idMax: 64,
+  nameMax: 120, commentMax: 2000, noteMax: 500, labelMax: 60, exNameMax: 200, idMax: 64,
   phasesMax: 14, exercisesMax: 80,
   sessionsPerCoach: 1000,
   tokensPerCoach: 6, tokenTtlDays: 365,       // a token is renewed every time it is used, so a coach who keeps using the app never signs out
@@ -328,9 +328,10 @@ const SESSIONS_HEADERS = [
   'practiceDate', 'location', 'templateId', 'rating', 'comment', 'favorited',
   'visibility', 'phasesJson', 'updatedAt',
   'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'startTime',
-  'lastUsedAt', 'locationPref', 'ownerKey'   // ownerKey = the coach account that owns the row (set by the server, never taken from the app)
+  'lastUsedAt', 'locationPref', 'ownerKey',  // ownerKey = the coach account that owns the row (set by the server, never taken from the app)
+  'notes'                                    // the coach's session-level Notes: private to the owner (the per-exercise Notes live inside phasesJson)
 ];
-const TEXT_COLUMNS_ = ['id', 'name', 'createdBy', 'templateId', 'comment', 'visibility', 'phasesJson', 'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'location', 'locationPref', 'ownerKey', 'practiceDate', 'startTime'];
+const TEXT_COLUMNS_ = ['id', 'name', 'createdBy', 'templateId', 'comment', 'visibility', 'phasesJson', 'focusArea', 'ageGroup', 'sessionStyle', 'shareToken', 'location', 'locationPref', 'ownerKey', 'practiceDate', 'startTime', 'notes'];
 
 function startTimeText_(v) {
   if (v instanceof Date) {
@@ -372,8 +373,11 @@ function sessionForClient_(obj, viewer) {
   };
   if (mine) {         // the owner's own private extras
     out.rating = Number(obj.rating) || 0; out.comment = String(obj.comment || ''); out.favorited = isTrue_(obj.favorited); out.shareToken = String(obj.shareToken || '');
+    out.notes = String(obj.notes || '');
   } else {            // everyone else gets the plan only: no notes, rating, favourite flag or share link
     out.rating = 0; out.comment = ''; out.favorited = false; out.shareToken = '';
+    out.notes = '';   // the session Notes, and the Notes on each exercise (kept inside the phases), are the coach's own: removed here
+    out.phases = out.phases.map(p => Object.assign({}, p, { exercises: ((p && Array.isArray(p.exercises)) ? p.exercises : []).map(e => { const c = Object.assign({}, e); delete c.notes; return c; }) }));
   }
   return out;
 }
@@ -395,6 +399,7 @@ function readSessions_(coach) {
 }
 
 // The public, read-only lookup behind a share link. Only a SHARED session, found by its long random token, trimmed to the plan.
+// Notes (session and exercise) are the coach's own and are never part of what a link shows: each exercise is rebuilt below from id, name and length only.
 function readSharedSession(token) {
   token = String(token || '');
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return { error: 'not_found' };
@@ -448,6 +453,8 @@ function validateSession_(raw) {
         const eid = String(e.id === undefined || e.id === null ? '' : e.id);
         if (!/^[A-Za-z0-9_.\-]{1,64}$/.test(eid)) fail_('invalid', 'Bad exercise id');
         const ex = { id: eid, name: cleanText_(e.name, LIMITS.exNameMax, 'Exercise name'), duration: numIn_(e.duration, 0, 240, 'Exercise length', 10) };
+        const exNote = cleanText_(e.notes, LIMITS.noteMax, 'Notes').trim();         // this session's Notes for this exercise (never the library exercise)
+        if (exNote) ex.notes = exNote;
         ['technicalScore', 'tacticalScore', 'physicalScore', 'cognitiveScore'].forEach(k => { const n = e[k] === null || e[k] === undefined ? null : numIn_(e[k], 0, 5, k, null); if (n !== null) ex[k] = n; });
         return ex;
       })
@@ -479,6 +486,7 @@ function validateSession_(raw) {
     practiceDate: date, startTime: start, location: loc, locationPref: pref, templateId: tmpl,
     rating: Math.round(numIn_(raw.rating, 0, 5, 'Rating', 0)), comment: cleanText_(raw.comment, LIMITS.commentMax, 'Notes'),
     favorited: raw.favorited === true || raw.favorited === 'true',
+    notes: cleanText_(raw.notes, LIMITS.noteMax, 'Notes').trim(),
     visibility: raw.visibility === 'shared' ? 'shared' : 'private',
     focusArea: focus, ageGroup: age, sessionStyle: style,
     shareToken: '',            // never taken from the app: the SERVER creates a share link (see upsertSession_)
