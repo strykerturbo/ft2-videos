@@ -399,10 +399,10 @@ add('NS-024', C.cons, 'Normal Session', 'Every screen in the flow has a Back but
 /* ================================================================ SESSION REVIEW (RV-001 .. RV-012) */
 add('RV-001', C.core, 'Session Review', 'Review shows the session name, totals and every phase with its exercises.', {
   smoke: true, severity: 'Critical', tags: ['review'],
-  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N mins planned" bar against the session length, "M exercises", Activate / Develop / Play groups with the exercises.',
+  steps: ['Build a draft and open Session Review.'], exp: 'Name, "N mins planned" bar against the target, "M exercises", Activate / Develop / Play groups with the exercises.',
   async run(env){
     const sb = await L.toReview(env); const t = sb.text('#content');
-    ['Session Review', 'Activate', 'Develop', 'Play', 'mins planned', 'min session', '6 exercises'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
+    ['Session Review', 'Activate', 'Develop', 'Play', 'mins planned', 'min target', '6 exercises'].forEach(w => assert(t.includes(w), `Review is missing "${w}"`));
   }});
 add('RV-002', C.core, 'Session Review', 'Each phase group shows what was picked for it (minutes and exercise count), and the groups add up to the planned total shown in the bar.', {
   severity: 'Minor', tags: ['review', 'math'],
@@ -470,7 +470,7 @@ add('SS-001', C.core, 'Saved Session', 'A saved session opens from Sessions and 
   async run(env){
     const sb = await L.withSaved(env, 1); const s = sb.S.savedSessions[0]; sb.click('Sessions', '#bottomnav'); sb.clickSel('#content .so-row');
     eq(sb.screen, 'sessionDetail', 'Screen'); const t = sb.text('#content');
-    [s.name, 'min session', 'Outdoor', 'QA Coach', 'Exercises'].forEach(w => assert(t.includes(w), `Saved session header is missing "${w}"`));
+    [s.name, 'min target', 'Outdoor', 'QA Coach', 'Exercises'].forEach(w => assert(t.includes(w), `Saved session header is missing "${w}"`));
   }});
 add('SS-002', C.nav, 'Saved Session', 'Back from a saved session returns to Sessions.', {
   severity: 'Major', tags: ['saved', 'nav'],
