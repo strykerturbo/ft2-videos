@@ -1028,7 +1028,8 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .session-name-wrap{position:relative;margin-top:2px;}
 .session-name-wrap .session-name-input{margin-top:0;padding-right:26px;}
 .session-name-pencil{
-  position:absolute;right:2px;top:6px;color:var(--ink-soft);opacity:0.55;pointer-events:none;
+  /* centred on the TEXT line of the title field: the field has 4px above and 8px + its 2px underline below the text */
+  position:absolute;right:2px;top:4px;bottom:10px;display:flex;align-items:center;color:var(--ink-soft);opacity:0.55;pointer-events:none;
 }
 .session-name-pencil svg{width:15px;height:15px;display:block;}
 .session-name-input{
@@ -1450,7 +1451,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .setup-title-name .session-name-input.fit-2{font-size:17px;}
 .setup-title-name .session-name-input.fit-3{font-size:14px;}
 .setup-title-name .session-name-input.fit-4{font-size:12px;}
-.setup-title-name .session-name-pencil{top:10px;}
+.setup-title-name .session-name-pencil{top:4px;bottom:12px;}      /* this title has 10px of padding under the text + its 2px underline */
 .setup-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;}
 .setup-field-card{display:flex;gap:12px;align-items:flex-start;background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:14px;margin-top:12px;}
 .setup-field-icon{width:44px;height:44px;border-radius:12px;background:var(--turf-dim);color:var(--turf);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
