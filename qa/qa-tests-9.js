@@ -261,5 +261,13 @@ nt('NT-015', 'A note on a saved session (read-only) still shows its "Notes" labe
   tags: ['notes', 'saved'], steps: ['Save a session with notes and open it.'], exp: 'Label + text.',
   async run(env){ const sb = await L.toReview(env); const id = firstId(sb); noteViaClicks(sb, '.nt-session', SESS); noteViaClicks(sb, `.phase-ex-item[data-ex-id="${id}"]`, EXN); const s = L.saveFromReview(sb); L.openSaved(sb, s.id); ['.nt-session', `.phase-ex-item[data-ex-id="${id}"] .nt`].forEach(sel => { const lab = sb.q(sel + ' .nt-label'); assert(lab && sb.win.getComputedStyle(lab).display !== 'none' && lab.textContent.trim() === 'Notes', 'No visible Notes label for ' + sel); }); }});
 
+/* ================================================================== Coach initials badge (Nov 2026) */
+add('HM-020', C.core, 'Top bar', 'The round badge top right shows the signed-in coach\'s initials - first letter of the first and last name ("Sam Rivera" = SR), a single name gives one letter ("Pat" = P), a leading "Coach" is ignored - on every screen and on the Settings account card; it is never a fixed "TA".', {
+  smoke: true, severity: 'Major', tags: ['topbar', 'identity'], steps: ['Sign in as different names and look at the badge.'], exp: 'Initials follow the name.', timeout: 60000,
+  async run(env){ const sb = await env.boot({coach: 'Sam Rivera'}); const cases = [['Tisan Ahmad', 'TA'], ['Tisan', 'T'], ['tisan ahmad', 'TA'], ['  maria   de la cruz ', 'MC'], ['Coach Tisan', 'T'], ['Coach Tisan Ahmad', 'TA'], ['Mary-Jane Smith', 'MS'], ['Ōkami Ito', 'ŌI'], ['', '']]; cases.forEach(([n, w]) => eq(sb.fn('coachInitials', n), w, 'initials of "' + n + '"'));
+    const badge = () => sb.text('#topbar .avatar'); eq(sb.S.coachName, 'Sam Rivera', 'Sandbox coach'); sb.fn('nav', 'home'); eq(badge(), 'SR', 'Home badge'); ['exercises', 'sessions', 'settings'].forEach(scr => { sb.fn('nav', scr); eq(badge(), 'SR', scr + ' badge'); }); eq(sb.text('.settings-avatar'), 'SR', 'Settings account badge');
+    sb.S.coachName = 'Pat'; sb.fn('render'); eq(badge(), 'P', 'One-name badge'); eq(sb.text('.settings-avatar'), 'P', 'Settings one-name badge'); sb.S.coachName = 'Ana Maria Lopez'; sb.fn('render'); eq(badge(), 'AL', 'First + last'); sb.S.coachName = 'Tisan Ahmad'; sb.fn('render'); eq(badge(), 'TA', 'Tisan Ahmad'); sb.S.coachName = 'Zed Quinn'; sb.fn('render'); assert(badge() !== 'TA', 'The badge is stuck on TA');
+    sb.S.coachName = '<b>x</b> y'; sb.fn('render'); assert(!sb.q('#topbar .avatar b') && sb.text('#topbar .avatar').length <= 2, 'A hostile name was not shown as plain text'); }});
+
 QA.register(tests);
 })();
