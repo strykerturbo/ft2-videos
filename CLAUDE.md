@@ -577,6 +577,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 
 - **Initials badge (2026-11).** The round badge top right (`.avatar` in `renderTopbar`) and the Settings account card show `coachInitials(state.coachName)`: first letter of the first and last name ("Sam Rivera" = SR), one letter for a single name, a leading "Coach" ignored, a person icon if nobody is signed in. It used to be a fixed "TA". Test HM-020.
 
+- **Review exercise rows (2026-11).** Rows on Session Review carry `.rv-row` (Saved Session / shared page rows keep the older compact row): a 120px square picture at the left (`object-fit:contain` so the WHOLE set-up diagram shows, dark letterbox; 84px under 370px wide), the title big (19px bold), then ONE line under it with the time button (32px high, 44px+ touch area through `::before`), swap and trash, then the Notes box whose "+ Add Notes" placeholder is deliberately small (13px; 12px in rows) while typed text stays 16px (below 16px iPhones zoom the page on focus). Layout is a 2-row grid on `.pei-top`. Tests RV-018, NT-010, TT-008, RS-001.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on
