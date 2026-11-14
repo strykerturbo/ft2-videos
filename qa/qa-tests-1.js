@@ -612,6 +612,22 @@ add('SS-023', C.core, 'Saved Session', 'Edit mode: exercises can be dragged into
     const after = names('develop'); assert(after.join() !== before.join(), 'The order did not change'); eq(after[after.length - 1], before[0], 'Dragged exercise should now be last'); QA.deepEq([s.totalMin, s.exCount], total, 'Totals changed by a reorder');
     assert(sb.ctx.backend.sessions.get(s.id), 'Not synced to the server'); sb.flushState(); const sb2 = await sb.reboot(); eq(sb2.fn('sessionDetailPhaseGroups', sb2.S.savedSessions[0]).find(g => g.key === 'develop').items.map(e => e.name).join(), after.join(), 'Order after reopening');
   }});
+add('SS-037', C.core, 'Saved Session', 'Dragging a grip straight away (no pause first) reorders, and on a Custom Session review an exercise never trades places with one from another section.', {
+  severity: 'Major', tags: ['saved', 'review', 'custom'], timeout: 30000, steps: ['Edit a saved session, put a finger on a grip and drag at once.', 'On Custom Session Step 4 drag a Duels exercise past a Rondos one.'], exp: 'The quick drag reorders; the cross-section drag moves nothing.',
+  async run(env){
+    const sb = await env.boot({live: true}); sb.fn('resetBuilderDraft'); const ex = (sec, n) => sb.exercises().filter(e => e.section === sec).slice(0, n).map(e => e.id);
+    Object.assign(sb.S.phaseData, {warmup: ex('Warmup', 1), athletic: ex('Athletic', 2), duels: ex('Duels', 2), rondos: ex('Rondos', 1), ssg: ex('SSGs', 1), scrimmage: ex('Scrimmage', 1)});
+    const drag = async (sel, hold) => { const rows = sb.qa(sel); const grip = rows[0].querySelector('.build-ex-grip'), gr = grip.getBoundingClientRect(), nx = rows[1].getBoundingClientRect(); const pe = (t, y) => new sb.win.PointerEvent(t, {bubbles: true, cancelable: true, clientX: gr.left + 5, clientY: y, pointerId: 1});
+      const y0 = gr.top + gr.height / 2, y1 = y0 + nx.height + 30; grip.dispatchEvent(pe('pointerdown', y0)); await sb.sleep(hold); for(const f of [0.2, 0.5, 0.8, 1]){ sb.doc.dispatchEvent(pe('pointermove', y0 + (y1 - y0) * f)); await sb.sleep(20); } const during = sb.qa(sel).map(r => r.dataset.exId).join(); sb.doc.dispatchEvent(pe('pointerup', y1)); await sb.sleep(450); return during; };
+    const ids = sel => sb.qa(sel).map(r => r.dataset.exId).join();
+    sb.fn('nav', 'customSessionReview'); const csel = '.phase-exlist[data-list-key="develop"] .phase-ex-item', c0 = ids(csel);
+    await drag(csel, 20); assert(ids(csel) !== c0, 'A quick drag inside one section did not reorder'); const c1 = ids(csel);
+    const rows = sb.qa(csel), g2 = rows[1].querySelector('.build-ex-grip'), r2 = g2.getBoundingClientRect(), pe = (t, y) => new sb.win.PointerEvent(t, {bubbles: true, cancelable: true, clientX: r2.left + 5, clientY: y, pointerId: 1});
+    const ya = r2.top + r2.height / 2, yb = ya + rows[2].getBoundingClientRect().height + 30; g2.dispatchEvent(pe('pointerdown', ya)); await sb.sleep(20); for(const f of [0.3, 0.7, 1]){ sb.doc.dispatchEvent(pe('pointermove', ya + (yb - ya) * f)); await sb.sleep(20); }
+    eq(ids(csel), c1, 'A row from another section moved on screen during the drag'); sb.doc.dispatchEvent(pe('pointercancel', yb)); await sb.sleep(450); eq(ids(csel), c1, 'Cross-section order changed'); eq(sb.qa('.dragging').length, 0, 'A row stayed lifted after the drag was interrupted');
+    sb.S.sessionName = 'Quick drag QA'; sb.fn('completeSession', {skipConfirm: true}); const s = sb.S.savedSessions[0]; sb.fn('openSessionDetail', s.id); sb.fn('toggleEditSessionDetail');
+    const ssel = '.phase-exlist[data-saved-key="develop"] .phase-ex-item', s0 = ids(ssel); await drag(ssel, 20); assert(ids(ssel) !== s0, 'A quick drag on a saved session did not reorder');
+  }});
 
 add('SS-024', C.use, 'Saved Session', 'Editing a saved session shows an "editing" note and a Save Changes button at the bottom (like Save Session); tapping it saves and leaves edit mode without altering an untouched title.', {
   severity: 'Major', tags: ['saved', 'save'], steps: ['More > Edit, change the title, tap Save Changes.'], exp: 'Bottom button present only while editing; title saved as typed; back to the normal view with a "Changes saved" message.',

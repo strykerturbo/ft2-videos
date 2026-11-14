@@ -488,7 +488,7 @@ rather than letting it get rediscovered next session.
 ## QA & regression suite (`qa/`)
 
 A developer-only test system lives in `qa/` (open `qa/index.html`; live at `.../ft2-videos/qa/`). It is NOT linked from the app and must never change the coach-facing UI.
-304 tests (the 202 checklist IDs H/NS/RV/SS/EX/ED/CS/TM/SH/PR/P plus navigation, bottom-nav, data-integrity, generator, usability, consistency, responsive, error/offline, security and performance
+305 tests (the 202 checklist IDs H/NS/RV/SS/EX/ED/CS/TM/SH/PR/P plus navigation, bottom-nav, data-integrity, generator, usability, consistency, responsive, error/offline, security and performance
 audits), classified Automated / Hybrid / Manual. Each automated test runs the real `index.html` in a hidden iframe with fake storage, fake network (in-memory Apps Script mock), fake clipboard / share sheet,
 so real coach data, the Google Sheet and real messages are never touched (only a read-only GET of the live exercise library for generator / data tests). See `qa/README.md`.
 - **Smoke suite** (47 tests, ~30 s) = run after every code change before committing. **Full QA** (~2 min) = periodically / before a release; manual + hybrid items then need a person.
@@ -578,6 +578,10 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 - **Initials badge (2026-11).** The round badge top right (`.avatar` in `renderTopbar`) and the Settings account card show `coachInitials(state.coachName)`: first letter of the first and last name ("Sam Rivera" = SR), one letter for a single name, a leading "Coach" ignored, a person icon if nobody is signed in. It used to be a fixed "TA". Test HM-020.
 
 - **Review exercise rows (2026-11).** Rows on Session Review carry `.rv-row` (Saved Session / shared page rows keep the older compact row): a 120px square picture at the left (`object-fit:contain` so the WHOLE set-up diagram shows, dark letterbox; 84px under 370px wide), the title big (19px bold), then ONE line under it with the time button (32px high, 44px+ touch area through `::before`), swap and trash, then the Notes box whose "+ Add Notes" placeholder is deliberately small (13px; 12px in rows) while typed text stays 16px (below 16px iPhones zoom the page on focus). Layout is a 2-row grid on `.pei-top`. Tests RV-018, NT-010, TT-008, RS-001.
+- **Drag-to-reorder fixes (2026-11).** `makeDragReorderController` (Build, Review, Custom Step 4, Saved Session edit): a finger that moves more than 8px on a grip now STARTS the drag (`startDrag`) instead of cancelling it -- the grip has
+  `touch-action:none` and never scrolls the page, so the old "hold still 320ms first or nothing happens" rule only made quick drags silently fail (the template editor's grip got the same change). While a row is held near the top / bottom the page scrolls under it
+  (`autoScroll`, requestAnimationFrame, only after the finger has travelled 16px that way) so a row can travel further than one screen. `config.canSwap` stops a row from visibly trading places when the data would refuse it (Custom Step 4 across sections used to swap on screen, then snap back on drop).
+  `pointercancel` ends a drag like `pointerup` (no row left lifted). The grip's touch area is ~38px wide through `::before`. GOTCHA: a hidden Browser pane never runs requestAnimationFrame -- to check auto-scroll there, stand in `requestAnimationFrame` with a 16ms `setTimeout` in the page first. Test SS-037.
 
 ## Where things live
 
