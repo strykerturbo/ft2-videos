@@ -5,6 +5,8 @@
  *   1. Serves the exercise library to the app (public, read-only, CLIENT-SAFE columns only).
  *   2. Stores every coach's saved sessions in a "Sessions" tab, behind REAL per-coach sign-in.
  *   3. Serves a read-only "shared session" page for a share link (only for sessions the coach chose to share).
+ *   4. Records how the app is used (the "AnalyticsEvents" tab) and answers usage reports for ADMINISTRATORS only
+ *      (coaches listed in the "Admins" tab). See USAGE ANALYTICS near the end of this file.
  *
  * WHO IS THE COACH?  The server decides - never the app. No passwords: coaches only ever type the club access code.
  *   - A coach joins once with their NAME and the CLUB ACCESS CODE (a Script Property you set once - see SETUP below), so strangers who
@@ -31,6 +33,9 @@
  *   4. Existing coaches: the first time each one opens the app it asks for their name + the club code. The first person to claim a
  *      name owns it and its old sessions, so claim yours first. To reset a coach (lost phone), delete their row in the "Coaches" tab
  *      (and any of their rows in "Auth"); they join again with the same name.
+ *   5. USAGE ANALYTICS (Nov 2026): after deploying, pick the function "setupAnalytics" in the toolbar and press Run once. It creates the
+ *      "AnalyticsEvents", "Admins" and "CoachActivity" tabs. Then type your own coach name (as you joined) in cell A2 of "Admins" -
+ *      that makes you an administrator. Run "analyticsSelfCheck" any time to see a plain summary in the execution log.
  *   Keep the Sheet itself PRIVATE. Execute as: Me. Who has access: Anyone (the script enforces who sees what).
  */
 
@@ -121,6 +126,14 @@ function doPost(e) {
     if (action === 'list') return jsonResponse({ ok: true, v: API_VERSION, name: coach.name, sessions: readSessions_(coach) });
     if (action === 'upsert') return jsonResponse(upsertSession_(body.session, coach));
     if (action === 'delete') return jsonResponse(deleteSession_(body.id, coach));
+    // Usage analytics. logEvent records what THIS coach did; the getAdmin... reports answer only for a coach listed in the "Admins" tab.
+    if (action === 'logEvent') return jsonResponse(logEvents_(body, coach));
+    if (action === 'getAdminStatus') return jsonResponse({ ok: true, v: API_VERSION, admin: isAdmin_(coach) });
+    if (Object.prototype.hasOwnProperty.call(ADMIN_REPORTS_, action)) {
+      getTab_(ADMINS_TAB_NAME, ADMIN_HEADERS);                     // make sure the tab exists while the lock is still held
+      try { lock.releaseLock(); } catch (x) {} lock = null;        // a report only reads, so it must not hold up other coaches' saves
+      return jsonResponse(ADMIN_REPORTS_[action](body, coach));    // every report checks the Admins list itself, first thing
+    }
     return jsonResponse({ ok: false, error: 'unknown_action' });
   } catch (err) {
     if (err && err.ft2) return jsonResponse({ ok: false, error: err.code, message: err.message });
@@ -533,6 +546,12 @@ function upsertSession_(rawSession, coach) {
   const textCols = TEXT_COLUMNS_.map(h => SESSIONS_HEADERS.indexOf(h) + 1).filter(c => c > 0);
   textCols.forEach(c => sheet.getRange(destRow, c).setNumberFormat('@'));
   sheet.getRange(destRow, 1, 1, row.length).setValues([row]);
+  // Usage analytics: the save is now in the Sessions tab, so it is recorded here by the server (never reported by the app).
+  const wasShared = !!existing && String(existing.visibility) === 'shared', isShared = s.visibility === 'shared';
+  if (!existing) serverEvent_(coach, 'session_saved', s.id, sessionEventMeta_(s));
+  else if (planSignature_(parsePhases_(existing), existing.name, existing.targetDuration) !== planSignature_(s.phases, s.name, s.targetDuration)) serverEvent_(coach, 'session_updated', s.id, sessionEventMeta_(s));
+  if (isShared && !wasShared) serverEvent_(coach, 'session_shared', s.id, {});
+  if (!isShared && wasShared) serverEvent_(coach, 'session_unshared', s.id, {});
   return { ok: true, session: sessionForClient_(rowObject_(SESSIONS_HEADERS, row), coach) };
 }
 
@@ -548,10 +567,681 @@ function deleteSession_(id, coach) {
     const row = rowObject_(headers, values[i]);
     if (ownerKeyOf_(row) !== coach.key) fail_(String(row.visibility) === 'shared' ? 'forbidden' : 'not_found', 'Not available');
     sheet.deleteRow(i + 1);
+    serverEvent_(coach, 'session_deleted', id, {});
     return { ok: true };
   }
   return { ok: true };   // already gone
 }
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* USAGE ANALYTICS (Nov 2026)                                                                                         */
+/* ------------------------------------------------------------------------------------------------------------------ */
+/*
+ * WHAT IS RECORDED: one row per thing a signed-in coach did, in the "AnalyticsEvents" tab (created automatically, only ever added to):
+ *     eventId | timestamp | coachKey | eventType | entityType | entityId | sessionId | metadata
+ *   - timestamp is the SERVER's clock, written as UTC text like 2026-11-14T18:05:22.123Z. The app may say "this happened N
+ *     milliseconds ago" (events are sent in small batches, and can wait while a phone is offline); the server subtracts that from its
+ *     own clock and never accepts more than 48 hours.
+ *   - coachKey is the coach behind the sign-in token. Nothing the app says about WHO did it is used.
+ *   - eventType must be on the list below. entityType is exercise / session / template / feature.
+ *   - metadata is a small JSON object with allow-listed keys only (see META_KEYS_).
+ *   - Every cell is plain text, so nothing typed by a coach can run as a spreadsheet formula.
+ *   NEVER recorded: sign-in tokens, the club code, session notes, exercise notes, search text, session titles.
+ *
+ * TWO KINDS OF EVENT:
+ *   - reported by the APP (CLIENT_EVENTS_): opening an exercise, adding one to a session, using Quick Pick, and so on. Product analytics, not an audit trail.
+ *   - recorded by the SERVER ITSELF (SERVER_EVENTS_) at the moment it confirms a change in the Sessions tab: session_saved,
+ *     session_updated, session_deleted, session_shared, session_unshared. The app cannot send these, so a failed save is never counted.
+ *
+ * WHO CAN SEE THE REPORTS: only a signed-in coach whose name is listed in the "Admins" tab (column A, one name per row, spelled the
+ *   way they joined - capitals do not matter). Add only names that have ALREADY joined (they appear in the "Coaches" tab). Every report
+ *   checks that list again, on the server, from the sign-in token. Remove a row to remove the access.
+ *
+ * DEFINITIONS (the same in every report):
+ *   - Period: "7d" / "30d" / "90d" = today and the 6 / 29 / 89 days before it; "all" = everything. Days start at midnight in the
+ *     SPREADSHEET's time zone (File > Settings), and the reply says which zone and which dates were used.
+ *   - Active coach: did at least one meaningful thing in the period - any event except merely opening the app - or saved / edited a session.
+ *   - Last active: the latest such moment, kept per coach in the small "CoachActivity" tab (so the whole event history is not re-read).
+ *   - Exercise VIEWS: times an exercise's detail page was opened. Exercise ADDITIONS: times a coach added one to a session.
+ *     In SAVED SESSIONS: read from the Sessions tab itself - how many saved sessions (first saved in the period, still existing)
+ *     contain it, counted once per session however often that session was saved again, and by how many different coaches.
+ *   - Sessions saved = saved sessions that exist in the Sessions tab, first saved in the period. Save actions = how many times a brand-new
+ *     session was confirmed saved (still counts one that was deleted later). Session updates = later changes to a saved plan.
+ *   - Feature adoption % = coaches who used the feature in the period / active coaches in the period.
+ *   - Exercises are matched by NAME (ids in the Exercises tab get renumbered), falling back to the id when there is no name.
+ */
+const EVENTS_TAB_NAME = 'AnalyticsEvents';
+const ADMINS_TAB_NAME = 'Admins';
+const ACTIVITY_TAB_NAME = 'CoachActivity';
+const EVENT_HEADERS = ['eventId', 'timestamp', 'coachKey', 'eventType', 'entityType', 'entityId', 'sessionId', 'metadata'];
+const ADMIN_HEADERS = ['coachName', 'addedAt', 'note'];
+const ACTIVITY_HEADERS = ['coachKey', 'lastActiveAt', 'lastSeenAt'];
+const ANALYTICS = {
+  batchMax: 25,                 // events in one request
+  metaMaxChars: 500, metaMaxKeys: 8, metaTextMax: 120,
+  maxAgeMs: 48 * 3600000,       // how far back the app may date an event that waited to be sent
+  perHour: 600,                 // events one coach may log per hour
+  dedupeTail: 1000, dedupeCacheSec: 21600,
+  feedDefault: 50, feedMax: 200, listDefault: 100, listMax: 500, coachesMax: 300, recentPerCoach: 5,
+  cacheSec: 300, cacheMaxChars: 90000,
+  tzFallback: 'America/New_York'
+};
+// What the APP may report -> the kind of thing the event is about.
+const CLIENT_EVENTS_ = {
+  app_opened: 'feature', app_session_started: 'feature',
+  exercise_viewed: 'exercise', exercise_added: 'exercise', exercise_removed: 'exercise', exercise_replaced: 'exercise',
+  exercise_favorited: 'exercise', exercise_unfavorited: 'exercise', exercise_search_performed: 'feature',
+  session_started: 'session', session_copied: 'session',
+  custom_session_started: 'feature', custom_session_completed: 'feature', custom_session_failed: 'feature',
+  quick_pick_used: 'feature', balance_session_used: 'feature',
+  template_created: 'template', template_used: 'template',
+  favorite_opened: 'feature', print_export_used: 'feature'
+};
+// What only the SERVER records, when it has confirmed the change in the Sessions tab.
+const SERVER_EVENTS_ = { session_saved: 'session', session_updated: 'session', session_deleted: 'session', session_shared: 'session', session_unshared: 'session' };
+// Opening the app is not "using" it: these never make a coach Active and never move Last Active.
+const PASSIVE_EVENTS_ = { app_opened: true, app_session_started: true };
+// For feature events the server fills in which feature it was (the app's own value is ignored).
+const FEATURE_OF_ = {
+  app_opened: 'app', app_session_started: 'app', exercise_search_performed: 'search',
+  custom_session_started: 'custom_session', custom_session_completed: 'custom_session', custom_session_failed: 'custom_session',
+  quick_pick_used: 'quick_pick', balance_session_used: 'balance_session', favorite_opened: 'favorites', print_export_used: 'print_export'
+};
+// The only detail names an event may carry. Anything else (a "query", a "note", a "title" ...) is refused.
+const META_KEYS_ = ['name', 'source', 'section', 'method', 'context', 'format', 'layout', 'focus', 'age', 'style', 'location', 'target', 'minutes', 'count', 'stage', 'from', 'template', 'generated', 'tab'];
+// The features the Feature Usage report lists. "events" are what counts as a use; "also" are shown beside it but do not count as uses.
+const FEATURES_ = [
+  { key: 'custom_session', label: 'Custom Session Generator', events: ['custom_session_completed'], also: ['custom_session_started', 'custom_session_failed'] },
+  { key: 'quick_pick', label: 'Quick Pick', events: ['quick_pick_used'], also: [] },
+  { key: 'balance_session', label: 'Balance My Session', events: ['balance_session_used'], also: [] },
+  { key: 'templates', label: 'Templates', events: ['template_used'], also: ['template_created'] },
+  { key: 'favorites', label: 'Favorites', events: ['favorite_opened'], also: ['exercise_favorited', 'exercise_unfavorited'] },
+  { key: 'search', label: 'Exercise Search', events: ['exercise_search_performed'], also: [] },
+  { key: 'print_export', label: 'Print / Export', events: ['print_export_used'], also: [] },
+  { key: 'share', label: 'Share Session', events: ['session_shared'], also: ['session_unshared'] },
+  { key: 'copy_session', label: 'Copy Session', events: ['session_copied'], also: [] }
+];
+const PERIODS_ = { '7d': 7, '30d': 30, '90d': 90, 'all': 0 };
+
+/* ---- recording ---- */
+
+function isoTime_(ms) { return new Date(ms).toISOString(); }
+function timeMs_(v) {                              // a timestamp cell back to milliseconds (text, or a date if someone re-formatted the column)
+  if (v instanceof Date) return v.getTime();
+  const n = Date.parse(String(v || ''));
+  return isFinite(n) ? n : 0;
+}
+
+// Checks one event from the app. Returns {row:{...}} or {error:'...'} - a bad event is refused on its own, it never fails the others.
+function validateEvent_(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { error: 'bad_event' };
+  const id = typeof raw.id === 'string' ? raw.id : '';
+  if (!/^[A-Za-z0-9_-]{8,64}$/.test(id) || /^srv-/.test(id)) return { error: 'bad_event_id' };
+  const type = typeof raw.type === 'string' ? raw.type : '';
+  if (!Object.prototype.hasOwnProperty.call(CLIENT_EVENTS_, type)) return { error: 'unknown_event_type' };
+  const entityType = CLIENT_EVENTS_[type];
+  let entityId = raw.entityId === undefined || raw.entityId === null ? '' : String(raw.entityId);
+  if (entityType === 'feature') entityId = FEATURE_OF_[type];
+  else if (entityId !== '' && !/^[A-Za-z0-9_.\-]{1,64}$/.test(entityId)) return { error: 'bad_entity_id' };
+  if (entityType === 'exercise' && entityId === '') return { error: 'bad_entity_id' };
+  const sessionId = raw.sessionId === undefined || raw.sessionId === null ? '' : String(raw.sessionId);
+  if (sessionId !== '' && !/^[A-Za-z0-9_-]{6,64}$/.test(sessionId)) return { error: 'bad_session_id' };
+  const meta = {};
+  if (raw.meta !== undefined && raw.meta !== null) {
+    if (typeof raw.meta !== 'object' || Array.isArray(raw.meta)) return { error: 'bad_metadata' };
+    const keys = Object.keys(raw.meta);
+    if (keys.length > ANALYTICS.metaMaxKeys) return { error: 'metadata_too_large' };
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i], v = raw.meta[k];
+      if (META_KEYS_.indexOf(k) === -1) return { error: 'bad_metadata' };
+      if (typeof v === 'string') {
+        if (v.length > ANALYTICS.metaTextMax) return { error: 'metadata_too_large' };
+        meta[k] = v.replace(/[\u0000-\u001F\u007F]/g, ' ');
+      } else if (typeof v === 'number') {
+        if (!isFinite(v)) return { error: 'bad_metadata' };
+        meta[k] = v;
+      } else if (typeof v === 'boolean') meta[k] = v;
+      else return { error: 'bad_metadata' };
+    }
+  }
+  const metaJson = JSON.stringify(meta);
+  if (metaJson.length > ANALYTICS.metaMaxChars) return { error: 'metadata_too_large' };
+  let age = Number(raw.age);
+  if (!isFinite(age) || age < 0) age = 0;
+  return { row: { id: id, type: type, entityType: entityType, entityId: entityId, sessionId: sessionId, metaJson: metaJson, age: Math.min(age, ANALYTICS.maxAgeMs) } };
+}
+
+// A tab starts with 1,000 rows; writing below the last one needs the rows to exist first.
+function ensureRows_(sheet, lastNeeded) {
+  const max = sheet.getMaxRows();
+  if (lastNeeded > max) sheet.insertRowsAfter(max, Math.max(lastNeeded - max, 500));
+}
+function appendEventRows_(rows) {
+  if (!rows.length) return;
+  const sheet = getTab_(EVENTS_TAB_NAME, EVENT_HEADERS);
+  const first = sheet.getLastRow() + 1;
+  ensureRows_(sheet, first + rows.length - 1);
+  const range = sheet.getRange(first, 1, rows.length, EVENT_HEADERS.length);
+  range.setNumberFormat('@');          // plain text first, then the values
+  range.setValues(rows);
+}
+
+// Keeps one row per coach in "CoachActivity": when they last DID something, and when the app was last seen at all.
+function noteCoachActivity_(coachKey, activeMs, seenMs) {
+  const sheet = getTab_(ACTIVITY_TAB_NAME, ACTIVITY_HEADERS);
+  const last = sheet.getLastRow();
+  const values = last > 1 ? sheet.getRange(2, 1, last - 1, ACTIVITY_HEADERS.length).getValues() : [];
+  let row = -1, active = 0, seen = 0;
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]) === coachKey) { row = i + 2; active = timeMs_(values[i][1]); seen = timeMs_(values[i][2]); break; }
+  }
+  const newActive = Math.max(active, activeMs || 0), newSeen = Math.max(seen, seenMs || 0, activeMs || 0);
+  if (row !== -1 && newActive === active && newSeen === seen) return;
+  if (row === -1) row = last + 1;
+  ensureRows_(sheet, row);
+  const range = sheet.getRange(row, 1, 1, ACTIVITY_HEADERS.length);
+  range.setNumberFormat('@');
+  range.setValues([[coachKey, newActive ? isoTime_(newActive) : '', newSeen ? isoTime_(newSeen) : '']]);
+}
+
+// action "logEvent": {events:[{id, type, entityId, sessionId, meta, age}]} (or one {event:{...}}). Recorded for the coach behind the token.
+function logEvents_(body, coach) {
+  const list = Array.isArray(body.events) ? body.events : (body.event !== undefined && body.event !== null ? [body.event] : null);
+  if (!list || !list.length) fail_('invalid', 'No events');
+  if (list.length > ANALYTICS.batchMax) fail_('invalid', 'Too many events in one request');
+  const cache = CacheService.getScriptCache();
+  const rateKey = 'evn:' + sha256_(coach.key).slice(0, 24);
+  const used = Number(cache.get(rateKey) || 0);
+  if (used + list.length > ANALYTICS.perHour) return { ok: false, error: 'rate_limited' };
+
+  const rejected = [], good = [];
+  list.forEach((raw, i) => {
+    const r = validateEvent_(raw);
+    if (r.error) rejected.push({ index: i, id: raw && typeof raw.id === 'string' ? raw.id.slice(0, 64) : '', error: r.error });
+    else good.push(r.row);
+  });
+  // The same event must never be stored twice (the app re-sends a batch when it did not hear back): look in this request, in the
+  // short-term memory of recently stored ids, and in the newest rows of the tab.
+  const sheet = getTab_(EVENTS_TAB_NAME, EVENT_HEADERS);
+  const known = {};
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const n = Math.min(lastRow - 1, ANALYTICS.dedupeTail);
+    sheet.getRange(lastRow - n + 1, 1, n, 1).getValues().forEach(r => { known[String(r[0])] = true; });
+  }
+  const recent = good.length ? (cache.getAll(good.map(g => 'ev:' + g.id)) || {}) : {};
+  const now = Date.now(), rows = [], remember = {};
+  let duplicates = 0, activeMs = 0, seenMs = 0;
+  good.forEach(g => {
+    if (known[g.id] || recent['ev:' + g.id]) { duplicates++; return; }
+    known[g.id] = true; remember['ev:' + g.id] = '1';
+    const when = now - g.age;
+    rows.push([g.id, isoTime_(when), coach.key, g.type, g.entityType, g.entityId, g.sessionId, g.metaJson]);
+    if (PASSIVE_EVENTS_[g.type]) seenMs = Math.max(seenMs, when); else activeMs = Math.max(activeMs, when);
+  });
+  if (rows.length) {
+    appendEventRows_(rows);
+    cache.putAll(remember, ANALYTICS.dedupeCacheSec);
+    cache.put(rateKey, String(used + rows.length), 3600);
+    noteCoachActivity_(coach.key, activeMs, seenMs);
+  }
+  const out = { ok: rejected.length === 0, accepted: rows.length, duplicates: duplicates, rejected: rejected };
+  if (rejected.length) out.error = 'invalid';
+  return out;
+}
+
+// An event the server writes itself. It must never get in the way of the save / delete it describes.
+function serverEvent_(coach, type, sessionId, meta) {
+  try {
+    const now = Date.now();
+    appendEventRows_([['srv-' + randomHex_(24), isoTime_(now), coach.key, type, SERVER_EVENTS_[type], String(sessionId), String(sessionId), JSON.stringify(meta || {})]]);
+    noteCoachActivity_(coach.key, now, now);
+  } catch (e) { /* analytics only */ }
+}
+function sessionEventMeta_(s) {
+  let count = 0;
+  s.phases.forEach(p => { count += p.exercises.length; });
+  const m = { count: count, minutes: s.totalMin, target: s.targetDuration, location: s.location };
+  if (s.focusArea) m.focus = s.focusArea;
+  if (s.ageGroup) m.age = s.ageGroup;
+  if (s.sessionStyle) m.style = s.sessionStyle;
+  if (s.templateId) m.template = true;
+  return m;
+}
+// The PLAN of a session (title, length, which exercises, their order and minutes). Notes, rating, favourite and "last used" are not part of it,
+// so changing those is not counted as updating the session.
+function planSignature_(phases, name, target) {
+  return String(name || '') + '|' + (Number(target) || 0) + '|' + (Array.isArray(phases) ? phases : []).map(p =>
+    String((p && p.section) || '') + '/' + String((p && p.label) || '') + ':' + ((p && Array.isArray(p.exercises)) ? p.exercises : []).map(e => String((e && e.id) || '') + '~' + (Number(e && e.duration) || 0)).join(',')).join(';');
+}
+
+/* ---- administrators ---- */
+
+function isAdmin_(coach) {
+  if (!coach || !coach.key) return false;
+  const sheet = getTab_(ADMINS_TAB_NAME, ADMIN_HEADERS);
+  const last = sheet.getLastRow();
+  if (last < 2) return false;
+  const names = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (let i = 0; i < names.length; i++) {
+    const k = coachKey_(names[i][0]);
+    if (k && sameText_(k, coach.key)) return true;
+  }
+  return false;
+}
+function requireAdmin_(coach) { if (!isAdmin_(coach)) fail_('forbidden', 'Administrators only'); }
+
+// Run once from the editor after pasting this version: creates the three analytics tabs so you can add yourself to "Admins".
+function setupAnalytics() {
+  getTab_(EVENTS_TAB_NAME, EVENT_HEADERS); getTab_(ADMINS_TAB_NAME, ADMIN_HEADERS); getTab_(ACTIVITY_TAB_NAME, ACTIVITY_HEADERS);
+  Logger.log('Analytics tabs are ready. Open the "Admins" tab and type your coach name (as you joined) in cell A2.');
+}
+// Run from the editor any time: prints a plain summary of what has been recorded (execution log). Nothing is changed.
+function analyticsSelfCheck() {
+  const ctx = adminContext_({ period: '30d' });
+  const d = analyticsData_(ctx);
+  const admins = getTab_(ADMINS_TAB_NAME, ADMIN_HEADERS);
+  const adminNames = admins.getLastRow() > 1 ? admins.getRange(2, 1, admins.getLastRow() - 1, 1).getValues().map(r => String(r[0]).trim()).filter(String) : [];
+  const joined = {};
+  d.coaches.forEach(c => { joined[c.key] = true; });
+  const o = overviewData_(ctx, d);
+  Logger.log('Administrators: ' + (adminNames.length ? adminNames.map(n => n + (joined[coachKey_(n)] ? '' : ' (NOT JOINED YET - check the spelling)')).join(', ') : 'none yet - add a name in the Admins tab'));
+  Logger.log('Time zone: ' + ctx.tz + '. Last 30 days = ' + ctx.range.from + ' to ' + ctx.range.to);
+  Logger.log('Events recorded in that time: ' + d.events.length);
+  Logger.log('Coaches: ' + o.totals.totalCoaches + ' joined, ' + o.totals.activeCoaches + ' active');
+  Logger.log('Sessions saved: ' + o.totals.sessionsSaved + ' | exercise views: ' + o.totals.exerciseViews + ' | exercises added: ' + o.totals.exercisesAdded + ' | exercises in saved sessions: ' + o.totals.exercisesInSavedSessions);
+  Logger.log('Most used features: ' + (o.topFeatures.length ? o.topFeatures.map(f => f.label + ' (' + f.uses + ')').join(', ') : 'none yet'));
+}
+
+/* ---- reading: shared building blocks ---- */
+
+function timeZone_() {
+  try { return SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() || ANALYTICS.tzFallback; } catch (e) { return ANALYTICS.tzFallback; }
+}
+function shiftDay_(ymd, days) {
+  const p = String(ymd).split('-').map(Number);
+  return new Date(Date.UTC(p[0], p[1] - 1, p[2] + days)).toISOString().slice(0, 10);
+}
+function weekStart_(ymd) {                 // the Monday of that day's week
+  const p = String(ymd).split('-').map(Number);
+  const dow = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+  return shiftDay_(ymd, -((dow + 6) % 7));
+}
+// Everything a report needs to know about "when": the period asked for, the time zone, and which calendar day a moment falls on.
+function adminContext_(body) {
+  const period = body.period === undefined || body.period === null || body.period === '' ? '30d' : String(body.period);
+  if (!Object.prototype.hasOwnProperty.call(PERIODS_, period)) fail_('invalid', 'Unknown period');
+  const tz = timeZone_(), memo = {}, now = Date.now();
+  const dayOf = ms => { const k = Math.floor(ms / 900000); return memo[k] || (memo[k] = Utilities.formatDate(new Date(ms), tz, 'yyyy-MM-dd')); };
+  const to = dayOf(now), days = PERIODS_[period];
+  const range = { period: period, from: days ? shiftDay_(to, -(days - 1)) : null, to: to };
+  return { now: now, tz: tz, dayOf: dayOf, range: range, inRange: ms => ms > 0 && (!range.from || dayOf(ms) >= range.from) };
+}
+function adminReply_(ctx, data) {
+  return Object.assign({ ok: true, v: API_VERSION, generatedAt: isoTime_(ctx.now), timezone: ctx.tz, range: ctx.range }, data);
+}
+// A report is remembered for a few minutes, and re-made as soon as anything new has been recorded (the row counts are part of its key).
+function adminCached_(name, ctx, params, build) {
+  let key = '';
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const rows = [EVENTS_TAB_NAME, SESSIONS_TAB_NAME, COACHES_TAB_NAME, ACTIVITY_TAB_NAME].map(n => { const sh = ss.getSheetByName(n); return sh ? sh.getLastRow() : 0; });
+    key = 'an:' + sha256_([name, ctx.range.period, ctx.range.to, JSON.stringify(params || []), rows.join(',')].join('|')).slice(0, 40);
+    const hit = CacheService.getScriptCache().get(key);
+    if (hit) return JSON.parse(hit);
+  } catch (e) { key = ''; }
+  const out = adminReply_(ctx, build());
+  try { const text = JSON.stringify(out); if (key && text.length <= ANALYTICS.cacheMaxChars) CacheService.getScriptCache().put(key, text, ANALYTICS.cacheSec); } catch (e) {}
+  return out;
+}
+
+function exerciseKey_(name, id) {
+  const n = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  if (n) return 'n:' + n;
+  id = String(id === undefined || id === null ? '' : id);
+  return id ? 'i:' + id : '';
+}
+function loadLibrary_() {       // the Exercises tab: today's id, name and section for each exercise
+  const lib = { byKey: {}, byId: {}, count: 0 };
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_TAB_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return lib;
+  const values = sheet.getDataRange().getValues(), h = values[0].map(String);
+  const idCol = h.indexOf('Exercise ID'), nameCol = h.indexOf('Exercise Name'), secCol = h.indexOf('Section');
+  for (let i = 1; i < values.length; i++) {
+    const id = idCol > -1 ? String(values[i][idCol] || '').trim() : '', name = nameCol > -1 ? String(values[i][nameCol] || '').trim() : '';
+    if (!name) continue;
+    const e = { id: id, name: name, section: secCol > -1 ? String(values[i][secCol] || '') : '' };
+    lib.byKey[exerciseKey_(name, id)] = e; if (id) lib.byId[id] = e; lib.count++;
+  }
+  return lib;
+}
+function loadCoachRecords_() {
+  const sheet = getTab_(COACHES_TAB_NAME, COACH_HEADERS);
+  const values = sheet.getDataRange().getValues(), out = [];
+  for (let i = 1; i < values.length; i++) {
+    const key = String(values[i][0] || ''); if (!key) continue;
+    out.push({ key: key, name: String(values[i][1] || key), joinedAt: Number(values[i][4]) || 0 });
+  }
+  return out;
+}
+function loadActivity_() {
+  const sheet = getTab_(ACTIVITY_TAB_NAME, ACTIVITY_HEADERS), out = {};
+  const last = sheet.getLastRow();
+  if (last < 2) return out;
+  sheet.getRange(2, 1, last - 1, ACTIVITY_HEADERS.length).getValues().forEach(r => { out[String(r[0])] = { active: timeMs_(r[1]), seen: timeMs_(r[2]) }; });
+  return out;
+}
+// The saved sessions as they stand in the Sessions tab - the authority on what was saved, by whom, and what is in it.
+// Titles and notes are deliberately not carried into reports, except the title of a session its owner has Shared.
+function loadSessionRecords_() {
+  const sheet = getSessionsSheet_();
+  const values = sheet.getDataRange().getValues(), out = [];
+  if (values.length < 2) return out;
+  const headers = values[0];
+  for (let i = 1; i < values.length; i++) {
+    const o = rowObject_(headers, values[i]);
+    const id = String(o.id || '').trim(); if (!id) continue;
+    const seen = {}, exercises = [];
+    let slots = 0;
+    parsePhases_(o).forEach(p => ((p && Array.isArray(p.exercises)) ? p.exercises : []).forEach(e => {
+      slots++;
+      const k = exerciseKey_(e && e.name, e && e.id);
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      exercises.push({ key: k, id: String((e && e.id) || ''), name: String((e && e.name) || '') });
+    }));
+    const shared = o.visibility === 'shared';
+    out.push({
+      id: id, owner: ownerKeyOf_(o), ownerName: String(o.createdBy || ''), sharedName: shared ? String(o.name || '') : '', shared: shared,
+      createdAt: Number(o.createdAt) || 0, updatedAt: Number(o.updatedAt) || 0,
+      totalMin: Number(o.totalMin) || 0, target: Number(o.targetDuration) || 0, location: o.location === 'indoor' ? 'indoor' : 'outdoor',
+      focus: String(o.focusArea || ''), age: String(o.ageGroup || ''), style: String(o.sessionStyle || ''), template: String(o.templateId || '') !== '',
+      exercises: exercises, slots: slots
+    });
+  }
+  return out;
+}
+// The events of the period. Rows are written in (nearly) time order, so only the timestamp column is scanned to find where the
+// period starts, and only the rows from there on are read in full.
+function loadEvents_(ctx) {
+  const sheet = getTab_(EVENTS_TAB_NAME, EVENT_HEADERS);
+  const last = sheet.getLastRow();
+  if (last < 2) return [];
+  let first = 2;
+  if (ctx.range.from) {
+    // 4 days of slack: 2 for an event that waited to be sent, the rest for any time zone. The exact day test below does the real filtering.
+    const cutoff = shiftDay_(ctx.range.from, -4) + 'T00:00:00.000Z';
+    const stamps = sheet.getRange(2, 2, last - 1, 1).getValues();
+    let i = 0;
+    const textOf = v => (v instanceof Date ? v.toISOString() : String(v));
+    while (i < stamps.length && !(textOf(stamps[i][0]) >= cutoff)) i++;
+    if (i >= stamps.length) return [];
+    first = i + 2;
+  }
+  const out = [];
+  sheet.getRange(first, 1, last - first + 1, EVENT_HEADERS.length).getValues().forEach(r => {
+    const ts = timeMs_(r[1]);
+    if (!ts || !ctx.inRange(ts)) return;
+    let meta = {};
+    try { const m = JSON.parse(String(r[7] || '{}')); if (m && typeof m === 'object' && !Array.isArray(m)) meta = m; } catch (e) {}
+    out.push({ id: String(r[0]), ts: ts, day: ctx.dayOf(ts), coach: String(r[2]), type: String(r[3]), entityType: String(r[4]), entityId: String(r[5]), sessionId: String(r[6]), meta: meta });
+  });
+  return out;
+}
+function analyticsData_(ctx) {
+  const d = { coaches: loadCoachRecords_(), sessions: loadSessionRecords_(), events: loadEvents_(ctx), activity: loadActivity_() };
+  d.coachName = {};
+  d.sessions.forEach(s => { if (s.ownerName && !d.coachName[s.owner]) d.coachName[s.owner] = s.ownerName; });
+  d.coaches.forEach(c => { d.coachName[c.key] = c.name; });
+  d.periodSessions = d.sessions.filter(s => ctx.inRange(s.createdAt));
+  // ONE definition of "active", used by every report.
+  d.active = {};
+  d.events.forEach(e => { if (!PASSIVE_EVENTS_[e.type]) d.active[e.coach] = true; });
+  d.sessions.forEach(s => { if (ctx.inRange(s.createdAt) || ctx.inRange(s.updatedAt)) d.active[s.owner] = true; });
+  d.activeCount = Object.keys(d.active).length;
+  return d;
+}
+function countBy_(list, keyOf) { const m = {}; list.forEach(x => { const k = keyOf(x); if (k !== null && k !== undefined) m[k] = (m[k] || 0) + 1; }); return m; }
+function pct_(part, whole) { return whole > 0 ? Math.round(part * 1000 / whole) / 10 : 0; }
+function avg_(list, valueOf) { return list.length ? Math.round(list.reduce((a, x) => a + valueOf(x), 0) * 10 / list.length) / 10 : 0; }
+function featureRows_(d) {
+  const byType = {};
+  d.events.forEach(e => { const t = byType[e.type] || (byType[e.type] = { n: 0, who: {} }); t.n++; t.who[e.coach] = true; });
+  return FEATURES_.map(f => {
+    const who = {}, eventCounts = {};
+    let uses = 0;
+    f.events.forEach(t => { const x = byType[t]; eventCounts[t] = x ? x.n : 0; if (x) { uses += x.n; Object.keys(x.who).forEach(k => { who[k] = true; }); } });
+    f.also.forEach(t => { eventCounts[t] = byType[t] ? byType[t].n : 0; });
+    const coaches = Object.keys(who).length;
+    return { feature: f.key, label: f.label, uses: uses, coaches: coaches, adoptionPct: pct_(coaches, d.activeCount), eventCounts: eventCounts };
+  });
+}
+function limit_(v, dflt, max) {
+  if (v === undefined || v === null || v === '') return dflt;
+  const n = Number(v);
+  if (!isFinite(n) || n < 1 || Math.floor(n) !== n) fail_('invalid', 'Bad limit');
+  return Math.min(n, max);
+}
+
+/* ---- the reports (each one checks the Admins list itself, before anything else) ---- */
+
+function overviewData_(ctx, d) {
+  const n = countBy_(d.events, e => e.type);
+  const ps = d.periodSessions;
+  const usedKeys = {};
+  let slots = 0;
+  ps.forEach(s => { slots += s.slots; s.exercises.forEach(x => { usedKeys[x.key] = true; }); });
+  // activity over time: one entry per day, or per week (starting Monday) when the period is longer than about three months
+  const firstDay = ctx.range.from || d.events.concat(ps.map(s => ({ day: ctx.dayOf(s.createdAt) }))).reduce((a, e) => (e.day < a ? e.day : a), ctx.range.to);
+  const start = firstDay < shiftDay_(ctx.range.to, -364) ? shiftDay_(ctx.range.to, -364) : firstDay;
+  const weekly = start < shiftDay_(ctx.range.to, -92);
+  const bucketOf = day => (weekly ? weekStart_(day) : day);
+  const buckets = {}, order = [];
+  for (let day = bucketOf(start); day <= ctx.range.to; day = shiftDay_(day, weekly ? 7 : 1)) { buckets[day] = { date: day, activeCoaches: 0, actions: 0, sessionsSaved: 0, exerciseViews: 0, exercisesAdded: 0, who: {} }; order.push(day); }
+  d.events.forEach(e => {
+    const b = buckets[bucketOf(e.day)]; if (!b || PASSIVE_EVENTS_[e.type]) return;
+    b.actions++; b.who[e.coach] = true;
+    if (e.type === 'exercise_viewed') b.exerciseViews++;
+    if (e.type === 'exercise_added') b.exercisesAdded++;
+  });
+  ps.forEach(s => { const b = buckets[bucketOf(ctx.dayOf(s.createdAt))]; if (b) { b.sessionsSaved++; b.who[s.owner] = true; } });
+  const trend = order.map(k => { const b = buckets[k]; b.activeCoaches = Object.keys(b.who).length; delete b.who; return b; });
+  return {
+    totals: {
+      totalCoaches: d.coaches.length,
+      activeCoaches: d.activeCount,
+      newCoaches: d.coaches.filter(c => ctx.inRange(c.joinedAt)).length,
+      sessionsSaved: ps.length,                               // saved sessions that exist, first saved in the period
+      saveActions: n.session_saved || 0,                      // new saves confirmed by the server in the period (includes ones deleted since)
+      sessionUpdates: n.session_updated || 0,
+      sessionsDeleted: n.session_deleted || 0,
+      sessionsStarted: n.session_started || 0,
+      sessionsShared: ps.filter(s => s.shared).length,        // of those saved sessions, how many are Shared right now
+      shareActions: n.session_shared || 0,
+      unshareActions: n.session_unshared || 0,
+      exerciseViews: n.exercise_viewed || 0,
+      exercisesAdded: n.exercise_added || 0,
+      exercisesRemoved: n.exercise_removed || 0,
+      exercisesInSavedSessions: slots,                        // exercise places in those saved sessions
+      uniqueExercisesUsed: Object.keys(usedKeys).length
+    },
+    topFeatures: featureRows_(d).filter(f => f.uses > 0).sort((a, b) => b.uses - a.uses || b.coaches - a.coaches).slice(0, 5),
+    trendBucket: weekly ? 'week' : 'day',
+    trend: trend
+  };
+}
+function getAdminOverview_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  return adminCached_('overview', ctx, [], () => overviewData_(ctx, analyticsData_(ctx)));
+}
+
+// What an event was about, safe to show an administrator: an exercise's name, or a session's title ONLY if its owner has Shared it.
+function entityNamer_(d) {
+  const lib = loadLibrary_(), sessions = {};
+  d.sessions.forEach(s => { sessions[s.id] = s; });
+  return function (e) {
+    if (e.entityType === 'exercise') {
+      const inLib = lib.byId[e.entityId];
+      return { name: String(e.meta.name || (inLib ? inLib.name : '')), private: false };
+    }
+    if (e.entityType === 'session') {
+      const s = sessions[e.sessionId || e.entityId];
+      return s ? { name: s.sharedName, private: !s.shared } : { name: '', private: false };
+    }
+    if (e.entityType === 'feature') { const f = FEATURES_.filter(x => x.key === e.entityId)[0]; return { name: f ? f.label : '', private: false }; }
+    return { name: '', private: false };
+  };
+}
+function feedItem_(e, d, nameOf) {
+  const n = nameOf(e);
+  return { eventId: e.id, timestamp: isoTime_(e.ts), coachKey: e.coach, coachName: d.coachName[e.coach] || e.coach, eventType: e.type, entityType: e.entityType, entityId: e.entityId, entityName: n.name, entityPrivate: n.private, sessionId: e.sessionId };
+}
+
+function getAdminCoachActivity_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  return adminCached_('coaches', ctx, [], () => {
+    const d = analyticsData_(ctx), nameOf = entityNamer_(d);
+    const rows = {};
+    const row = key => rows[key] || (rows[key] = { coachKey: key, name: d.coachName[key] || key, joinedAt: null, lastActiveAt: null, lastSeenAt: null, active: !!d.active[key],
+      sessionsSaved: 0, sessionsSavedAllTime: 0, sessionsShared: 0, exercisesAdded: 0, exerciseViews: 0, actions: 0, recentActivity: [], _active: 0, _seen: 0 });
+    d.coaches.forEach(c => { row(c.key).joinedAt = c.joinedAt ? isoTime_(c.joinedAt) : null; });
+    d.sessions.forEach(s => {
+      const r = row(s.owner);
+      r.sessionsSavedAllTime++;
+      r._active = Math.max(r._active, s.createdAt, s.updatedAt);         // saving / editing a session counts, also for history from before analytics
+      if (ctx.inRange(s.createdAt)) { r.sessionsSaved++; if (s.shared) r.sessionsShared++; }
+    });
+    Object.keys(d.activity).forEach(k => { const r = row(k); r._active = Math.max(r._active, d.activity[k].active); r._seen = Math.max(r._seen, d.activity[k].seen); });
+    const recent = {};
+    d.events.forEach(e => {
+      const r = row(e.coach);
+      if (PASSIVE_EVENTS_[e.type]) return;
+      r.actions++;
+      if (e.type === 'exercise_added') r.exercisesAdded++;
+      if (e.type === 'exercise_viewed') r.exerciseViews++;
+      (recent[e.coach] || (recent[e.coach] = [])).push(e);
+    });
+    const list = Object.keys(rows).map(k => {
+      const r = rows[k];
+      r.lastActiveAt = r._active ? isoTime_(r._active) : null;
+      r.lastSeenAt = Math.max(r._seen, r._active) ? isoTime_(Math.max(r._seen, r._active)) : null;
+      r.recentActivity = (recent[k] || []).sort((a, b) => b.ts - a.ts).slice(0, ANALYTICS.recentPerCoach).map(e => { const it = feedItem_(e, d, nameOf); return { timestamp: it.timestamp, eventType: it.eventType, entityType: it.entityType, entityName: it.entityName, entityPrivate: it.entityPrivate }; });
+      const sortKey = r._active; delete r._active; delete r._seen;
+      return { r: r, t: sortKey };
+    }).sort((a, b) => b.t - a.t || (a.r.name < b.r.name ? -1 : 1)).map(x => x.r);
+    return { totalCoaches: d.coaches.length, activeCoaches: d.activeCount, truncated: list.length > ANALYTICS.coachesMax, coaches: list.slice(0, ANALYTICS.coachesMax) };
+  });
+}
+
+function getAdminExerciseAnalytics_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  const limit = limit_(body.limit, ANALYTICS.listDefault, ANALYTICS.listMax);
+  const sort = body.sort === undefined || body.sort === null || body.sort === '' ? 'views' : String(body.sort);
+  if (['views', 'additions', 'savedSessions', 'coachesUsed', 'name'].indexOf(sort) === -1) fail_('invalid', 'Unknown sort');
+  const includeUnused = body.includeUnused === true;
+  return adminCached_('exercises', ctx, [limit, sort, includeUnused], () => {
+    const d = analyticsData_(ctx), lib = loadLibrary_(), rows = {};
+    const row = (key, id, name) => {
+      const r = rows[key] || (rows[key] = { exerciseId: '', name: '', section: '', inLibrary: false, views: 0, viewers: 0, additions: 0, removals: 0, savedSessions: 0, coachesUsed: 0, _viewers: {}, _coaches: {} });
+      if (!r.name && name) r.name = name;
+      if (!r.exerciseId && id) r.exerciseId = id;
+      return r;
+    };
+    d.events.forEach(e => {
+      if (e.entityType !== 'exercise') return;
+      const inLib = lib.byId[e.entityId];
+      const name = String(e.meta.name || (inLib ? inLib.name : ''));
+      const r = row(exerciseKey_(name, e.entityId), e.entityId, name);
+      if (e.type === 'exercise_viewed') { r.views++; r._viewers[e.coach] = true; }
+      else if (e.type === 'exercise_added') r.additions++;
+      else if (e.type === 'exercise_removed') r.removals++;
+    });
+    d.periodSessions.forEach(s => s.exercises.forEach(x => { const r = row(x.key, x.id, x.name); r.savedSessions++; r._coaches[s.owner] = true; }));   // once per session
+    if (includeUnused) Object.keys(lib.byKey).forEach(k => row(k, lib.byKey[k].id, lib.byKey[k].name));
+    const totals = { views: 0, additions: 0, removals: 0, savedSessionInclusions: 0 };
+    const list = Object.keys(rows).map(k => {
+      const r = rows[k], now = lib.byKey[k];
+      if (now) { r.inLibrary = true; r.exerciseId = now.id || r.exerciseId; r.name = now.name; r.section = now.section; }     // today's id and spelling
+      r.viewers = Object.keys(r._viewers).length; r.coachesUsed = Object.keys(r._coaches).length;
+      delete r._viewers; delete r._coaches;
+      totals.views += r.views; totals.additions += r.additions; totals.removals += r.removals; totals.savedSessionInclusions += r.savedSessions;
+      return r;
+    });
+    list.sort((a, b) => (sort === 'name' ? 0 : b[sort] - a[sort]) || b.views - a.views || b.savedSessions - a.savedSessions || (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1));
+    return { totals: totals, libraryCount: lib.count, exerciseCount: list.length, truncated: list.length > limit, exercises: list.slice(0, limit) };
+  });
+}
+
+function getAdminSessionAnalytics_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  return adminCached_('sessions', ctx, [], () => {
+    const d = analyticsData_(ctx), ps = d.periodSessions, n = countBy_(d.events, e => e.type);
+    const dist = valueOf => { const m = countBy_(ps, valueOf); return Object.keys(m).map(k => ({ value: k, count: m[k], pct: pct_(m[k], ps.length) })).sort((a, b) => b.count - a.count || (a.value < b.value ? -1 : 1)); };
+    return {
+      sessionsSaved: ps.length, saveActions: n.session_saved || 0, sessionUpdates: n.session_updated || 0, sessionsDeleted: n.session_deleted || 0,
+      sessionsStarted: n.session_started || 0, sessionsCopied: n.session_copied || 0,
+      sessionsShared: ps.filter(s => s.shared).length, shareActions: n.session_shared || 0, unshareActions: n.session_unshared || 0,
+      coachesWhoSaved: Object.keys(countBy_(ps, s => s.owner)).length,
+      averageExerciseCount: avg_(ps, s => s.slots),
+      averagePlannedMinutes: avg_(ps, s => s.totalMin),          // the sum of the exercise times
+      averageTargetMinutes: avg_(ps, s => s.target),             // the session length the coach chose
+      distributions: {                                           // "" = not set (only a Custom Session knows its focus, age group and style)
+        focusArea: dist(s => s.focus), ageGroup: dist(s => s.age), sessionStyle: dist(s => s.style), location: dist(s => s.location),
+        targetMinutes: dist(s => String(s.target || '')), builtWith: dist(s => (s.focus ? 'custom_session' : (s.template ? 'template' : 'from_scratch')))
+      }
+    };
+  });
+}
+
+function getAdminFeatureAnalytics_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  return adminCached_('features', ctx, [], () => {
+    const d = analyticsData_(ctx);
+    return { activeCoaches: d.activeCount, features: featureRows_(d).sort((a, b) => b.uses - a.uses || b.coaches - a.coaches) };
+  });
+}
+
+function getAdminActivityFeed_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  const limit = limit_(body.limit, ANALYTICS.feedDefault, ANALYTICS.feedMax);
+  const who = body.coach === undefined || body.coach === null || body.coach === '' ? '' : coachKey_(cleanText_(body.coach, LIMITS.coachNameMax, 'Coach'));
+  let types = body.eventType === undefined || body.eventType === null || body.eventType === '' ? [] : (Array.isArray(body.eventType) ? body.eventType : [body.eventType]);
+  if (types.length > 30) fail_('invalid', 'Too many event types');
+  types = types.map(String);
+  types.forEach(t => { if (!Object.prototype.hasOwnProperty.call(CLIENT_EVENTS_, t) && !Object.prototype.hasOwnProperty.call(SERVER_EVENTS_, t)) fail_('invalid', 'Unknown event type'); });
+  let before = 0;
+  if (body.before !== undefined && body.before !== null && body.before !== '') {
+    before = typeof body.before === 'string' && body.before.length <= 40 ? Date.parse(body.before) : NaN;
+    if (!isFinite(before)) fail_('invalid', 'Bad "before" time');
+  }
+  const includeOpens = body.includeAppOpens === true;
+  const d = analyticsData_(ctx), nameOf = entityNamer_(d);
+  const hits = d.events.filter(e => (!who || e.coach === who) && (types.length ? types.indexOf(e.type) !== -1 : (includeOpens || !PASSIVE_EVENTS_[e.type])) && (!before || e.ts < before)).sort((a, b) => b.ts - a.ts);
+  const page = hits.slice(0, limit);
+  return adminReply_(ctx, {
+    items: page.map(e => feedItem_(e, d, nameOf)),
+    hasMore: hits.length > page.length,
+    nextBefore: hits.length > page.length ? isoTime_(page[page.length - 1].ts) : null,       // pass back as "before" for the next page
+    filters: { coach: who, eventType: types, includeAppOpens: includeOpens },
+    eventTypes: Object.keys(CLIENT_EVENTS_).concat(Object.keys(SERVER_EVENTS_)).sort(),
+    coaches: d.coaches.map(c => ({ coachKey: c.key, name: c.name })).sort((a, b) => (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1))
+  });
+}
+
+const ADMIN_REPORTS_ = {
+  getAdminOverview: getAdminOverview_,
+  getAdminCoachActivity: getAdminCoachActivity_,
+  getAdminExerciseAnalytics: getAdminExerciseAnalytics_,
+  getAdminSessionAnalytics: getAdminSessionAnalytics_,
+  getAdminFeatureAnalytics: getAdminFeatureAnalytics_,
+  getAdminActivityFeed: getAdminActivityFeed_
+};
 
 /**
  * ABOUT SECURITY (Oct 2026): this version replaces the old name-based trust.

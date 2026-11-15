@@ -33,7 +33,10 @@ QA.sha256Hex = msg => sha256Bytes(msg).map(b => ('0' + (b & 255).toString(16)).s
 
 /* ---- a pretend spreadsheet ---- */
 class FakeSheet {
-  constructor(name){ this.name = name; this.cells = new Map(); this.fmt = new Map(); this.maxRow = 0; this.maxCol = 0; }
+  constructor(name){ this.name = name; this.cells = new Map(); this.fmt = new Map(); this.maxRow = 0; this.maxCol = 0; this.gridRows = 1000; }      // like a real tab: 1,000 rows to begin with
+  getMaxRows(){ return this.gridRows; }
+  insertRowsAfter(after, howMany){ this.gridRows += howMany; return this; }
+  _inGrid(lastRow){ if(lastRow > this.gridRows) throw new Error('The coordinates of the range are outside the dimensions of the sheet.'); }
   _k(r, c){ return r + ',' + c; }
   _touch(r, c){ if(r > this.maxRow) this.maxRow = r; if(c > this.maxCol) this.maxCol = c; }
   _put(r, c, v){
@@ -44,7 +47,7 @@ class FakeSheet {
     else cell = {v: v === undefined ? '' : v, formula: false};
     this.cells.set(this._k(r, c), cell); this._touch(r, c);
   }
-  appendRow(arr){ const r = this.getLastRow() + 1; arr.forEach((v, i) => this._put(r, i + 1, v)); }
+  appendRow(arr){ const r = this.getLastRow() + 1; if(r > this.gridRows) this.gridRows = r; arr.forEach((v, i) => this._put(r, i + 1, v)); }      // appendRow adds a row when the tab is full
   getLastRow(){ return this.maxRow; }
   getLastColumn(){ return this.maxCol; }
   getDataRange(){ return this.getRange(1, 1, Math.max(this.maxRow, 1), Math.max(this.maxCol, 1)); }
@@ -52,9 +55,9 @@ class FakeSheet {
     const sh = this; nr = nr || 1; nc = nc || 1;
     return {
       getValues(){ const out = []; for(let i = 0; i < nr; i++){ const row = []; for(let j = 0; j < nc; j++){ const cell = sh.cells.get(sh._k(r + i, c + j)); row.push(cell ? (cell.formula ? '#FORMULA:' + cell.v : cell.v) : ''); } out.push(row); } return out; },
-      setValues(vals){ vals.forEach((row, i) => row.forEach((v, j) => sh._put(r + i, c + j, v))); return this; },
-      setValue(v){ sh._put(r, c, v); return this; },
-      setNumberFormat(f){ for(let i = 0; i < nr; i++) for(let j = 0; j < nc; j++) sh.fmt.set(sh._k(r + i, c + j), f); sh._touch(r + nr - 1, c + nc - 1); return this; },
+      setValues(vals){ sh._inGrid(r + nr - 1); vals.forEach((row, i) => row.forEach((v, j) => sh._put(r + i, c + j, v))); return this; },
+      setValue(v){ sh._inGrid(r); sh._put(r, c, v); return this; },
+      setNumberFormat(f){ sh._inGrid(r + nr - 1); for(let i = 0; i < nr; i++) for(let j = 0; j < nc; j++) sh.fmt.set(sh._k(r + i, c + j), f); sh._touch(r + nr - 1, c + nc - 1); return this; },
     };
   }
   deleteRow(r){
@@ -66,22 +69,28 @@ class FakeSheet {
 }
 function makeEnv(){
   const sheets = new Map(), props = new Map(), cache = new Map();
-  const ss = { getSheetByName: n => sheets.get(n) || null, insertSheet: n => { const s = new FakeSheet(n); sheets.set(n, s); return s; } };
-  return {
-    sheets, props, cache, advanceTime: ms => cache.forEach(e => { e.exp -= ms; }),
+  const ss = { getSheetByName: n => sheets.get(n) || null, insertSheet: n => { const s = new FakeSheet(n); sheets.set(n, s); return s; }, getSpreadsheetTimeZone: () => env.timeZone };
+  /* Utilities.formatDate, for the one pattern the script uses (the calendar day of a moment in a time zone) */
+  const formatDate = (date, tz, pattern) => { if(pattern !== 'yyyy-MM-dd') throw new Error('QA formatDate only knows yyyy-MM-dd'); const p = {}; new Intl.DateTimeFormat('en-CA', {timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(date).forEach(x => { p[x.type] = x.value; }); return p.year + '-' + p.month + '-' + p.day; };
+  const env = {
+    sheets, props, cache, timeZone: 'America/New_York', advanceTime: ms => cache.forEach(e => { e.exp -= ms; }),
     globals: {
       SpreadsheetApp: { getActiveSpreadsheet: () => ss },
-      Utilities: { DigestAlgorithm: {SHA_256: 'SHA_256'}, Charset: {UTF_8: 'UTF_8'}, computeDigest: (alg, text) => sha256Bytes(String(text)), getUuid: () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); })) },
+      Utilities: { DigestAlgorithm: {SHA_256: 'SHA_256'}, Charset: {UTF_8: 'UTF_8'}, computeDigest: (alg, text) => sha256Bytes(String(text)), formatDate, getUuid: () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); })) },
       ContentService: { MimeType: {JSON: 'JSON'}, createTextOutput: s => ({ _s: s, setMimeType(){ return this; }, getContent(){ return this._s; } }) },
       LockService: { getScriptLock: () => ({ waitLock(){}, releaseLock(){} }) },
       PropertiesService: { getScriptProperties: () => ({ getProperty: k => (props.has(k) ? props.get(k) : null), setProperty: (k, v) => { props.set(k, String(v)); } }) },
       CacheService: { getScriptCache: () => ({
         get: k => { const e = cache.get(k); if(!e) return null; if(e.exp < Date.now()){ cache.delete(k); return null; } return e.v; },
         put: (k, v, sec) => { cache.set(k, {v: String(v), exp: Date.now() + (sec || 600) * 1000}); },
-        remove: k => { cache.delete(k); } }) },
-      Logger: { log(){} },
+        remove: k => { cache.delete(k); },
+        getAll(keys){ const out = {}; keys.forEach(k => { const v = this.get(k); if(v !== null) out[k] = v; }); return out; },
+        putAll(map, sec){ Object.keys(map).forEach(k => this.put(k, map[k], sec)); } }) },
+      Logger: { log(...a){ env.logLines.push(a.join(' ')); } },
     },
   };
+  env.logLines = [];
+  return env;
 }
 QA.serverSource = null;
 QA.loadServerSource = async () => { if(!QA.serverSource){ const r = await fetch(new URL('../claude_FT2_AppsScript_Code.gs', location.href).href, {cache: 'no-store'}); if(!r.ok) throw new Error('Could not load the Apps Script file'); QA.serverSource = await r.text(); } return QA.serverSource; };
@@ -92,7 +101,7 @@ class QAServer {
     o = o || {};
     this.env = makeEnv(); this.club = o.club || 'QA-club-code';
     const names = Object.keys(this.env.globals);
-    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, issueToken_, coachKey_, newShareToken_, LIMITS, PUBLIC_EXERCISE_COLUMNS};')(...names.map(n => this.env.globals[n]));
+    this.api = new Function(...names, src + '\n;return {doGet, doPost, readSharedSession, setupClubCode, issueToken_, coachKey_, newShareToken_, LIMITS, PUBLIC_EXERCISE_COLUMNS, setupAnalytics, analyticsSelfCheck, ANALYTICS, CLIENT_EVENTS_, SERVER_EVENTS_};')(...names.map(n => this.env.globals[n]));
     if(o.clubCode !== false) this.env.props.set('CLUB_CODE_HASH', QA.sha256Hex('ft2-club:' + this.club));
     this.log = [];
   }
@@ -105,6 +114,10 @@ class QAServer {
   /* a signed-in coach: joins if new; if the name is already claimed, hands out a token the way a phone code would; returns {name, token} */
   coach(name){ let r = this.join(name); if(!r.ok && r.error === 'name_taken'){ const key = this.api.coachKey_(name); const row = this.sheet('Coaches').getDataRange().getValues().find(x => String(x[0]) === key); r = {ok: true, name: row ? String(row[1]) : name, token: this.api.issueToken_(key)}; } if(!r.ok) throw new Error('QA could not sign ' + name + ' in: ' + JSON.stringify(r)); return {name: r.name, token: r.token}; }
   sheet(name){ return this.env.sheets.get(name) || null; }
+  /* make a coach an administrator the way the club owner does: by typing the name into the Admins tab */
+  makeAdmin(name){ const ss = this.env.globals.SpreadsheetApp.getActiveSpreadsheet(); let sh = ss.getSheetByName('Admins'); if(!sh){ sh = ss.insertSheet('Admins'); sh.appendRow(['coachName', 'addedAt', 'note']); } sh.appendRow([name, '', '']); }
+  /* what is physically in the AnalyticsEvents tab, as objects (metadata parsed) */
+  events(){ const sh = this.sheet('AnalyticsEvents'); if(!sh || sh.getLastRow() < 2) return []; const v = sh.getDataRange().getValues(); return v.slice(1).map(r => { const o = {}; v[0].forEach((h, i) => { o[h] = r[i]; }); try{ o.meta = JSON.parse(o.metadata || '{}'); }catch(e){ o.meta = null; } return o; }); }
   addExercises(headers, rows){ const sh = this.env.globals.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Exercises'); sh.appendRow(headers); rows.forEach(r => sh.appendRow(r)); }
   /* what is physically in the Sessions tab, as objects */
   rows(){ const sh = this.sheet('Sessions'); if(!sh || sh.getLastRow() < 2) return []; const v = sh.getDataRange().getValues(); return v.slice(1).map(r => { const o = {}; v[0].forEach((h, i) => { o[h] = r[i]; }); try{ o.phases = JSON.parse(o.phasesJson || '[]'); }catch(e){ o.phases = []; } return o; }); }
