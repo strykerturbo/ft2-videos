@@ -1,10 +1,10 @@
-# FT2 Coaches — Usage Analytics (Pass 1: recording + administrator reports)
+# FT2 Coaches — Usage Analytics (recording, administrator reports, Admin Dashboard)
 
 Pass 1 records how coaches use the app and lets **administrators** ask the server for reports.
-There is no dashboard screen yet — that is Pass 2, built on the reports described here.
+Pass 2 is the screen that shows them: **Settings → Admin Dashboard** (section 7).
 
 Code: `claude_FT2_AppsScript_Code.gs` ("USAGE ANALYTICS" section) and `index.html` ("USAGE ANALYTICS" block, `track()`).
-Tests: `qa/qa-tests-10.js` (AN-S01..12 server, AN-C01..08 app).
+Tests: `qa/qa-tests-10.js` (AN-S01..12 server, AN-C01..08 app) and `qa/qa-tests-11.js` (AD-S01..02 server, AD-C01..11 the dashboard).
 
 ## 1. What is stored (Google Sheet tabs, all created automatically)
 
@@ -102,7 +102,7 @@ Reply: `{ok:true, v, admin:true|false}` — lets the app decide whether to show 
 
 ### The six reports (administrators only)
 Common request field: `period` (`7d` | `30d` | `90d` | `all`, default `30d`).
-Common reply fields: `ok, v, generatedAt, timezone, range:{period, from, to}`.
+Common reply fields: `ok, v, generatedAt, timezone, range:{period, from, to}, trackingSince` — `trackingSince` is the time of the first row ever written to `AnalyticsEvents` (`null` = nothing recorded yet), so a screen can tell "nobody used it" from "it was not being recorded".
 
 | Action | Extra request fields | Reply |
 |---|---|---|
@@ -111,7 +111,8 @@ Common reply fields: `ok, v, generatedAt, timezone, range:{period, from, to}`.
 | `getAdminExerciseAnalytics` | `limit` (default 100, max 500), `sort` (`views` \| `additions` \| `savedSessions` \| `coachesUsed` \| `name`), `includeUnused` (true = also list library exercises nobody touched) | `totals:{views, additions, removals, savedSessionInclusions}, libraryCount, exerciseCount, truncated, exercises:[{exerciseId, name, section, inLibrary, views, viewers, additions, removals, savedSessions, coachesUsed}]` |
 | `getAdminSessionAnalytics` | — | `sessionsSaved, saveActions, sessionUpdates, sessionsDeleted, sessionsStarted, sessionsCopied, sessionsShared, shareActions, unshareActions, coachesWhoSaved, averageExerciseCount, averagePlannedMinutes, averageTargetMinutes, distributions:{focusArea, ageGroup, sessionStyle, location, targetMinutes, builtWith}` — each distribution is `[{value, count, pct}]`; `""` = not set (only a Custom Session knows its focus / age / style) |
 | `getAdminFeatureAnalytics` | — | `activeCoaches, features:[{feature, label, uses, coaches, adoptionPct, eventCounts}]` — all 9 features, most used first |
-| `getAdminActivityFeed` | `coach` (name or key), `eventType` (one or a list), `limit` (default 50, max 200), `before` (the previous reply's `nextBefore`), `includeAppOpens` | `items:[{eventId, timestamp, coachKey, coachName, eventType, entityType, entityId, entityName, entityPrivate, sessionId}], hasMore, nextBefore, filters, eventTypes:[…], coaches:[{coachKey, name}]` — newest first |
+| `getAdminCoachProfile` | `coach` (name or key, required) | `coach:{coachKey, name, joinedAt, lastActiveAt, lastSeenAt, active, sessionsSaved, sessionsSavedAllTime, sessionsShared, exercisesAdded, exerciseViews, actions}`, `trendBucket`, `trend:[{date, actions, sessionsSaved, exerciseViews, exercisesAdded}]`, `topViewed`, `topAdded`, `topInSavedSessions` (each `[{name, section, count}]`, max 8, three separate measures), `features:[{feature, label, uses}]` (used ones only), `recentActivity:[{eventId, timestamp, eventType, entityType, entityName, entityPrivate}]` (15 newest). Unknown coach → `invalid`. Added in Pass 2. |
+| `getAdminActivityFeed` | `coach` (name or key), `eventType` (one or a list), `limit` (default 50, max 200), `before` (the previous reply's `nextBefore`), `includeAppOpens` | `items:[{eventId, timestamp, coachKey, coachName, eventType, entityType, entityId, entityName, entityPrivate, sessionId}], hasMore, nextBefore, filters, eventTypes:[…], coaches:[{coachKey, name}]` — newest first. Events recorded in the same instant are kept on one page, so a page can be a little longer than `limit`. |
 
 Privacy in replies: a session's title is returned only if its owner has Shared it (`entityPrivate:true` and an empty name otherwise).
 No reply contains notes, comments, ratings, share links or tokens. `timestamp`s are UTC text; times shown to people should be converted on screen.
@@ -128,3 +129,24 @@ Reports are remembered for up to 5 minutes and re-made as soon as a new event, s
 - `exercise_viewed` etc. carry the exercise name the app saw; an exercise renamed in the Sheet shows as a new row from then on.
 - Templates live on each coach's phone only (never on the server), so template events carry a template id but can never show a template name.
 - Google Sheets is the store: fine for a club of this size. If `AnalyticsEvents` ever grows past a few hundred thousand rows, archive old rows to another tab or move to a database — the API above would not change.
+
+## 7. The Admin Dashboard (Pass 2)
+
+Where: **Settings → Admin Dashboard** (a "Club Administration" row). Code: `index.html`, "ADMIN DASHBOARD" block (`renderAdmin`, everything named `ad…`).
+
+- **Who sees it.** Settings asks the server `getAdminStatus` once per sign-in; the row is drawn only for an administrator. That answer is a display hint
+  only — every report is still checked by the server, and a `forbidden` answer at any time wipes the screen and the reports held in memory.
+  A coach who reaches the screen some other way sees "Administrators only" and no report is requested.
+- **Sections → reports.** Overview = `getAdminOverview` + `getAdminSessionAnalytics` (focus areas). Coaches = `getAdminCoachActivity`; a coach's page =
+  `getAdminCoachProfile`. Exercises = `getAdminExerciseAnalytics` (`limit:500`; search, sorting and the three rankings are done on the phone).
+  Sessions = `getAdminSessionAnalytics`. Feature Usage = `getAdminFeatureAnalytics`. Activity Feed = `getAdminActivityFeed` (coach + activity filters, "Show older activity").
+- **Date range** (7 / 30 / 90 days, all time) applies to every section and is kept while moving between them.
+- **No made-up data, ever.** A report is requested once per date range and reused for up to 5 minutes (or until Refresh); it lives in memory only,
+  never in the phone's storage. Loading, empty, failed (with Try again) and wrong-shaped replies each have their own state; a failed report never
+  shows zeros or old numbers, and the other sections keep working.
+- **No comparison with the previous period** is shown: the reports do not provide one, so none is invented.
+- **Charts** are drawn by the app itself (no chart library, nothing loaded from elsewhere): one colour (navy, FT2 yellow in dark mode), exact values on
+  hover / tap, and a "Show as a table" option under each time chart.
+- **Engagement insights** (Exercises) are simple rules applied to the report: "viewed a lot, rarely added" = at least 3 views and additions at most a
+  fifth of views; "strong repeat use" = in at least twice as many saved sessions as it has coaches. Each list shows only when something qualifies.
+- An older server (before Pass 2 is deployed) still works for the six original sections; a coach's page then shows the basics and says the server needs its update.

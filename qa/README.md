@@ -18,6 +18,7 @@ The only real network call is a **read-only GET** of the live exercise library (
 - `qa-tests-4.js` Navigation matrix, Bottom-nav matrix, Data integrity, Generator QA (1,080-combination sweep)
 - `qa-tests-5.js` Usability, Consistency, Responsive, Error / Offline, Security / Privacy, Performance
 - `qa-tests-10.js` Usage analytics: event recording, the AnalyticsEvents tab, administrators-only reports (see `../ANALYTICS.md`)
+- `qa-tests-11.js` Admin Dashboard: who can see it, every section's numbers against real server data, empty / error states, sizes (AD-S.., AD-C..)
 - `qa-ui.js`, `index.html`  the dashboard
 
 ## Adding / changing a test

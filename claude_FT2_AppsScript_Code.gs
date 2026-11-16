@@ -622,7 +622,7 @@ const ANALYTICS = {
   maxAgeMs: 48 * 3600000,       // how far back the app may date an event that waited to be sent
   perHour: 600,                 // events one coach may log per hour
   dedupeTail: 1000, dedupeCacheSec: 21600,
-  feedDefault: 50, feedMax: 200, listDefault: 100, listMax: 500, coachesMax: 300, recentPerCoach: 5,
+  feedDefault: 50, feedMax: 200, listDefault: 100, listMax: 500, coachesMax: 300, recentPerCoach: 5, profileTop: 8, profileRecent: 15,
   cacheSec: 300, cacheMaxChars: 90000,
   tzFallback: 'America/New_York'
 };
@@ -877,8 +877,18 @@ function adminContext_(body) {
   const range = { period: period, from: days ? shiftDay_(to, -(days - 1)) : null, to: to };
   return { now: now, tz: tz, dayOf: dayOf, range: range, inRange: ms => ms > 0 && (!range.from || dayOf(ms) >= range.from) };
 }
+// When usage recording began: the time of the very first row in AnalyticsEvents (null = nothing has ever been recorded).
+// Lets the dashboard tell "nobody used this" apart from "this was not being recorded yet".
+function trackingSince_() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(EVENTS_TAB_NAME);
+    if (!sheet || sheet.getLastRow() < 2) return null;
+    const ms = timeMs_(sheet.getRange(2, 2, 1, 1).getValues()[0][0]);
+    return ms ? isoTime_(ms) : null;
+  } catch (e) { return null; }
+}
 function adminReply_(ctx, data) {
-  return Object.assign({ ok: true, v: API_VERSION, generatedAt: isoTime_(ctx.now), timezone: ctx.tz, range: ctx.range }, data);
+  return Object.assign({ ok: true, v: API_VERSION, generatedAt: isoTime_(ctx.now), timezone: ctx.tz, range: ctx.range, trackingSince: trackingSince_() }, data);
 }
 // A report is remembered for a few minutes, and re-made as soon as anything new has been recorded (the row counts are part of its key).
 function adminCached_(name, ctx, params, build) {
@@ -1025,27 +1035,31 @@ function limit_(v, dflt, max) {
 
 /* ---- the reports (each one checks the Admins list itself, before anything else) ---- */
 
-function overviewData_(ctx, d) {
-  const n = countBy_(d.events, e => e.type);
-  const ps = d.periodSessions;
-  const usedKeys = {};
-  let slots = 0;
-  ps.forEach(s => { slots += s.slots; s.exercises.forEach(x => { usedKeys[x.key] = true; }); });
-  // activity over time: one entry per day, or per week (starting Monday) when the period is longer than about three months
-  const firstDay = ctx.range.from || d.events.concat(ps.map(s => ({ day: ctx.dayOf(s.createdAt) }))).reduce((a, e) => (e.day < a ? e.day : a), ctx.range.to);
+// Activity over time: one entry per day, or per week (starting Monday) when the period is longer than about three months.
+// Used for the whole club (overview) and for one coach (profile) - the same rules either way.
+function trend_(ctx, events, ps) {
+  const firstDay = ctx.range.from || events.concat(ps.map(s => ({ day: ctx.dayOf(s.createdAt) }))).reduce((a, e) => (e.day < a ? e.day : a), ctx.range.to);
   const start = firstDay < shiftDay_(ctx.range.to, -364) ? shiftDay_(ctx.range.to, -364) : firstDay;
   const weekly = start < shiftDay_(ctx.range.to, -92);
   const bucketOf = day => (weekly ? weekStart_(day) : day);
   const buckets = {}, order = [];
   for (let day = bucketOf(start); day <= ctx.range.to; day = shiftDay_(day, weekly ? 7 : 1)) { buckets[day] = { date: day, activeCoaches: 0, actions: 0, sessionsSaved: 0, exerciseViews: 0, exercisesAdded: 0, who: {} }; order.push(day); }
-  d.events.forEach(e => {
+  events.forEach(e => {
     const b = buckets[bucketOf(e.day)]; if (!b || PASSIVE_EVENTS_[e.type]) return;
     b.actions++; b.who[e.coach] = true;
     if (e.type === 'exercise_viewed') b.exerciseViews++;
     if (e.type === 'exercise_added') b.exercisesAdded++;
   });
   ps.forEach(s => { const b = buckets[bucketOf(ctx.dayOf(s.createdAt))]; if (b) { b.sessionsSaved++; b.who[s.owner] = true; } });
-  const trend = order.map(k => { const b = buckets[k]; b.activeCoaches = Object.keys(b.who).length; delete b.who; return b; });
+  return { bucket: weekly ? 'week' : 'day', trend: order.map(k => { const b = buckets[k]; b.activeCoaches = Object.keys(b.who).length; delete b.who; return b; }) };
+}
+function overviewData_(ctx, d) {
+  const n = countBy_(d.events, e => e.type);
+  const ps = d.periodSessions;
+  const usedKeys = {};
+  let slots = 0;
+  ps.forEach(s => { slots += s.slots; s.exercises.forEach(x => { usedKeys[x.key] = true; }); });
+  const tr = trend_(ctx, d.events, ps);
   return {
     totals: {
       totalCoaches: d.coaches.length,
@@ -1066,8 +1080,8 @@ function overviewData_(ctx, d) {
       uniqueExercisesUsed: Object.keys(usedKeys).length
     },
     topFeatures: featureRows_(d).filter(f => f.uses > 0).sort((a, b) => b.uses - a.uses || b.coaches - a.coaches).slice(0, 5),
-    trendBucket: weekly ? 'week' : 'day',
-    trend: trend
+    trendBucket: tr.bucket,
+    trend: tr.trend
   };
 }
 function getAdminOverview_(body, coach) {
@@ -1119,6 +1133,7 @@ function getAdminCoachActivity_(body, coach) {
       const r = row(e.coach);
       if (PASSIVE_EVENTS_[e.type]) return;
       r.actions++;
+      r._active = Math.max(r._active, e.ts);          // belt and braces: the events themselves also prove activity
       if (e.type === 'exercise_added') r.exercisesAdded++;
       if (e.type === 'exercise_viewed') r.exerciseViews++;
       (recent[e.coach] || (recent[e.coach] = [])).push(e);
@@ -1223,7 +1238,10 @@ function getAdminActivityFeed_(body, coach) {
   const includeOpens = body.includeAppOpens === true;
   const d = analyticsData_(ctx), nameOf = entityNamer_(d);
   const hits = d.events.filter(e => (!who || e.coach === who) && (types.length ? types.indexOf(e.type) !== -1 : (includeOpens || !PASSIVE_EVENTS_[e.type])) && (!before || e.ts < before)).sort((a, b) => b.ts - a.ts);
-  const page = hits.slice(0, limit);
+  // Events recorded in the same instant stay on one page (the next page starts strictly before the last time shown, so none can be skipped).
+  let end = Math.min(limit, hits.length);
+  while (end < hits.length && hits[end].ts === hits[end - 1].ts) end++;
+  const page = hits.slice(0, end);
   return adminReply_(ctx, {
     items: page.map(e => feedItem_(e, d, nameOf)),
     hasMore: hits.length > page.length,
@@ -1234,13 +1252,67 @@ function getAdminActivityFeed_(body, coach) {
   });
 }
 
+// One coach in detail (the Coaches section's profile page). Same definitions as the other reports, narrowed to that coach.
+// Never includes notes, comments, ratings or the titles of private sessions.
+function getAdminCoachProfile_(body, coach) {
+  requireAdmin_(coach);
+  const ctx = adminContext_(body);
+  const who = coachKey_(cleanText_(body.coach, LIMITS.coachNameMax, 'Coach'));
+  if (!who) fail_('invalid', 'Which coach?');
+  return adminCached_('profile', ctx, [who], () => {
+    const d = analyticsData_(ctx), nameOf = entityNamer_(d), lib = loadLibrary_();
+    const rec = d.coaches.filter(c => c.key === who)[0];
+    const mine = d.sessions.filter(s => s.owner === who);
+    if (!rec && !mine.length) fail_('invalid', 'Unknown coach');
+    const events = d.events.filter(e => e.coach === who), ps = mine.filter(s => ctx.inRange(s.createdAt));
+    const acts = events.filter(e => !PASSIVE_EVENTS_[e.type]);
+    const n = countBy_(events, e => e.type);
+    let lastActive = 0, lastSeen = 0;
+    mine.forEach(s => { lastActive = Math.max(lastActive, s.createdAt, s.updatedAt); });
+    if (d.activity[who]) { lastActive = Math.max(lastActive, d.activity[who].active); lastSeen = d.activity[who].seen; }
+    acts.forEach(e => { lastActive = Math.max(lastActive, e.ts); });
+    lastSeen = Math.max(lastSeen, lastActive);
+    // exercises: three separate rankings, never mixed
+    const top = (type) => {
+      const m = {};
+      events.forEach(e => {
+        if (e.type !== type || e.entityType !== 'exercise') return;
+        const inLib = lib.byId[e.entityId], name = String(e.meta.name || (inLib ? inLib.name : ''));
+        const k = exerciseKey_(name, e.entityId); if (!k) return;
+        const r = m[k] || (m[k] = { name: name, section: '', count: 0 });
+        r.count++;
+      });
+      return rank(m);
+    };
+    const rank = m => Object.keys(m).map(k => { const r = m[k], now = lib.byKey[k]; if (now) { r.name = now.name; r.section = now.section; } return r; })
+      .sort((a, b) => b.count - a.count || (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1)).slice(0, ANALYTICS.profileTop);
+    const used = {};
+    ps.forEach(s => s.exercises.forEach(x => { const r = used[x.key] || (used[x.key] = { name: x.name, section: '', count: 0 }); r.count++; }));   // once per saved session
+    const tr = trend_(ctx, events, ps);
+    return {
+      coach: {
+        coachKey: who, name: d.coachName[who] || who, joinedAt: rec && rec.joinedAt ? isoTime_(rec.joinedAt) : null,
+        lastActiveAt: lastActive ? isoTime_(lastActive) : null, lastSeenAt: lastSeen ? isoTime_(lastSeen) : null, active: !!d.active[who],
+        sessionsSaved: ps.length, sessionsSavedAllTime: mine.length, sessionsShared: ps.filter(s => s.shared).length,
+        exercisesAdded: n.exercise_added || 0, exerciseViews: n.exercise_viewed || 0, actions: acts.length
+      },
+      trendBucket: tr.bucket,
+      trend: tr.trend.map(b => ({ date: b.date, actions: b.actions, sessionsSaved: b.sessionsSaved, exerciseViews: b.exerciseViews, exercisesAdded: b.exercisesAdded })),
+      topViewed: top('exercise_viewed'), topAdded: top('exercise_added'), topInSavedSessions: rank(used),
+      features: featureRows_({ events: events, activeCount: 1 }).filter(f => f.uses > 0).sort((a, b) => b.uses - a.uses).map(f => ({ feature: f.feature, label: f.label, uses: f.uses })),
+      recentActivity: acts.sort((a, b) => b.ts - a.ts).slice(0, ANALYTICS.profileRecent).map(e => { const it = feedItem_(e, d, nameOf); return { eventId: it.eventId, timestamp: it.timestamp, eventType: it.eventType, entityType: it.entityType, entityName: it.entityName, entityPrivate: it.entityPrivate }; })
+    };
+  });
+}
+
 const ADMIN_REPORTS_ = {
   getAdminOverview: getAdminOverview_,
   getAdminCoachActivity: getAdminCoachActivity_,
   getAdminExerciseAnalytics: getAdminExerciseAnalytics_,
   getAdminSessionAnalytics: getAdminSessionAnalytics_,
   getAdminFeatureAnalytics: getAdminFeatureAnalytics_,
-  getAdminActivityFeed: getAdminActivityFeed_
+  getAdminActivityFeed: getAdminActivityFeed_,
+  getAdminCoachProfile: getAdminCoachProfile_
 };
 
 /**
