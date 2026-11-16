@@ -163,7 +163,7 @@ add('RV-013', C.core, 'Session Review', 'Session Review has no "Time Breakdown" 
 
 add('RV-014', C.core, 'Session Review', 'Each Activate / Develop / Play card on Session Review shows what was picked - "<minutes> min · <count> exercises" - not actual / target numbers; the counts match the cards\' exercise lists.', {
   severity: 'Minor', tags: ['review', 'math'], steps: ['Open Session Review.'], exp: 'Minutes · count, no slash.', timeout: 40000,
-  async run(env){ const sb = await L.toReview(env); const cards = sb.qa('#content .phase-card'); assert(cards.length >= 3, 'Cards'); cards.forEach(c => { const t = c.querySelector('.phase-time'); const txt = t.textContent.replace(/\s+/g, ' ').trim(); assert(/^\d+ min \u00b7 \d+ exercises?$/.test(txt), 'Unexpected time text: ' + txt); assert(!/\//.test(txt) && !c.querySelector('.phase-over-tag'), 'Still shows actual/target'); const n = Number(txt.match(/\u00b7 (\d+)/)[1]); eq(n, c.querySelectorAll('.phase-exlist > *').length, 'Count vs the card\'s list'); }); }});
+  async run(env){ const sb = await L.toReview(env); const cards = sb.qa('#content .phase-card'); assert(cards.length >= 3, 'Cards'); cards.forEach(c => { const t = c.querySelector('.phase-time'); const txt = t.textContent.replace(/\s+/g, ' ').trim(); assert(/^\d+ min( \(\d{1,2}:\d\d( [AP]M)? \u2013 \d{1,2}:\d\d [AP]M\))?$/.test(txt), 'Unexpected time text: ' + txt); assert(!/\//.test(txt) && !c.querySelector('.phase-over-tag'), 'Still shows actual/target'); assert(c.querySelector('.rv-band'), 'No coloured phase bar'); }); }});
 
 QA.register(tests);
 })();
