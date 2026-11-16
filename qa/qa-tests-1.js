@@ -189,7 +189,8 @@ add('NS-001', C.core, 'Session Setup', 'Session Setup shows title, date, start t
   steps: ['Home > Start New Session.'], exp: 'All fields present with sensible defaults; Next: Build Session offered.',
   async run(env){
     const sb = await env.boot(); sb.click('Start New Session');
-    ['Title', 'Date', 'Start Time', 'Duration', 'Location', 'Start from Scratch', 'Choose a Template'].forEach(t => assert(sb.has(t, '#content'), `Session Setup is missing "${t}"`));
+    assert(sb.q('.su-title-wrap .session-name-input') && sb.q('.su-title-wrap .session-name-pencil'), 'Session Setup has no title field with its pencil');
+    ['Date', 'Start Time', 'Duration', 'Location', 'Start from Scratch', 'Choose a Template'].forEach(t => assert(sb.has(t, '#content'), `Session Setup is missing "${t}"`));
     assert(sb.S.setupName && sb.S.setupDate && sb.S.setupDuration && sb.S.setupLocation, 'A Setup field has no default value');
   }});
 add('NS-002', C.core, 'Session Setup', 'The default session name is sensible and the coach can rename it.', {

@@ -132,7 +132,7 @@ add('ED-019', C.core, 'Exercise Detail', 'Opening an exercise from a saved sessi
 
 add('NS-025', C.core, 'Build Session', 'The title entered on Session Setup appears on Build Session exactly as typed (upper and lower case), and the title field there accepts lower-case typing and keeps it.', {
   severity: 'Minor', tags: ['setup', 'build', 'visual'], steps: ['Type "Playing Forward U10 - Week 3" on Session Setup, open Build, edit the title.'], exp: 'Mixed case shown and kept.', timeout: 40000,
-  async run(env){ const sb = await env.boot(); sb.fn('initSetupDraft'); sb.fn('nav', 'practiceSetup'); const name = 'Playing Forward U10 - Week 3'; sb.type('.su-title-input', name); eq(sb.S.setupName, name, 'Setup title');
+  async run(env){ const sb = await env.boot(); sb.fn('initSetupDraft'); sb.fn('nav', 'practiceSetup'); const name = 'Playing Forward U10 - Week 3'; sb.type('.su-title-wrap .session-name-input', name); eq(sb.S.setupName, name, 'Setup title');
     sb.fn('startFromSetup'); eq(sb.S.screen, 'build', 'Did not reach Build'); eq(sb.S.sessionName, name, 'Build did not get the title as typed'); const inp = sb.q('.session-name-input'); assert(inp, 'No title field on Build'); eq(sb.win.getComputedStyle(inp).textTransform, 'none', 'Build title is forced to capitals'); eq(inp.value, name, 'Build title text');
     sb.type('.session-name-input', 'warm up and passing'); eq(sb.S.sessionName, 'warm up and passing', 'Lower-case typing was changed'); sb.fn('render'); eq(sb.q('.session-name-input').value, 'warm up and passing', 'Lower case lost after redraw'); }});
 
