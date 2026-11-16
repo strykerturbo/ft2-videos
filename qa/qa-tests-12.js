@@ -73,5 +73,16 @@ wf('WF-005', 'The dots fit every screen: phone upright (incl. a small 320px phon
       } }
     return out.length + ' screens checked'; }});
 
+wf('WF-006', 'The three navigation rules: (1) "Back to ..." goes one step back to the screen just left - Exercise Detail -> Find Exercises -> Build Session -> Session Setup, never further; (2) the dots only move between stages already reached - on Build, Review cannot be tapped even when the session is full; (3) the yellow Next button is there on Setup, Build and Review and is the way forward. Finished dots have a hover / press state.', {
+  steps: ['Build: open Find Exercises, an exercise, then Back step by step; check the dots and the Next button on each stage.'], exp: 'Back is always one step; Next always present; Review not tappable from Build.',
+  async run(env){ const sb = await env.boot(); sb.click('Start New Session'); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup has no Next button'); sb.click('Next: Build Session');
+    sb.fn('pickForPhase', 'warmup'); const phase = sb.S.pickingPhase; sb.clickSel('#content .ex-card'); eq(sb.screen, 'detail', 'Exercise Detail');
+    assert(/Back to Find Exercises/.test(sb.text('#content .nav-back-link')), 'Back label on Exercise Detail: ' + sb.text('#content .nav-back-link'));
+    sb.click('Back to Find Exercises'); eq(sb.screen, 'exercises', 'Back from Exercise Detail went to ' + sb.screen); eq(sb.S.pickingPhase, phase, 'Still picking for the same phase');
+    sb.click('Back to Build Session'); eq(sb.screen, 'build', 'Back from Find Exercises went to ' + sb.screen);
+    sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('render'); assert(!sb.qa('#content .wf-steps button').some(b => /Review/.test(b.textContent)), 'Review can be tapped from Build'); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build has no Next button');
+    sb.click('Back to Session Setup'); eq(sb.screen, 'practiceSetup', 'Back from Build went to ' + sb.screen); sb.click('Next: Build Session'); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Next reaches Review'); assert(sb.has('Save Session', '#workflowFooter'), 'Review has no Save button');
+    const css = [...sb.doc.styleSheets].flatMap(x => { try{ return [...x.cssRules]; }catch(e){ return []; } }).map(r => r.cssText).join('\n'); assert(/button\.wf-hit:active/.test(css) && /button\.wf-hit:hover/.test(css), 'No hover / press state for the finished dots'); eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
+
 QA.register(tests);
 })();
