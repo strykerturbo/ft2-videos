@@ -18,7 +18,7 @@ add('NAV-001', C.nav, 'Normal session flow', 'Home > Start New Session > Session
     sb.click('Save Session'); eq(sb.screen, 'home', 'After save');
   }});
 add('NAV-002', C.nav, 'Custom session flow', 'Home > Custom Session > Step 1 > Step 2 > Step 3 > Step 4 (Session Review) > Save: right screen and Back label at every step.', {
-  severity: 'Critical', tags: ['nav', 'custom'], timeout: 40000, steps: ['Walk the custom flow forward.'], exp: 'Step 1 (Back to Home), Step 2 (Back to Intent), Step 3 (Back to Session Setup), Step 4 (Back to Session Setup, STEP 4 OF 4, Save Session).',
+  severity: 'Critical', tags: ['nav', 'custom'], timeout: 40000, steps: ['Walk the custom flow forward.'], exp: 'Step 1 (Back to Home), Step 2 (Back to Intent), Step 3 (Back to Session Setup), Step 4 (Back to Session Setup, Save Session).',
   async run(env){
     const sb = await env.boot({live: true}); sb.click('Custom Session'); eq(sb.screen, 'quickStartCustom', 'Step 1'); assert(/Back to Home/.test(backText(sb)), 'Step 1 Back: ' + backText(sb));
     L.pickFocus(sb, 0); sb.click('Next: Session Setup'); eq(sb.screen, 'customSessionSetup', 'Step 2'); assert(/Back to Intent/.test(backText(sb)), 'Step 2 Back: ' + backText(sb)); assert(sb.has('Next: Generate Session', '#workflowFooter'), 'Step 2 Next');
