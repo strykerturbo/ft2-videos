@@ -13,7 +13,7 @@ add('NAV-001', C.nav, 'Normal session flow', 'Home > Start New Session > Session
   async run(env){
     const sb = await env.boot(); eq(sb.screen, 'home', 'Start');
     sb.click('Start New Session'); eq(sb.screen, 'practiceSetup', 'Setup'); assert(/Back to Home/.test(backText(sb)), 'Setup Back: ' + backText(sb)); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup Next');
-    sb.click('Next: Build Session'); eq(sb.screen, 'build', 'Build'); assert(/Back to Session Setup/.test(backText(sb)), 'Build Back: ' + backText(sb)); sb.addExercises(sb.firstIdsPerPhase(1)); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build Next');
+    QA.setupNext(sb); eq(sb.screen, 'build', 'Build'); assert(/Back to Session Setup/.test(backText(sb)), 'Build Back: ' + backText(sb)); sb.addExercises(sb.firstIdsPerPhase(1)); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build Next');
     sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Review'); assert(/Back to Build Session/.test(backText(sb)), 'Review Back: ' + backText(sb)); assert(sb.has('Save Session', '#workflowFooter'), 'Review Save');
     sb.click('Save Session'); eq(sb.screen, 'home', 'After save');
   }});

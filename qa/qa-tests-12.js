@@ -21,7 +21,7 @@ const noStepLabel = (sb, label) => { assert(!sb.q('#content .nav-page-title[data
 wf('WF-001', 'Standard session: Setup / Build / Review dots sit under the Back link and above the title, showing the right step on Session Setup, Build Session, Find Exercises, Exercise Detail (opened while building) and Session Review. The dots only show progress (none can be tapped), and there is no separate STEP label or In Progress tag beside them.', {
   steps: ['Start New Session; go through Setup, Build, Find Exercises, an exercise page, Review.'], exp: 'Setup current -> Build current (also on Find Exercises / Exercise Detail) -> Review current.',
   async run(env){ const sb = await env.boot(); sb.click('Start New Session'); eq(sb.screen, 'practiceSetup', 'Screen'); expect(sb, STD(CUR, TODO, TODO), 'Session Setup'); placed(sb, 'Session Setup'); noStepLabel(sb, 'Session Setup');
-    sb.click('Next: Build Session'); expect(sb, STD(DONE, CUR, TODO), 'Build Session'); placed(sb, 'Build Session'); noStepLabel(sb, 'Build Session');
+    QA.setupNext(sb); expect(sb, STD(DONE, CUR, TODO), 'Build Session'); placed(sb, 'Build Session'); noStepLabel(sb, 'Build Session');
     sb.fn('pickForPhase', 'warmup'); eq(sb.screen, 'exercises', 'Find Exercises'); expect(sb, STD(DONE, CUR, TODO), 'Find Exercises'); placed(sb, 'Find Exercises');
     sb.clickSel('#content .ex-card'); eq(sb.screen, 'detail', 'Exercise Detail'); expect(sb, STD(DONE, CUR, TODO), 'Exercise Detail (from Find Exercises)'); placed(sb, 'Exercise Detail');
     sb.fn('backFromDetail'); sb.fn('nav', 'build'); sb.addExercises(sb.firstIdsPerPhase(1)); sb.click('Next: Session Review'); expect(sb, STD(DONE, DONE, CUR), 'Session Review'); placed(sb, 'Session Review'); noStepLabel(sb, 'Session Review');
@@ -33,7 +33,7 @@ wf('WF-002', 'Going back is the Back link\'s job: Review -> Build -> Setup one s
   async run(env){ const sb = await L.toReview(env); const id = sb.S.phaseData.warmup[0]; sb.S.exDurations[id] = 7; sb.S.exNotes[id] = 'keep me'; sb.S.sessionName = 'Tuesday Rondos'; const before = draft(sb);
     sb.click('Back to Build Session'); eq(sb.screen, 'build', 'Review -> Build'); eq(draft(sb), before, 'Draft after Review -> Build');
     sb.click('Back to Session Setup'); eq(sb.screen, 'practiceSetup', 'Build -> Setup'); eq(draft(sb), before, 'Draft after Build -> Setup'); eq(sb.S.setupName, 'Tuesday Rondos', 'Setup shows the session\'s own title');
-    sb.click('Next: Build Session'); eq(sb.screen, 'build', 'Next from Setup'); eq(draft(sb), before, 'Draft after Setup -> Next'); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Next from Build'); eq(draft(sb), before, 'Draft after Build -> Next');
+    QA.setupNext(sb); eq(sb.screen, 'build', 'Next from Setup'); eq(draft(sb), before, 'Draft after Setup -> Next'); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Next from Build'); eq(draft(sb), before, 'Draft after Build -> Next');
     sb.click('Back to Build Session'); sb.fn('pickReplacementFor', 'warmup', id, 'build'); eq(sb.screen, 'exercises', 'Replace picker'); sb.click('Back to Build Session'); eq(sb.screen, 'build', 'Find Exercises -> Build'); eq(sb.S.replaceContext, null, 'The replacement was left open'); eq(draft(sb), before, 'Draft after leaving a replacement');
     eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
 
@@ -75,13 +75,13 @@ wf('WF-005', 'The dots fit every screen: phone upright (incl. a small 320px phon
 
 wf('WF-006', 'The three navigation rules: (1) "Back to ..." goes one step back to the screen just left - Exercise Detail -> Find Exercises -> Build Session -> Session Setup, never further; (2) the dots only show where the coach is - nothing on them can be tapped; (3) the yellow Next button is there on Setup, Build and Review and is the way forward. The Back link\'s touch area stays 44px tall even though it looks smaller.', {
   steps: ['Build: open Find Exercises, an exercise, then Back step by step; check the dots and the Next button on each stage.'], exp: 'Back is always one step; Next always present; Review not tappable from Build.',
-  async run(env){ const sb = await env.boot(); sb.click('Start New Session'); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup has no Next button'); sb.click('Next: Build Session');
+  async run(env){ const sb = await env.boot(); sb.click('Start New Session'); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup has no Next button'); QA.setupNext(sb);
     sb.fn('pickForPhase', 'warmup'); const phase = sb.S.pickingPhase; sb.clickSel('#content .ex-card'); eq(sb.screen, 'detail', 'Exercise Detail');
     assert(/Back to Find Exercises/.test(sb.text('#content .nav-back-link')), 'Back label on Exercise Detail: ' + sb.text('#content .nav-back-link'));
     sb.click('Back to Find Exercises'); eq(sb.screen, 'exercises', 'Back from Exercise Detail went to ' + sb.screen); eq(sb.S.pickingPhase, phase, 'Still picking for the same phase');
     sb.click('Back to Build Session'); eq(sb.screen, 'build', 'Back from Find Exercises went to ' + sb.screen);
     sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('render'); eq(sb.qa('#content .wf-steps button').length, 0, 'A progress dot can be tapped'); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build has no Next button');
-    sb.click('Back to Session Setup'); eq(sb.screen, 'practiceSetup', 'Back from Build went to ' + sb.screen); sb.click('Next: Build Session'); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Next reaches Review'); assert(sb.has('Save Session', '#workflowFooter'), 'Review has no Save button');
+    sb.click('Back to Session Setup'); eq(sb.screen, 'practiceSetup', 'Back from Build went to ' + sb.screen); QA.setupNext(sb); sb.click('Next: Session Review'); eq(sb.screen, 'review', 'Next reaches Review'); assert(sb.has('Save Session', '#workflowFooter'), 'Review has no Save button');
     const bl = sb.q('#content .nav-back-link'), area = sb.win.getComputedStyle(bl, '::before'); assert(bl.getBoundingClientRect().height + parseFloat(area.bottom) * -1 + parseFloat(area.top) * -1 >= 43, 'The Back link touch area is under 44px'); eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
 
 QA.register(tests);

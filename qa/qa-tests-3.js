@@ -85,7 +85,7 @@ add('TM-014', C.core, 'Sessions > Templates', 'Deleting a template asks first.',
 add('TM-015', C.core, 'Session Setup', 'A template chosen on Session Setup sets the session\'s sections and length.', {
   severity: 'Major', tags: ['templates', 'setup', 'build'], steps: ['Pick a template on Setup, continue.'], exp: 'Build uses the template\'s enabled sections and duration.',
   async run(env){
-    const sb = await env.boot(); const t = sb.S.practiceTemplates[0]; sb.click('Start New Session'); sb.fn('selectSetupTemplate', t.id); sb.fn('setSetupDuration', t.duration); sb.click('Next: Build Session');
+    const sb = await env.boot(); const t = sb.S.practiceTemplates[0]; sb.click('Start New Session'); sb.fn('selectSetupTemplate', t.id); sb.fn('setSetupDuration', t.duration); QA.setupNext(sb);
     const want = t.sections.filter(s => s.standard && s.enabled !== false).map(s => s.key); QA.deepEq([...sb.S.enabledPhaseKeys].sort(), want.slice().sort(), 'Enabled phases');
   }});
 add('TM-016', C.core, 'Session Setup', 'Template usage is remembered so the most-used templates are offered first.', {
@@ -186,7 +186,7 @@ add('PR-007', C.core, 'Print / Export', 'Save / Send closes the sheet once it co
 add('PR-008', C.core, 'Print / Export', 'The print header and phase bars carry the title, date, start-to-finish time, length, age, place and each phase\'s clock window.', {
   smoke: true, severity: 'Major', tags: ['print'], steps: ['Read the top of a print.'], exp: 'All present, in order.',
   async run(env){
-    const sb = await env.boot({live: true}); sb.click('Start New Session'); sb.fn('setSetupStartTime', '17:00'); sb.fn('setSetupDuration', 75); sb.click('Next: Build Session'); sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('completeSession', {skipConfirm: true});
+    const sb = await env.boot({live: true}); sb.click('Start New Session'); sb.fn('setSetupStartTime', '17:00'); sb.fn('setSetupDuration', 75); QA.setupNext(sb); sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('completeSession', {skipConfirm: true});
     const s = sb.S.savedSessions[0]; const m = sb.fn('ftPrintModel', s, sb.e('PRINT_LAYOUTS').half, 0); const icons = m.info.map(i => i.icon); QA.deepEq(icons.slice(0, 3), ['calendar', 'clock', 'stopwatch'], 'Header items'); assert(/5:00/.test(m.info[1].text), 'Time range ' + m.info[1].text); assert(m.groups.every(g => g.timeText), 'A phase bar has no clock window'); eq(m.title, s.name, 'Title');
   }});
 add('PR-009', C.core, 'Print / Export', 'Every exercise appears once, numbered 1..N in order, with its minutes.', {

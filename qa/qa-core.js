@@ -253,6 +253,11 @@ QA.sandboxes = new Set();      // every sandbox still alive; a test that opens s
    store        a Map to reuse as storage (to simulate closing and reopening the app)
    seed         {key: value} pre-loaded into storage (strings are stored as-is; objects are JSON-encoded)
    width/height viewport of the sandbox, default phone 390 x 844 */
+/* Session Setup's "Next: Build Session" now needs a session name (Nov 2026). Tests that are not about naming type one first, like a coach would. */
+QA.setupNext = function(sb, name){
+  if(sb.screen === 'practiceSetup' && !String(sb.S.setupName || '').trim()){ const el = sb.q('#setupNameInput'); if(el) sb.type(el, name || 'QA Session'); else sb.fn('setSetupName', name || 'QA Session'); }
+  return sb.click('Next: Build Session');
+};
 QA.boot = async function(opts){
   opts = Object.assign({coach: 'QA Coach', query: '', fetchMode: 'mock', width: 390, height: 844}, opts || {});
   const src = await QA.loadSource();

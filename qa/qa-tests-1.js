@@ -16,7 +16,7 @@ const L = QA.lib = {
   /* Home -> Start New Session -> Next: Build Session, the way a coach does it. */
   async startBuild(env, o){
     const sb = await env.boot(o);
-    sb.click('Start New Session'); sb.click('Next: Build Session');
+    sb.click('Start New Session'); QA.setupNext(sb);
     assert(sb.screen === 'build', 'Expected to land on Build Session, got ' + sb.screen);
     return sb;
   },
@@ -191,17 +191,17 @@ add('NS-001', C.core, 'Session Setup', 'Session Setup shows title, date, start t
   steps: ['Home > Start New Session.'], exp: 'All fields present with sensible defaults; Next: Build Session offered.',
   async run(env){
     const sb = await env.boot(); sb.click('Start New Session');
-    assert(sb.q('.su-title-wrap .session-name-input') && sb.q('.su-title-wrap .session-name-pencil'), 'Session Setup has no title field with its pencil');
+    assert(sb.q('#setupNameInput') && /Session Name/i.test(sb.text('#content .su-name-label')) && !sb.q('#content .su-name .session-name-pencil'), 'Session Setup has no labelled Session Name field (or still shows a pencil)');
     ['Date', 'Start Time', 'Duration', 'Location', 'Start from Scratch', 'Choose a Template'].forEach(t => assert(sb.has(t, '#content'), `Session Setup is missing "${t}"`));
-    assert(sb.S.setupName && sb.S.setupDate && sb.S.setupDuration && sb.S.setupLocation, 'A Setup field has no default value');
+    eq(sb.S.setupName, '', 'A new session starts unnamed'); assert(sb.S.setupDate && sb.S.setupDuration && sb.S.setupLocation, 'A Setup field has no default value');
   }});
-add('NS-002', C.core, 'Session Setup', 'The default session name is sensible and the coach can rename it.', {
+add('NS-002', C.core, 'Session Setup', 'A new session starts with an empty Session Name (no made-up default); the name the coach types carries into Build.', {
   severity: 'Minor', tags: ['setup'],
-  steps: ['Open Setup, edit the title.', 'Continue to Build.'], exp: 'Default name follows the "<Day> Session" pattern; the typed name carries into Build.',
+  steps: ['Open Setup, edit the title.', 'Continue to Build.'], exp: 'Empty to start; the typed name carries into Build.',
   async run(env){
     const sb = await env.boot(); sb.click('Start New Session');
-    assert(/\S/.test(sb.S.setupName), 'Default name is blank');
-    sb.S.setupName = 'Tuesday Rondos'; sb.click('Next: Build Session');
+    eq(sb.q('#setupNameInput').value, '', 'The name field is not empty');
+    sb.S.setupName = 'Tuesday Rondos'; QA.setupNext(sb);
     eq(sb.S.sessionName, 'Tuesday Rondos', 'Session name after Setup'); assert(sb.has('Tuesday Rondos', '#content') || sb.has('Build Session', '#content'), 'Build did not render');
   }});
 add('NS-003', C.core, 'Session Setup', 'Duration choices 60 / 75 / 90 / Custom change the target length.', {
@@ -211,7 +211,7 @@ add('NS-003', C.core, 'Session Setup', 'Duration choices 60 / 75 / 90 / Custom c
     const sb = await env.boot(); sb.click('Start New Session');
     [60, 75, 90].forEach(n => { sb.fn('setSetupDuration', n); eq(sb.S.setupDuration, n, 'Duration after choosing ' + n); });
     sb.fn('commitSetupCustomDuration', '100'); await sb.sleep(20); eq(sb.S.setupDuration, 100, 'Custom duration');
-    sb.click('Next: Build Session'); eq(sb.S.targetDuration, 100, 'Target duration in Build');
+    QA.setupNext(sb); eq(sb.S.targetDuration, 100, 'Target duration in Build');
   }});
 add('NS-004', C.core, 'Session Setup', 'Next: Build Session carries name, date, start time, duration and location into the draft.', {
   smoke: true, severity: 'Critical', tags: ['setup', 'build', 'nav'],
@@ -219,7 +219,7 @@ add('NS-004', C.core, 'Session Setup', 'Next: Build Session carries name, date, 
   async run(env){
     const sb = await env.boot(); sb.click('Start New Session');
     sb.S.setupName = 'Carry Test'; sb.fn('setSetupDate', '2026-11-05'); sb.fn('setSetupStartTime', '16:30'); sb.fn('setSetupDuration', 90); sb.fn('setSetupLocation', 'indoor');
-    sb.click('Next: Build Session');
+    QA.setupNext(sb);
     const S = sb.S;
     eq(S.screen, 'build', 'Screen'); eq(S.sessionName, 'Carry Test', 'Name'); eq(S.practiceDate, '2026-11-05', 'Date'); eq(S.practiceStartTime, '16:30', 'Start time');
     eq(S.targetDuration, 90, 'Duration'); eq(S.practiceLocation, 'indoor', 'Location'); eq(sb.fn('currentTotalMinutes').count, 0, 'Exercises');
@@ -245,7 +245,7 @@ add('NS-007', C.data, 'Session Setup', 'The start time chosen in Setup is stored
   severity: 'Minor', tags: ['setup', 'save'],
   steps: ['Set a start time, build and save.'], exp: 'The saved session keeps the start time.',
   async run(env){
-    const sb = await env.boot(); sb.click('Start New Session'); sb.fn('setSetupStartTime', '18:15'); sb.click('Next: Build Session');
+    const sb = await env.boot(); sb.click('Start New Session'); sb.fn('setSetupStartTime', '18:15'); QA.setupNext(sb);
     sb.addExercises(sb.firstIdsPerPhase(1)); sb.click('Next: Session Review'); const s = L.saveFromReview(sb);
     eq(s.startTime, '18:15', 'Saved start time');
   }});
@@ -256,7 +256,7 @@ add('NS-008', C.core, 'Session Setup', 'Choosing a template on Setup applies its
     const sb = await env.boot(); sb.click('Start New Session');
     const t = sb.S.practiceTemplates[0]; assert(t, 'There are no templates to choose from');
     sb.fn('selectSetupTemplate', t.id); eq(sb.S.setupSelectedTemplateId, t.id, 'Selected template');
-    sb.click('Next: Build Session'); eq(sb.S.activeTemplateId, t.id, 'Active template in Build');
+    QA.setupNext(sb); eq(sb.S.activeTemplateId, t.id, 'Active template in Build');
   }});
 add('NS-009', C.core, 'Build Session', 'Build Session lists all six phases, each with an Add Exercise button.', {
   severity: 'Critical', tags: ['build'],
@@ -367,21 +367,21 @@ add('NS-021', C.nav, 'Build Session', 'Back to Session Setup keeps the exercises
   async run(env){
     const sb = await L.startBuild(env); sb.addExercises(sb.firstIdsPerPhase(1));
     sb.clickSel('#content .nav-back-link'); eq(sb.screen, 'practiceSetup', 'Screen after Back');
-    sb.S.setupName = 'Renamed'; sb.click('Next: Build Session');
+    sb.S.setupName = 'Renamed'; QA.setupNext(sb);
     eq(sb.fn('currentTotalMinutes').count, 6, 'Exercises kept'); eq(sb.S.sessionName, 'Renamed', 'Name');
   }});
 add('NS-022', C.core, 'Build Session', 'A phase switched off in Settings does not appear in Build Session.', {
   severity: 'Minor', tags: ['build', 'settings'],
   steps: ['In Settings turn a phase off, open Build.'], exp: 'That phase is hidden.',
   async run(env){
-    const sb = await env.boot(); sb.S.enabledPhaseKeys.delete('athletic'); sb.click('Start New Session'); sb.click('Next: Build Session');
+    const sb = await env.boot(); sb.S.enabledPhaseKeys.delete('athletic'); sb.click('Start New Session'); QA.setupNext(sb);
     eq(sb.qa('#content .pcard-add-pill').length, 5, 'Add Exercise buttons with Athletic off');
   }});
 add('NS-023', C.core, 'Normal Session', 'Full flow: Setup, Build, Review, Save creates one saved session that appears in Sessions.', {
   smoke: true, severity: 'Critical', tags: ['setup', 'build', 'review', 'save', 'nav'],
   steps: ['Start New Session > Next: Build Session > add exercises > Next: Session Review > Save Session.', 'Open Sessions.'], exp: 'One new saved session with the right name and minutes; it is listed under Sessions; the draft is cleared.',
   async run(env){
-    const sb = await env.boot(); sb.click('Start New Session'); sb.S.setupName = 'Flow Test'; sb.click('Next: Build Session');
+    const sb = await env.boot(); sb.click('Start New Session'); sb.S.setupName = 'Flow Test'; QA.setupNext(sb);
     sb.addExercises(sb.firstIdsPerPhase(1)); const expected = L.sumDraftMinutes(sb);
     sb.click('Next: Session Review'); const s = L.saveFromReview(sb);
     eq(s.name, 'Flow Test', 'Saved name'); eq(s.totalMin, expected, 'Saved minutes'); eq(s.exCount, 6, 'Saved exercise count');
@@ -394,7 +394,7 @@ add('NS-024', C.cons, 'Normal Session', 'Every screen in the flow has a Back but
   async run(env){
     const sb = await env.boot(); sb.click('Start New Session');
     assert(/Back to Home/i.test(sb.text('#content .nav-back-link')), 'Setup back label'); assert(sb.has('Next: Build Session', '#workflowFooter'), 'Setup forward label');
-    sb.click('Next: Build Session'); assert(/Back to Session Setup/i.test(sb.text('#content .nav-back-link')), 'Build back label');
+    QA.setupNext(sb); assert(/Back to Session Setup/i.test(sb.text('#content .nav-back-link')), 'Build back label');
     sb.addExercises(sb.firstIdsPerPhase(1)); assert(sb.has('Next: Session Review', '#workflowFooter'), 'Build forward label');
     sb.click('Next: Session Review'); assert(/Back to Build Session/i.test(sb.text('#content .nav-back-link')), 'Review back label');
   }});
