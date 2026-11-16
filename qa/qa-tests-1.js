@@ -60,13 +60,13 @@ const tests = [];
 const add = (...a) => tests.push(T(...a));
 
 /* ================================================================ HOME (H-001 .. H-012) */
-add('H-001', C.core, 'Home', 'Home loads with greeting, Start New Session, Quick Start, Recent Sessions and a Featured Exercise.', {
+add('H-001', C.core, 'Home', 'Home loads with greeting, Start New Session, Custom Session, Recent Sessions and a Featured Exercise.', {
   smoke: true, severity: 'Critical', tags: ['home'],
-  steps: ['Open the app.', 'Look at the Home screen.'], exp: 'Greeting, Start New Session button, Quick Start cards, Recent Sessions and Featured Exercise are all visible; no script errors.',
+  steps: ['Open the app.', 'Look at the Home screen.'], exp: 'Greeting, Start New Session button, Custom Session, Recent Sessions and Featured Exercise are all visible; no script errors.',
   async run(env){
     const sb = await env.boot();
     eq(sb.screen, 'home', 'First screen');
-    ['Start New Session', 'Quick Start', 'Recent Sessions', 'Featured Exercise'].forEach(t => assert(sb.has(t, '#content'), `Home is missing "${t}"`));
+    ['Start New Session', 'Custom Session', 'Recent Sessions', 'Featured Exercise'].forEach(t => assert(sb.has(t, '#content'), `Home is missing "${t}"`));
     assert(/Good (Morning|Afternoon|Evening)/.test(sb.text('#content')), 'No time-of-day greeting');
     assert(sb.errors.length === 0, 'Script errors on load: ' + sb.errors.join(' | '));
   }});
@@ -101,15 +101,17 @@ add('H-004', C.nav, 'Home', 'Bottom navigation shows Home, Exercises, Sessions, 
     QA.deepEq(sb.visibleNavLabels(), ['Home', 'Exercises', 'Sessions', 'Settings'], 'Bottom nav items');
     eq(sb.navLabelActive(), 'Home', 'Active bottom-nav item');
   }});
-add('H-005', C.core, 'Home', 'Pre-built Sessions and Surprise Me are clearly "Coming Soon" and do nothing when tapped.', {
+add('H-005', C.core, 'Home', 'Pre-built Sessions and Surprise Me are only a small "Coming Soon" note at the bottom of Home - not cards or buttons - and tapping it does nothing.', {
   severity: 'Minor', tags: ['home'],
-  steps: ['Tap Pre-built Sessions, then Surprise Me.'], exp: 'Both are labelled Coming Soon!; tapping leaves you on Home.',
+  steps: ['Find the Coming Soon note on Home and tap it.'], exp: 'Plain text at the bottom, labelled Coming Soon; tapping leaves you on Home.',
   async run(env){
     const sb = await env.boot();
-    const cards = sb.qa('#content .hm-qs[aria-disabled="true"]');
-    eq(cards.length, 2, 'Number of "Coming Soon" cards');
-    cards.forEach(c => { assert(/coming soon/i.test(c.textContent), 'A disabled card is not labelled Coming Soon'); c.click(); });
-    eq(sb.screen, 'home', 'Screen after tapping the Coming Soon cards');
+    const note = sb.q('#content .hm-soon-note'); assert(note, 'No Coming Soon note');
+    assert(/coming soon/i.test(note.textContent) && /Pre-built Sessions/.test(note.textContent) && /Surprise Me/.test(note.textContent), 'Note text: ' + note.textContent);
+    assert(!note.closest('button,a,[data-onclick],[role="button"]') && !note.querySelector('button,a,[data-onclick],[role="button"]'), 'The Coming Soon note looks / acts like a button');
+    assert(!sb.qa('#content .hm-qs[aria-disabled="true"]').length, 'There are still Coming Soon cards');
+    const page = sb.q('#content .hm-page'); eq(page.lastElementChild.matches('.hm-soon-note') || [...page.children].indexOf(note) > [...page.children].findIndex(e => /Recent Sessions/.test(e.textContent)), true, 'The note is not below the main sections');
+    note.click(); eq(sb.screen, 'home', 'Screen after tapping the note');
   }});
 add('H-006', C.core, 'Home', 'Continue Session appears only when a draft exists, and resumes Build Session.', {
   severity: 'Major', tags: ['home', 'build', 'persistence'],
@@ -299,12 +301,12 @@ add('NS-013', C.core, 'Build Session', 'Exercises can be reordered inside a phas
   steps: ['Add two Warmup exercises.', 'Drag the grip handle of one past the other.'], exp: 'The order changes and stays changed after leaving and returning.', run: null});
 add('NS-014', C.core, 'Build Session', 'The planned-minutes total equals the sum of the exercises\' durations.', {
   smoke: true, severity: 'Critical', tags: ['build', 'math'],
-  steps: ['Add exercises to several phases.', 'Compare the total at the top with the individual durations.'], exp: 'Total = sum of durations; header shows "<total> / <target> MINS PLANNED" with the exercise count beside it.',
+  steps: ['Add exercises to several phases.', 'Compare the total at the top with the individual durations.'], exp: 'Total = sum of durations; header shows "<total> of <target> min allocated PLANNED" with the exercise count beside it.',
   async run(env){
     const sb = await L.startBuild(env); sb.addExercises(sb.firstIdsPerPhase(2));
     eq(sb.fn('currentTotalMinutes').total, L.sumDraftMinutes(sb), 'currentTotalMinutes() vs sum of durations');
-    assert(new RegExp(sb.fn('currentTotalMinutes').total + '\\s*/\\s*' + sb.S.targetDuration, 'i').test(sb.text('#content')), 'Header does not show "<total> / <target>"');
-    const lbl = sb.text('#content .bp-progress-label'); assert(/MINS PLANNED/.test(lbl) && new RegExp(sb.fn('currentTotalMinutes').count + ' EXERCISES').test(lbl), 'Progress label: ' + lbl); assert(!/EXERCISE/i.test(sb.text('#content .bp-meta-line')), 'The exercise count is still in the date line');
+    assert(new RegExp(sb.fn('currentTotalMinutes').total + ' of ' + sb.S.targetDuration + ' min allocated').test(sb.text('#content')), 'Header does not show "<total> of <target> min allocated"');
+    const lbl = sb.text('#content .bp-progress-label'); assert(/min allocated/.test(lbl) && new RegExp(sb.fn('currentTotalMinutes').count + ' exercises').test(lbl), 'Progress label: ' + lbl); assert(!/EXERCISE/i.test(sb.text('#content .bp-meta-line')), 'The exercise count is still in the date line');
   }});
 add('NS-015', C.use, 'Build Session', 'The page makes it obvious when the session is under or over the target length.', {
   severity: 'Minor', tags: ['build', 'math'],

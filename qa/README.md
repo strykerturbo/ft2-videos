@@ -20,6 +20,7 @@ The only real network call is a **read-only GET** of the live exercise library (
 - `qa-tests-10.js` Usage analytics: event recording, the AnalyticsEvents tab, administrators-only reports (see `../ANALYTICS.md`)
 - `qa-tests-11.js` Admin Dashboard: who can see it, every section's numbers against real server data, empty / error states, sizes (AD-S.., AD-C..)
 - `qa-tests-12.js` Workflow progress dots (Setup / Build / Review, Custom Session's four steps): states, tapping back, where they show, sizes (WF-001..006)
+- `qa-tests-13.js` Usability pass on Home, Session Setup and Build Session (UX-001..006)
 - `qa-ui.js`, `index.html`  the dashboard
 
 ## Adding / changing a test
