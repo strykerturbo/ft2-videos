@@ -203,6 +203,14 @@ add('ED-015', C.core, 'Exercise Detail', 'The Training profile shows four rows (
 add('ED-016', C.err, 'Exercise Detail', 'A missing exercise (bad link or removed from the sheet) shows a message instead of crashing.', {
   severity: 'Major', tags: ['detail', 'data'], steps: ['Open a detail for an id that does not exist.'], exp: '"Exercise not found", app keeps working.',
   async run(env){ const sb = await env.boot(); sb.fn('nav', 'detail', {detailId: 'EX99999'}); sb.S.detailId = 'EX99999'; sb.fn('nav', 'detail'); assert(sb.has('not found', '#content'), 'No friendly message'); assert(sb.errors.length === 0, 'Script error'); }});
+add('ED-018', C.core, 'Exercise Detail', 'The exercise animation keeps playing when the coach taps "+ Add to Session" or "Remove from Session" (or the bookmark): it is not blanked and restarted.', { severity: 'Major', tags: ['detail', 'build', 'library'], steps: ['Open an exercise with an animation; tap Add; tap Remove; tap the bookmark.'], exp: 'The same animation element stays on the page throughout.',
+  async run(env){ const sb = await env.boot(); const ex = sb.exercises().find(e => e.mediaUrl); assert(ex, 'No exercise with an animation in the library');
+    sb.fn('openDetail', ex.id); const m = () => sb.q('#content .media-box > video, #content .media-box > img'); const first = m(); assert(first, 'No animation on the exercise page'); first.__qaMark = 1;
+    sb.click('Add to Session', '#content'); assert(sb.fn('findPhaseKeyContaining', ex.id), 'Not added'); assert(m() === first && m().__qaMark === 1, 'Adding to the session restarted the animation');
+    sb.fn('detailToggle', ex.id); assert(!sb.fn('findPhaseKeyContaining', ex.id), 'Not removed'); assert(m() === first, 'Removing from the session restarted the animation');
+    sb.clickSel('#content .dh-bm'); assert(m() === first, 'The bookmark restarted the animation');
+    const other = sb.exercises().find(e => e.mediaUrl && e.mediaUrl !== ex.mediaUrl); if(other){ sb.fn('openDetail', other.id); assert(m() && m() !== first && m().getAttribute('src') !== first.getAttribute('src'), 'Another exercise showed the first one\'s animation'); }
+    eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
 add('ED-017', C.vis, 'Exercise Detail', 'Detail page layout: header box, bookmark corner, diagram, readable text, no clipping on a phone.', {
   type: 'Manual', severity: 'Polish', tags: ['detail', 'visual'], steps: ['Open details on a phone in light and dark.'], exp: 'Looks tidy; nothing overlaps or is cut off.', run: null});
 
