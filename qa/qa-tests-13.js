@@ -72,5 +72,41 @@ us('UX-006', 'Home / Setup / Build', 'Home, Session Setup and Build Session fit 
       eq(sb.errors.length, 0, `Errors at ${w}x${h}: ` + sb.errors.join(' | ')); out.push(`${w}x${h}`); sb.destroy(); }
     return out.join(', ') + ' ok'; }});
 
+us('UX-007', 'Home', 'Start New Session with a draft opens a bottom sheet ("You have a session in progress") showing the real draft - title, date, length, exercise count and whether it is saved - with Resume Session as the main button, Start New Session and Cancel. Resume returns to the exact draft; Cancel, tapping outside and Esc keep it.', {
+  tags: ['usability', 'home', 'persistence'], steps: ['Make a draft; Home; Start New Session; read; Resume; again Cancel / outside / Esc.'], exp: 'Real draft details; nothing lost.',
+  async run(env){ const sb = await env.boot(); sb.click('Start New Session'); eq(sb.screen, 'practiceSetup', 'No draft: straight to Setup'); assert(!sb.S.confirmNewSessionOpen, 'Sheet shown without a draft');
+    sb.click('Next: Build Session'); sb.addExercises(sb.firstIdsPerPhase(1)); sb.S.sessionName = 'Tue Rondo Night'; sb.S.exDurations[sb.S.phaseData.warmup[0]] = 9; sb.fn('nav', 'home'); await sb.sleep(500); const before = draft(sb), n = sb.fn('currentTotalMinutes').count;
+    sb.click('Start New Session'); eq(sb.screen, 'home', 'Stayed on Home'); const sheet = sb.q('#overlay .sheet.dsh-sheet'); assert(sheet, 'No bottom sheet'); const t = sb.overlayText();
+    ['Current draft', 'You have a session in progress', 'Would you like to pick up where you left off or start fresh?', 'Tue Rondo Night', sb.fn('formatPracticeDateShort', sb.S.practiceDate), `${sb.S.targetDuration} min · ${n} exercises`, 'Draft saved', 'Resume Session', 'Start New Session', 'Cancel'].forEach(x => assert(sb.norm(t).includes(sb.norm(x)), 'Sheet is missing "' + x + '": ' + t.slice(0, 200)));
+    const resume = sb.q('#overlay .dsh-resume'), cs = sb.win.getComputedStyle(resume); assert(/247, 255, 0/.test(cs.backgroundColor) && resume.getBoundingClientRect().height >= 48, 'Resume is not the big yellow button'); assert(sb.q('#overlay .dsh-new').getBoundingClientRect().height >= 44 && sb.q('#overlay .dsh-cancel').getBoundingClientRect().height >= 44, 'Buttons too small');
+    sb.clickSel('#overlay .dsh-resume'); eq(sb.screen, 'build', 'Resume'); eq(draft(sb), before, 'Resume: same draft'); assert(!sb.S.confirmNewSessionOpen, 'Sheet still open');
+    sb.fn('nav', 'home'); sb.click('Start New Session'); sb.clickSel('#overlay .dsh-cancel'); assert(!sb.S.confirmNewSessionOpen && sb.screen === 'home', 'Cancel'); eq(draft(sb), before, 'Cancel: same draft');
+    sb.click('Start New Session'); sb.clickSel('#overlay .sheet-backdrop'); assert(!sb.S.confirmNewSessionOpen, 'Tapping outside'); eq(draft(sb), before, 'Outside: same draft');
+    sb.click('Start New Session'); sb.doc.dispatchEvent(new sb.win.KeyboardEvent('keydown', {key: 'Escape', bubbles: true})); await sb.sleep(20); assert(!sb.S.confirmNewSessionOpen, 'Esc'); eq(draft(sb), before, 'Esc: same draft');
+    const sb2 = await L.reopen(sb); eq(draft(sb2), before, 'After reopening the app'); eq(sb2.S.savedSessions.length, 0, 'A saved session appeared'); eq(sb2.errors.length, 0, 'Errors: ' + sb2.errors.join(' | ')); }});
+
+us('UX-008', 'Home', 'Only the second step can discard: "Start New Session" in the sheet opens "Discard your current draft?" (naming the draft, red - never yellow - "Discard & Start New", and "Keep Existing Session"); Keep and tapping outside go back to the sheet with the draft intact; Discard & Start New clears the draft once and opens a fresh Session Setup, with no extra saved session.', {
+  tags: ['usability', 'home', 'persistence'], steps: ['Draft; Start New Session; Start New Session; Keep; outside; Discard (double tap).'], exp: 'Draft kept until Discard; one clean new session.',
+  async run(env){ const sb = await env.boot(); sb.addExercises(sb.firstIdsPerPhase(1)); sb.S.sessionName = 'Old Plan'; sb.fn('nav', 'home'); const before = draft(sb), saved = sb.S.savedSessions.length;
+    sb.click('Start New Session'); sb.clickSel('#overlay .dsh-new'); eq(draft(sb), before, 'Draft after the first Start New Session'); assert(!sb.q('#overlay .dsh-sheet'), 'The sheet is still showing under the dialog'); const t = sb.overlayText();
+    ['Discard your current draft?', 'Starting a new session will replace your unfinished session. This cannot be undone.', 'Old Plan', 'Discard & Start New', 'Keep Existing Session'].forEach(x => assert(sb.norm(t).includes(sb.norm(x)), 'Dialog is missing "' + x + '"'));
+    const danger = sb.q('#overlay .ft-alert-btn.danger'), cs = sb.win.getComputedStyle(danger); assert(!/247, 255, 0/.test(cs.backgroundColor) && /185, 28, 28|252, 165, 165/.test(cs.color), 'Discard is not red: ' + cs.color + ' on ' + cs.backgroundColor);
+    sb.click('Keep Existing Session', '#overlay'); assert(sb.q('#overlay .dsh-sheet') && sb.S.confirmNewSessionOpen, 'Keep did not return to the sheet'); eq(draft(sb), before, 'Draft after Keep');
+    sb.clickSel('#overlay .dsh-new'); sb.clickSel('#overlay .ft-alert-backdrop'); assert(sb.q('#overlay .dsh-sheet'), 'Tapping outside the dialog did not return to the sheet'); eq(draft(sb), before, 'Draft after tapping outside');
+    sb.clickSel('#overlay .dsh-new'); const btn = sb.q('#overlay .ft-alert-btn.danger'); btn.click(); btn.click(); sb.fn('confirmDiscardDraftAndStart');
+    eq(sb.screen, 'practiceSetup', 'After Discard & Start New'); eq(sb.fn('currentTotalMinutes').count, 0, 'Old exercises gone'); assert(sb.S.sessionName !== 'Old Plan', 'Old title kept'); assert(!sb.S.confirmNewSessionOpen && !sb.S.confirmDiscardDraftOpen, 'Something is still open'); eq(sb.S.savedSessions.length, saved, 'A saved session was created or removed');
+    sb.click('Next: Build Session'); eq(sb.screen, 'build', 'The new session carries on'); eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
+
+us('UX-009', 'Home', 'The draft sheet and the discard dialog fit phone upright (incl. 320px), phone sideways, tablet and computer: everything visible without scrolling the sheet on a normal phone, nothing under the bottom menu, a centred dialog on a computer.', {
+  cat: C.vis, tags: ['usability', 'responsive'], timeout: 90000, steps: ['Open both at five sizes.'], exp: 'Fits.',
+  async run(env){ const out = [];
+    for(const [w, h] of [[390, 844], [320, 568], [844, 390], [768, 1024], [1280, 800]]){
+      const sb = await env.boot({width: w, height: h}); sb.addExercises(sb.firstIdsPerPhase(1)); sb.fn('nav', 'home'); sb.click('Start New Session'); const tag = `${w}x${h}`; sb.qa('#overlay .sheet, #overlay .sheet-backdrop').forEach(n => { n.style.transition = 'none'; n.classList.add('is-open'); });      // the hidden test frame does not run the slide-up animation, so finish it by hand
+      const sh = sb.q('#overlay .dsh-sheet'), r = sh.getBoundingClientRect(); assert(r.left >= -1 && r.right <= w + 1 && r.bottom <= h + 1 && r.top >= -1, tag + ': the sheet is off screen'); if(h >= 700) assert(sh.scrollHeight <= sh.clientHeight + 1, tag + ': the sheet needs scrolling');
+      if(w >= 900) assert(Math.abs((r.left + r.right) / 2 - w / 2) < w * 0.25 && r.bottom < h - 20, tag + ': not a centred dialog on a computer');
+      sb.clickSel('#overlay .dsh-new'); await sb.sleep(30); const d = sb.q('#overlay .ft-alert').getBoundingClientRect(); assert(d.left >= 0 && d.right <= w && d.top >= 0 && d.bottom <= h, tag + ': the dialog is off screen');
+      eq(sb.errors.length, 0, tag + ' errors: ' + sb.errors.join(' | ')); out.push(tag); sb.destroy(); }
+    return out.join(', ') + ' ok'; }});
+
 QA.register(tests);
 })();
