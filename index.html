@@ -2432,6 +2432,12 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
   #content[data-screen="home"] > *{max-width:980px;}
   /* the coloured header block of Exercise Detail / Saved Session lines up with the text edges of the content below it */
   #content > .detail-header{width:calc(100% - 36px);max-width:824px;border-radius:18px;margin-top:14px;}
+  /* the exercise's diagram / animation: full content width and its own natural shape (no cropping, no stretching) -- the phone keeps its short 220px strip */
+  #content > .media-box{width:calc(100% - 36px);max-width:824px;height:auto;min-height:220px;margin-top:16px;}
+  /* Exercise Detail uses more of a wide screen so the diagram can be bigger; its coloured header lines up with it */
+  #content[data-screen="detail"] > *{max-width:1100px;}
+  #content[data-screen="detail"] > .detail-header, #content[data-screen="detail"] > .media-box{max-width:1064px;}
+  #content > .media-box > img, #content > .media-box > video{height:auto;max-height:78vh;object-fit:contain;display:block;}
   .ex-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
   .main-actions-row{grid-template-columns:repeat(4,1fr);}
 
