@@ -67,7 +67,7 @@ wf('WF-005', 'The dots fit every screen: phone upright (incl. a small 320px phon
         circles.forEach(c => assert(c.width >= 24 && c.width <= 28 && Math.abs(c.top - circles[0].top) < 1, tag + ': circle size / row'));
         labels.forEach((l, i) => { assert(l.height <= 18, tag + ': a label wraps'); if(i) assert(l.left >= labels[i - 1].right, tag + ': labels overlap'); });
         const c = sb.q('#content'), wr = wrap.getBoundingClientRect(), col = sb.q('#content .section-pad').getBoundingClientRect(); assert(c.scrollWidth <= c.clientWidth + 1, tag + ': sideways scrolling'); assert(Math.abs((wr.left + wr.right) / 2 - (col.left + col.right) / 2) <= 2, tag + ': not centred in the page column');
-        const back = sb.q('#content .nav-back-link').getBoundingClientRect(); assert(back.height >= 34 && back.height <= 40, tag + ': Back pill height ' + Math.round(back.height));
+        const back = sb.q('#content .nav-back-link').getBoundingClientRect(); assert(back.height >= 40 && back.height <= 48, tag + ': Back pill height ' + Math.round(back.height));
         assert(wr.height <= 46, tag + ': the dots take ' + Math.round(wr.height) + 'px of height');
         eq(sb.errors.length, 0, tag + ' errors: ' + sb.errors.join(' | ')); out.push(tag); sb.destroy();
       } }

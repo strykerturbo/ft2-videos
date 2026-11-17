@@ -98,11 +98,11 @@ add('EX-012', C.use, 'Exercise Library', 'Going into a detail page and back keep
   severity: 'Minor', tags: ['library', 'nav'],
   steps: ['Pick a phase chip, open an exercise, tap Back.'], exp: 'Still on the same chip.',
   async run(env){ const sb = await env.boot(); sb.fn('nav', 'exercises'); sb.fn('setSectionFilter', 'Rondos'); sb.qa('#content .ex-name')[0].click(); sb.fn('backFromDetail'); eq(sb.S.sectionFilter, 'Rondos', 'Phase chip after Back'); }});
-add('EX-013', C.core, 'Exercise Library', 'Creating a new exercise starts as an unsaved draft and only joins the library when saved.', {
+add('EX-013', C.core, 'Exercise Library', 'The "+ New Exercise" tile is switched off for now (not shown in the library); the dormant code behind it still starts an unsaved draft that only joins the library when saved.', {
   severity: 'Minor', tags: ['library', 'detail'],
-  steps: ['Tap the new-exercise tile, then Discard; again and Save Exercise.'], exp: 'Discard leaves the library unchanged; Save adds exactly one.',
+  steps: ['Open Exercises: no New Exercise tile. (Code only) start a new exercise, Discard; again and Save Exercise.'], exp: 'No tile; Discard leaves the library unchanged; Save adds exactly one.',
   async run(env){
-    const sb = await env.boot(); sb.fn('nav', 'exercises'); const n = sb.exercises().length;
+    const sb = await env.boot(); sb.fn('nav', 'exercises'); const n = sb.exercises().length; assert(!sb.q('#content .new-ex-card'), 'The New Exercise tile is still shown');
     sb.fn('createNewExercise'); eq(sb.screen, 'detail', 'Screen'); assert(sb.S.draftExercise, 'No draft'); sb.fn('discardDraftExercise'); eq(sb.exercises().length, n, 'Count after discard');
     sb.fn('createNewExercise'); sb.fn('saveDraftExercise'); eq(sb.exercises().length, n + 1, 'Count after save'); assert(sb.S.localExercises.length === 1, 'Not kept locally');
   }});
