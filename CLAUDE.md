@@ -599,6 +599,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 
 - **"+ New Exercise" is switched off for now (2026-11-16, coach's request).** `NEW_EXERCISE_ENABLED = false` makes `newExerciseTileHtml()` draw nothing, so the tile at the end of the Exercises grid is gone and nothing in the app can start a coach-made exercise. The code behind it (`createNewExercise`, the draft / save / discard flow, `localExercises`) is left in place unused, and exercises a coach already made stay in their library. Set the flag to `true` to bring it back. Test EX-013 checks the tile is absent.
 
+- **Section time bars are plain green (2026-11-16, coach's request).** The thin bar under each section (`phaseProgressBarHtml`, `.phase-progress-row`) fills with `--turf` instead of the rainbow gradient, which the coach found distracting; it still turns red when over the suggested time. The session-level bars (Build's time summary, Review's plan bar, Find Exercises' session box) keep the rainbow.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on

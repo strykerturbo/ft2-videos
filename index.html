@@ -1082,6 +1082,7 @@ select.diff-select option{color:var(--ink);background:var(--bg-surface);}
 .progress-fill{height:100%;background:linear-gradient(90deg,#FF6B6B 0%,#FF8A3C 20%,#7C3AED 40%,#06B6D4 60%,#10B981 80%,#F59E0B 100%);background-size:400px 100%;border-radius:6px;transition:width .2s;}
 .progress-fill.over{background:var(--warn);}
 .phase-progress-row{margin-top:6px;}
+.phase-progress-row .progress-fill:not(.over){background:var(--turf);}   /* the small bar under each section is one plain green (the app's accent), not the rainbow -- the coach found the colours distracting; over the suggested time it still turns red */
 .phase-over-tag{color:var(--warn);font-weight:700;}
 .progress-caption{display:flex;justify-content:space-between;margin-top:7px;font-size:var(--fs-base);color:var(--ink-soft);}
 .progress-caption b{color:var(--ink);}
