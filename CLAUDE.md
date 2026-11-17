@@ -601,6 +601,8 @@ so real coach data, the Google Sheet and real messages are never touched (only a
 
 - **Section time bars are plain green (2026-11-16, coach's request).** The thin bar under each section (`phaseProgressBarHtml`, `.phase-progress-row`) fills with `--turf` instead of the rainbow gradient, which the coach found distracting; it still turns red when over the suggested time. The session-level bars (Build's time summary, Review's plan bar, Find Exercises' session box) keep the rainbow.
 
+- **Scroll shadow under the pinned top area (2026-11-16, coach's request).** `updateStickyEdge()` (just before `initLazyMedia`, which calls it on every redraw; also on `#content`'s scroll) gives the LOWEST strip that is currently pinned -- Back bar, Build's time summary, Find Exercises' session box, Exercise Detail's coloured header -- the class `.stuck-edge` (hairline + soft downward shadow) only while the page is scrolled under it; at rest there is no shadow. A new pinned strip must be added to `STICKY_EDGE_SEL` or it gets no shadow (and the strip above it keeps one). Test UX-013.
+
 ## Where things live
 
 - **The deliverable is the live app itself** — `index.html`, hosted on

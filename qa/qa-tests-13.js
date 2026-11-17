@@ -139,5 +139,12 @@ us('UX-012', 'Session Setup', 'The Session Name field fits and stays visible on 
       eq(sb.errors.length, 0, tag + ' errors: ' + sb.errors.join(' | ')); out.push(tag); sb.destroy(); }
     return out.join(', ') + ' ok'; }});
 
+us('UX-013', 'Build Session', 'The pinned top area (Back bar + time summary) shows a soft shadow line under its lowest strip only while the list is scrolled under it; at rest there is none, and only one strip ever carries it.', {
+  tags: ['usability', 'build', 'scroll'], steps: ['Open Build Session with exercises; scroll down; scroll back to the top.'], exp: 'No shadow at rest; a shadow under the time summary while scrolled; gone again at the top.',
+  async run(env){ const sb = await L.startBuild(env, {width: 390, height: 700}); sb.addExercises(sb.firstIdsPerPhase(2)); sb.fn('render'); const c = sb.q('#content'), edges = () => sb.qa('#content .stuck-edge');
+    eq(edges().length, 0, 'Shadow shown before scrolling');
+    c.scrollTop = 400; sb.fn('updateStickyEdge'); eq(edges().length, 1, 'Strips with the shadow while scrolled'); assert(edges()[0].classList.contains('bp-progress'), 'The shadow is not under the time summary: ' + edges()[0].className); assert(sb.win.getComputedStyle(edges()[0]).boxShadow !== 'none', 'The strip has no shadow style');
+    c.scrollTop = 0; sb.fn('updateStickyEdge'); eq(edges().length, 0, 'Shadow still shown back at the top'); eq(sb.errors.length, 0, 'Errors: ' + sb.errors.join(' | ')); }});
+
 QA.register(tests);
 })();
